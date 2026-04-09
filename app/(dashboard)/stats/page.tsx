@@ -1,14 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import {
-  TrendingUp,
-  TrendingDown,
-  Activity,
-  DollarSign,
-  Target,
-  BarChart2,
-} from 'lucide-react'
+import { TrendingUp, TrendingDown, Activity, DollarSign, Target, BarChart2 } from 'lucide-react'
 import type { Trade } from '@/lib/types'
 
 function StatCard({
@@ -16,33 +9,36 @@ function StatCard({
   value,
   sub,
   icon: Icon,
-  color = 'default',
+  positive,
+  neutral,
 }: {
   label: string
   value: string
   sub?: string
   icon: React.ElementType
-  color?: 'default' | 'green' | 'red' | 'blue'
+  positive?: boolean
+  neutral?: boolean
 }) {
-  const iconColors = {
-    default: 'text-[#555] bg-white/5',
-    green: 'text-emerald-400 bg-emerald-500/10',
-    red: 'text-red-400 bg-red-500/10',
-    blue: 'text-blue-400 bg-blue-500/10',
-  }
+  const valueColor = neutral
+    ? 'text-white'
+    : positive === true
+    ? 'text-emerald-400'
+    : positive === false
+    ? 'text-red-400'
+    : 'text-white'
 
   return (
-    <div className="card p-4 md:p-6 animate-fade-in-up">
-      <div className="flex items-start justify-between mb-3 md:mb-4">
-        <p className="text-[10px] md:text-xs font-medium text-[#555] uppercase tracking-wider">
-          {label}
-        </p>
-        <div className={`w-7 h-7 md:w-8 md:h-8 rounded-xl flex items-center justify-center ${iconColors[color]}`}>
-          <Icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
+    <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-6 md:p-7 flex flex-col gap-5 hover:border-white/[0.08] transition-colors animate-fade-in-up">
+      <div className="flex items-start justify-between">
+        <p className="text-[10px] font-medium text-[#444] uppercase tracking-widest">{label}</p>
+        <div className="w-8 h-8 rounded-xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center">
+          <Icon className="w-3.5 h-3.5 text-[#444]" />
         </div>
       </div>
-      <p className="text-2xl md:text-3xl font-bold text-white tracking-tight">{value}</p>
-      {sub && <p className="text-[10px] md:text-xs text-[#555] mt-1.5">{sub}</p>}
+      <div>
+        <p className={`text-4xl md:text-5xl font-black tracking-tight ${valueColor}`}>{value}</p>
+        {sub && <p className="text-xs text-[#444] mt-2 font-light">{sub}</p>}
+      </div>
     </div>
   )
 }
@@ -54,16 +50,14 @@ export default function StatsPage() {
   useEffect(() => {
     fetch('/api/trades')
       .then((r) => r.json())
-      .then((d) => {
-        if (d.trades) setTrades(d.trades)
-      })
+      .then((d) => { if (d.trades) setTrades(d.trades) })
       .finally(() => setLoading(false))
   }, [])
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
       </div>
     )
   }
@@ -72,178 +66,151 @@ export default function StatsPage() {
   const wins = closedTrades.filter((t) => (t.pnl ?? 0) > 0)
   const losses = closedTrades.filter((t) => (t.pnl ?? 0) < 0)
   const totalPnl = closedTrades.reduce((s, t) => s + (t.pnl ?? 0), 0)
-  const winRate =
-    closedTrades.length > 0 ? (wins.length / closedTrades.length) * 100 : 0
-  const avgWin =
-    wins.length > 0
-      ? wins.reduce((s, t) => s + (t.pnl ?? 0), 0) / wins.length
-      : 0
-  const avgLoss =
-    losses.length > 0
-      ? Math.abs(losses.reduce((s, t) => s + (t.pnl ?? 0), 0) / losses.length)
-      : 0
+  const winRate = closedTrades.length > 0 ? (wins.length / closedTrades.length) * 100 : 0
+  const avgWin = wins.length > 0 ? wins.reduce((s, t) => s + (t.pnl ?? 0), 0) / wins.length : 0
+  const avgLoss = losses.length > 0 ? Math.abs(losses.reduce((s, t) => s + (t.pnl ?? 0), 0) / losses.length) : 0
   const profitFactor = avgLoss > 0 ? avgWin / avgLoss : 0
 
-  const pairStats = trades.reduce<Record<string, { count: number; pnl: number }>>(
-    (acc, t) => {
-      if (!acc[t.pair]) acc[t.pair] = { count: 0, pnl: 0 }
-      acc[t.pair].count++
-      acc[t.pair].pnl += t.pnl ?? 0
-      return acc
-    },
-    {}
-  )
-
-  const topPairs = Object.entries(pairStats)
-    .sort((a, b) => b[1].count - a[1].count)
-    .slice(0, 5)
-
+  const pairStats = trades.reduce<Record<string, { count: number; pnl: number }>>((acc, t) => {
+    if (!acc[t.pair]) acc[t.pair] = { count: 0, pnl: 0 }
+    acc[t.pair].count++
+    acc[t.pair].pnl += t.pnl ?? 0
+    return acc
+  }, {})
+  const topPairs = Object.entries(pairStats).sort((a, b) => b[1].count - a[1].count).slice(0, 5)
   const recentTrades = [...trades].slice(0, 10)
 
   if (trades.length === 0) {
     return (
-      <div className="px-4 md:px-8 pt-5 md:pt-8">
-        <div className="mb-6">
-          <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">Statistics</h1>
-          <p className="text-[#555] text-xs md:text-sm mt-0.5">Performance overview</p>
+      <div className="px-4 md:px-8 pt-6 md:pt-10">
+        <div className="mb-8">
+          <p className="text-[#444] text-xs uppercase tracking-widest mb-2 font-medium">Overview</p>
+          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Statistics</h1>
         </div>
-        <div className="card p-12 md:p-16 text-center">
-          <BarChart2 className="w-10 h-10 text-[#333] mx-auto mb-4" />
-          <p className="text-[#555] text-sm">No trades yet. Log your first trade to see stats.</p>
+        <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-16 text-center">
+          <BarChart2 className="w-10 h-10 text-[#222] mx-auto mb-4" />
+          <p className="text-[#444] text-sm font-light">No trades yet. Log your first trade to see stats.</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="px-4 md:px-8 pt-5 md:pt-8 pb-6">
-      <div className="mb-5 md:mb-8">
-        <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">Statistics</h1>
-        <p className="text-[#555] text-xs md:text-sm mt-0.5">
-          Based on {closedTrades.length} closed{' '}
-          {closedTrades.length === 1 ? 'trade' : 'trades'}
-        </p>
+    <div className="px-4 md:px-8 pt-6 md:pt-10 pb-8">
+      {/* Header */}
+      <div className="mb-8 md:mb-10">
+        <p className="text-[#444] text-xs uppercase tracking-widest mb-2 font-medium">Overview</p>
+        <div className="flex items-end justify-between">
+          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Statistics</h1>
+          <p className="text-[#444] text-xs font-light">
+            {closedTrades.length} closed {closedTrades.length === 1 ? 'trade' : 'trades'}
+          </p>
+        </div>
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-5 md:mb-8">
+      {/* Stat cards — big numbers like reference */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6">
         <StatCard
           label="Total Trades"
           value={String(trades.length)}
           sub={`${closedTrades.length} closed`}
           icon={Activity}
-          color="blue"
+          neutral
         />
         <StatCard
           label="Win Rate"
-          value={`${winRate.toFixed(1)}%`}
-          sub={`${wins.length}W / ${losses.length}L`}
+          value={`${winRate.toFixed(0)}%`}
+          sub={`${wins.length}W  /  ${losses.length}L`}
           icon={Target}
-          color={winRate >= 50 ? 'green' : 'red'}
+          positive={winRate >= 50}
         />
         <StatCard
           label="Total P&L"
-          value={`${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(2)}`}
+          value={`${totalPnl >= 0 ? '+' : ''}$${Math.abs(totalPnl) >= 1000 ? (totalPnl / 1000).toFixed(1) + 'k' : totalPnl.toFixed(0)}`}
           sub="All closed trades"
           icon={totalPnl >= 0 ? TrendingUp : TrendingDown}
-          color={totalPnl >= 0 ? 'green' : 'red'}
+          positive={totalPnl >= 0}
         />
         <StatCard
           label="Avg Win"
-          value={avgWin > 0 ? `+$${avgWin.toFixed(2)}` : '—'}
-          sub={`${wins.length} winning`}
+          value={avgWin > 0 ? `$${avgWin.toFixed(0)}` : '—'}
+          sub={`${wins.length} winning trades`}
           icon={TrendingUp}
-          color="green"
+          positive={avgWin > 0 ? true : undefined}
+          neutral={avgWin === 0}
         />
         <StatCard
           label="Avg Loss"
-          value={avgLoss > 0 ? `-$${avgLoss.toFixed(2)}` : '—'}
-          sub={`${losses.length} losing`}
+          value={avgLoss > 0 ? `$${avgLoss.toFixed(0)}` : '—'}
+          sub={`${losses.length} losing trades`}
           icon={TrendingDown}
-          color="red"
+          positive={avgLoss > 0 ? false : undefined}
+          neutral={avgLoss === 0}
         />
         <StatCard
           label="Profit Factor"
           value={profitFactor > 0 ? profitFactor.toFixed(2) : '—'}
           sub="Avg win / avg loss"
           icon={DollarSign}
-          color={profitFactor >= 1.5 ? 'green' : 'default'}
+          positive={profitFactor >= 1.5 ? true : undefined}
+          neutral={profitFactor === 0}
         />
       </div>
 
       {/* Bottom panels */}
       <div className="grid md:grid-cols-2 gap-4">
         {/* Top pairs */}
-        <div className="card overflow-hidden">
-          <div className="px-4 md:px-6 py-3.5 md:py-4 border-b border-[#1a1a1a]">
-            <h2 className="text-sm font-semibold text-white">Top Pairs</h2>
+        <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl overflow-hidden">
+          <div className="px-6 py-5 border-b border-white/[0.05]">
+            <h2 className="text-sm font-bold text-white tracking-tight">Top Pairs</h2>
           </div>
-          <div className="divide-y divide-[#111]">
+          <div className="divide-y divide-white/[0.04]">
             {topPairs.map(([pair, { count, pnl }]) => (
-              <div
-                key={pair}
-                className="px-4 md:px-6 py-3.5 flex items-center justify-between"
-              >
+              <div key={pair} className="px-6 py-4 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-white">{pair}</p>
-                  <p className="text-xs text-[#555]">{count} trades</p>
+                  <p className="text-sm font-semibold text-white">{pair}</p>
+                  <p className="text-xs text-[#444] font-light mt-0.5">{count} trades</p>
                 </div>
-                <span
-                  className={`text-sm font-semibold ${
-                    pnl >= 0 ? 'text-emerald-400' : 'text-red-400'
-                  }`}
-                >
+                <span className={`text-sm font-bold ${pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                   {pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}
                 </span>
               </div>
             ))}
             {topPairs.length === 0 && (
-              <p className="text-center text-[#555] text-sm py-8">No pair data</p>
+              <p className="text-center text-[#444] text-sm py-10 font-light">No pair data</p>
             )}
           </div>
         </div>
 
         {/* Recent trades */}
-        <div className="card overflow-hidden">
-          <div className="px-4 md:px-6 py-3.5 md:py-4 border-b border-[#1a1a1a]">
-            <h2 className="text-sm font-semibold text-white">Recent Trades</h2>
+        <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl overflow-hidden">
+          <div className="px-6 py-5 border-b border-white/[0.05]">
+            <h2 className="text-sm font-bold text-white tracking-tight">Recent Trades</h2>
           </div>
-          <div className="divide-y divide-[#111]">
+          <div className="divide-y divide-white/[0.04]">
             {recentTrades.map((trade) => (
-              <div
-                key={trade.id}
-                className="px-4 md:px-6 py-3.5 flex items-center justify-between"
-              >
+              <div key={trade.id} className="px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span
-                    className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
-                      trade.type === 'BUY'
-                        ? 'bg-emerald-500/15 text-emerald-400'
-                        : 'bg-red-500/15 text-red-400'
-                    }`}
-                  >
+                  <span className={`text-[10px] font-bold px-2 py-1 rounded-lg tracking-wider ${
+                    trade.type === 'BUY'
+                      ? 'bg-emerald-500/10 text-emerald-400'
+                      : 'bg-red-500/10 text-red-400'
+                  }`}>
                     {trade.type}
                   </span>
                   <div>
-                    <p className="text-sm font-medium text-white">{trade.pair}</p>
-                    <p className="text-xs text-[#555]">
-                      {new Date(trade.created_at).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
+                    <p className="text-sm font-semibold text-white">{trade.pair}</p>
+                    <p className="text-xs text-[#444] font-light mt-0.5">
+                      {new Date(trade.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </p>
                   </div>
                 </div>
                 {trade.pnl !== null ? (
-                  <span
-                    className={`text-sm font-semibold ${
-                      trade.pnl >= 0 ? 'text-emerald-400' : 'text-red-400'
-                    }`}
-                  >
+                  <span className={`text-sm font-bold ${trade.pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                     {trade.pnl >= 0 ? '+' : ''}${trade.pnl.toFixed(2)}
                   </span>
                 ) : (
-                  <span className="text-xs text-[#444]">Open</span>
+                  <span className="text-xs text-[#333] bg-white/[0.03] px-2 py-1 rounded-lg">Open</span>
                 )}
               </div>
             ))}

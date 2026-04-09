@@ -23,9 +23,7 @@ export default function JournalPage() {
     }
   }, [])
 
-  useEffect(() => {
-    fetchTrades()
-  }, [fetchTrades])
+  useEffect(() => { fetchTrades() }, [fetchTrades])
 
   function handleSuccess(trade: Trade) {
     setTrades((prev) => {
@@ -66,18 +64,19 @@ export default function JournalPage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <div className="px-4 md:px-8 pt-5 md:pt-8 pb-5 flex items-center justify-between">
+      <div className="px-4 md:px-8 pt-6 md:pt-10 pb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">Trade Journal</h1>
-          <p className="text-[#555] text-xs md:text-sm mt-0.5">
-            {trades.length} {trades.length === 1 ? 'trade' : 'trades'} logged
+          <p className="text-[#444] text-xs uppercase tracking-widest mb-2 font-medium">Journal</p>
+          <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">Trade Log</h1>
+          <p className="text-[#444] text-xs font-light mt-1">
+            {trades.length} {trades.length === 1 ? 'trade' : 'trades'} recorded
           </p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="btn-primary gap-2 !px-4 !py-2.5 !min-h-0 !h-10 md:!h-auto md:!min-h-[44px]"
+          className="btn-blue gap-2 !px-4 !py-2.5 !min-h-0 h-10 text-xs mt-1"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Log Trade</span>
           <span className="sm:hidden">Add</span>
         </button>
@@ -85,58 +84,48 @@ export default function JournalPage() {
 
       {/* Quick stats */}
       {trades.length > 0 && (
-        <div className="px-4 md:px-8 mb-5">
+        <div className="px-4 md:px-8 mb-6">
           <div className="grid grid-cols-3 gap-3">
-            <div className="card px-4 py-3 md:px-5 md:py-4">
-              <p className="text-[10px] md:text-xs text-[#555] mb-1 uppercase tracking-wider font-medium">
-                Trades
-              </p>
-              <p className="text-xl md:text-2xl font-bold text-white">{trades.length}</p>
-            </div>
-            <div className="card px-4 py-3 md:px-5 md:py-4">
-              <p className="text-[10px] md:text-xs text-[#555] mb-1 uppercase tracking-wider font-medium">
-                Win Rate
-              </p>
-              <p className="text-xl md:text-2xl font-bold text-white">{winRate}%</p>
-            </div>
-            <div className="card px-4 py-3 md:px-5 md:py-4">
-              <p className="text-[10px] md:text-xs text-[#555] mb-1 uppercase tracking-wider font-medium">
-                P&amp;L
-              </p>
-              <p
-                className={`text-xl md:text-2xl font-bold ${
-                  totalPnl >= 0 ? 'text-emerald-400' : 'text-red-400'
-                }`}
-              >
-                {totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(0)}
-              </p>
-            </div>
+            {[
+              { label: 'Trades', value: String(trades.length), color: 'text-white' },
+              { label: 'Win Rate', value: `${winRate}%`, color: winRate >= 50 ? 'text-emerald-400' : 'text-red-400' },
+              {
+                label: 'P&L',
+                value: `${totalPnl >= 0 ? '+' : ''}$${Math.abs(totalPnl) >= 1000 ? (totalPnl / 1000).toFixed(1) + 'k' : totalPnl.toFixed(0)}`,
+                color: totalPnl >= 0 ? 'text-emerald-400' : 'text-red-400',
+              },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl px-4 py-4">
+                <p className="text-[10px] text-[#444] mb-2 uppercase tracking-widest font-medium">{label}</p>
+                <p className={`text-2xl md:text-3xl font-black tracking-tight ${color}`}>{value}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Search + Trade list card */}
+      {/* Table card */}
       <div className="px-4 md:px-8">
-        <div className="card overflow-hidden">
+        <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl overflow-hidden">
           {/* Search */}
           {trades.length > 0 && (
-            <div className="px-4 md:px-6 py-3.5 border-b border-[#1a1a1a]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#444]" />
+            <div className="px-4 md:px-6 py-4 border-b border-white/[0.04]">
+              <div className="relative max-w-xs">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#333]" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search pair or notes…"
-                  className="input pl-9 !min-h-0 h-10 text-sm"
+                  className="input pl-9 !min-h-0 h-10 !text-xs !rounded-xl !py-2.5"
                 />
               </div>
             </div>
           )}
 
           {loading ? (
-            <div className="py-16 flex items-center justify-center">
-              <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <div className="py-20 flex items-center justify-center">
+              <div className="w-5 h-5 border-2 border-white/10 border-t-white/40 rounded-full animate-spin" />
             </div>
           ) : (
             <TradeTable trades={filtered} onEdit={handleEdit} onDelete={handleDelete} />
@@ -144,7 +133,6 @@ export default function JournalPage() {
         </div>
       </div>
 
-      {/* Form modal */}
       {showForm && (
         <TradeForm trade={editingTrade} onClose={handleClose} onSuccess={handleSuccess} />
       )}

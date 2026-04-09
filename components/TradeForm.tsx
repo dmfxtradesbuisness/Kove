@@ -18,34 +18,24 @@ const FOREX_PAIRS = [
 ]
 
 const emptyForm: TradeFormData = {
-  pair: 'EUR/USD',
-  type: 'BUY',
-  entry_price: '',
-  exit_price: '',
-  stop_loss: '',
-  take_profit: '',
-  lot_size: '',
-  pnl: '',
-  notes: '',
-  screenshot_url: '',
+  pair: 'EUR/USD', type: 'BUY',
+  entry_price: '', exit_price: '', stop_loss: '', take_profit: '',
+  lot_size: '', pnl: '', notes: '', screenshot_url: '',
 }
 
 export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps) {
   const [form, setForm] = useState<TradeFormData>(
-    trade
-      ? {
-          pair: trade.pair,
-          type: trade.type,
-          entry_price: String(trade.entry_price),
-          exit_price: trade.exit_price ? String(trade.exit_price) : '',
-          stop_loss: trade.stop_loss ? String(trade.stop_loss) : '',
-          take_profit: trade.take_profit ? String(trade.take_profit) : '',
-          lot_size: trade.lot_size ? String(trade.lot_size) : '',
-          pnl: trade.pnl !== null ? String(trade.pnl) : '',
-          notes: trade.notes ?? '',
-          screenshot_url: trade.screenshot_url ?? '',
-        }
-      : emptyForm
+    trade ? {
+      pair: trade.pair, type: trade.type,
+      entry_price: String(trade.entry_price),
+      exit_price: trade.exit_price ? String(trade.exit_price) : '',
+      stop_loss: trade.stop_loss ? String(trade.stop_loss) : '',
+      take_profit: trade.take_profit ? String(trade.take_profit) : '',
+      lot_size: trade.lot_size ? String(trade.lot_size) : '',
+      pnl: trade.pnl !== null ? String(trade.pnl) : '',
+      notes: trade.notes ?? '',
+      screenshot_url: trade.screenshot_url ?? '',
+    } : emptyForm
   )
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -53,37 +43,22 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
   const fileRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-
     setUploading(true)
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
-
       const ext = file.name.split('.').pop()
       const path = `${user.id}/${Date.now()}.${ext}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('screenshots')
-        .upload(path, file, { upsert: true })
-
+      const { error: uploadError } = await supabase.storage.from('screenshots').upload(path, file, { upsert: true })
       if (uploadError) throw uploadError
-
-      const { data } = supabase.storage
-        .from('screenshots')
-        .getPublicUrl(path)
-
+      const { data } = supabase.storage.from('screenshots').getPublicUrl(path)
       setForm((prev) => ({ ...prev, screenshot_url: data.publicUrl }))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
@@ -96,21 +71,15 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
     e.preventDefault()
     setLoading(true)
     setError('')
-
     try {
       const url = trade ? `/api/trades/${trade.id}` : '/api/trades'
-      const method = trade ? 'PUT' : 'POST'
-
       const res = await fetch(url, {
-        method,
+        method: trade ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
-
       const data = await res.json()
-
       if (!res.ok) throw new Error(data.error || 'Failed to save trade')
-
       onSuccess(data.trade)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
@@ -120,54 +89,43 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
   }
 
   return (
-    /* Overlay */
     <div
-      className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      {/* Sheet / Modal */}
-      <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-t-3xl md:rounded-2xl w-full md:max-w-2xl max-h-[92vh] md:max-h-[90vh] overflow-y-auto shadow-2xl animate-slide-up scroll-smooth-mobile">
-        {/* Drag handle (mobile) */}
-        <div className="flex justify-center pt-3 pb-1 md:hidden">
-          <div className="w-10 h-1 bg-[#333] rounded-full" />
+      <div className="bg-[#111] border border-white/[0.07] rounded-t-3xl md:rounded-3xl w-full md:max-w-xl max-h-[94vh] md:max-h-[88vh] overflow-y-auto shadow-2xl animate-slide-up scroll-smooth-mobile"
+        style={{ boxShadow: '0 0 0 1px rgba(255,255,255,0.05), 0 40px 80px rgba(0,0,0,0.9)' }}
+      >
+        {/* Drag handle */}
+        <div className="flex justify-center pt-3 pb-0 md:hidden">
+          <div className="w-10 h-1 bg-white/10 rounded-full" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1a1a1a]">
-          <h2 className="text-white font-semibold text-base">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+          <h2 className="text-white font-bold text-base tracking-tight">
             {trade ? 'Edit Trade' : 'Log Trade'}
           </h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-xl text-[#666] hover:text-white hover:bg-white/5 transition-all"
+            className="w-8 h-8 flex items-center justify-center rounded-xl text-[#555] hover:text-white hover:bg-white/[0.05] transition-all"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4">
-          {/* Pair + Direction row */}
+        <form onSubmit={handleSubmit} className="p-5 md:p-6 flex flex-col gap-4">
+          {/* Pair + Direction */}
           <div className="grid grid-cols-2 gap-3">
-            {/* Pair */}
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <label className="label">Pair</label>
-              <select
-                name="pair"
-                value={form.pair}
-                onChange={handleChange}
-                className="input"
-                required
-              >
-                {FOREX_PAIRS.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
+              <select name="pair" value={form.pair} onChange={handleChange} className="input" required>
+                {FOREX_PAIRS.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
-
-            {/* Direction */}
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <label className="label">Direction</label>
-              <div className="flex gap-2 h-[44px]">
+              <div className="flex gap-2 h-[48px]">
                 {(['BUY', 'SELL'] as const).map((t) => (
                   <button
                     key={t}
@@ -176,9 +134,9 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
                     className={`flex-1 rounded-xl text-sm font-bold transition-all duration-150 ${
                       form.type === t
                         ? t === 'BUY'
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                        : 'bg-[#0a0a0a] border border-[#1f1f1f] text-[#555] hover:text-white'
+                          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+                          : 'bg-red-500/15 text-red-400 border border-red-500/25'
+                        : 'bg-[#0a0a0a] border border-white/[0.07] text-[#444] hover:text-[#888]'
                     }`}
                   >
                     {t}
@@ -188,55 +146,42 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
             </div>
           </div>
 
-          {/* Prices grid */}
+          {/* Prices */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <label className="label">Entry Price</label>
-              <input name="entry_price" type="number" step="any" value={form.entry_price}
-                onChange={handleChange} placeholder="1.08500" className="input" required />
+              <input name="entry_price" type="number" step="any" value={form.entry_price} onChange={handleChange} placeholder="1.08500" className="input" required />
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <label className="label">Exit Price</label>
-              <input name="exit_price" type="number" step="any" value={form.exit_price}
-                onChange={handleChange} placeholder="1.09200" className="input" />
+              <input name="exit_price" type="number" step="any" value={form.exit_price} onChange={handleChange} placeholder="1.09200" className="input" />
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <label className="label">Stop Loss</label>
-              <input name="stop_loss" type="number" step="any" value={form.stop_loss}
-                onChange={handleChange} placeholder="1.08000" className="input" />
+              <input name="stop_loss" type="number" step="any" value={form.stop_loss} onChange={handleChange} placeholder="1.08000" className="input" />
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <label className="label">Take Profit</label>
-              <input name="take_profit" type="number" step="any" value={form.take_profit}
-                onChange={handleChange} placeholder="1.10000" className="input" />
+              <input name="take_profit" type="number" step="any" value={form.take_profit} onChange={handleChange} placeholder="1.10000" className="input" />
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <label className="label">Lot Size</label>
-              <input name="lot_size" type="number" step="any" value={form.lot_size}
-                onChange={handleChange} placeholder="0.10" className="input" />
+              <input name="lot_size" type="number" step="any" value={form.lot_size} onChange={handleChange} placeholder="0.10" className="input" />
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <label className="label">P&amp;L ($)</label>
-              <input name="pnl" type="number" step="any" value={form.pnl}
-                onChange={handleChange} placeholder="+120.00" className="input" />
+              <input name="pnl" type="number" step="any" value={form.pnl} onChange={handleChange} placeholder="+120.00" className="input" />
             </div>
           </div>
 
           {/* Notes */}
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <label className="label">Notes</label>
-            <textarea
-              name="notes"
-              value={form.notes}
-              onChange={handleChange}
-              placeholder="Trade reasoning, market conditions, emotional state..."
-              rows={3}
-              className="input resize-none"
-            />
+            <textarea name="notes" value={form.notes} onChange={handleChange} placeholder="Trade reasoning, market conditions, emotional state…" rows={3} className="input resize-none" />
           </div>
 
           {/* Screenshot */}
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <label className="label">Screenshot</label>
             <input ref={fileRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
             <div className="flex items-center gap-3">
@@ -244,34 +189,28 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
                 type="button"
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
-                className="btn-secondary gap-2 !px-4 !py-2.5 !min-h-0 !h-10 text-xs"
+                className="btn-secondary !min-h-0 h-10 !px-4 !text-xs gap-2"
               >
-                {uploading ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Upload className="w-3.5 h-3.5" />
-                )}
+                {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
                 {uploading ? 'Uploading…' : 'Upload Chart'}
               </button>
               {form.screenshot_url && (
-                <span className="text-xs text-emerald-400">✓ Attached</span>
+                <span className="text-xs text-emerald-400 font-light">✓ Attached</span>
               )}
             </div>
           </div>
 
           {/* Error */}
           {error && (
-            <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+            <div className="text-red-400 text-sm bg-red-500/8 border border-red-500/15 rounded-2xl px-4 py-3 font-light">
               {error}
             </div>
           )}
 
           {/* Actions */}
           <div className="flex items-center gap-3 pt-1">
-            <button type="button" onClick={onClose} className="btn-secondary flex-1">
-              Cancel
-            </button>
-            <button type="submit" disabled={loading} className="btn-primary flex-1 gap-2">
+            <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancel</button>
+            <button type="submit" disabled={loading} className="btn-blue flex-1 gap-2">
               {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               {trade ? 'Save Changes' : 'Log Trade'}
             </button>
