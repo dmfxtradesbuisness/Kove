@@ -1,0 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #000000;
+    color: #ffffff;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: rgba(59, 130, 246, 0.3);
+    color: #ffffff;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0a0a0a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #1a1a1a;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #333;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg transition-all duration-150 text-sm;
+  }
+
+  .btn-secondary {
+    @apply bg-transparent border border-white/15 hover:border-white/30 hover:bg-white/5 text-white font-medium px-5 py-2.5 rounded-lg transition-all duration-150 text-sm;
+  }
+
+  .btn-danger {
+    @apply bg-transparent border border-red-500/30 hover:border-red-500/60 hover:bg-red-500/10 text-red-400 font-medium px-5 py-2.5 rounded-lg transition-all duration-150 text-sm;
+  }
+
+  .card {
+    @apply bg-[#111111] border border-[#1a1a1a] rounded-xl;
+  }
+
+  .input {
+    @apply bg-[#0f0f0f] border border-[#1a1a1a] text-white placeholder-[#555] rounded-lg px-3.5 py-2.5 text-sm w-full focus:outline-none focus:border-blue-500 transition-colors duration-150;
+  }
+
+  .label {
+    @apply text-xs font-medium text-[#888] uppercase tracking-wider;
+  }
+
+  .stat-card {
+    @apply card p-6 flex flex-col gap-1;
+  }
+}
