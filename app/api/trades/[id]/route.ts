@@ -3,9 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createClient()
+  const { id } = await params
+  const supabase = await createClient()
 
   const {
     data: { user },
@@ -44,7 +45,7 @@ export async function PUT(
       notes: notes !== undefined ? notes || null : undefined,
       screenshot_url: screenshot_url !== undefined ? screenshot_url || null : undefined,
     })
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('user_id', user.id)
     .select()
     .single()
@@ -58,9 +59,10 @@ export async function PUT(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createClient()
+  const { id } = await params
+  const supabase = await createClient()
 
   const {
     data: { user },
@@ -73,7 +75,7 @@ export async function DELETE(
   const { error } = await supabase
     .from('trades')
     .delete()
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('user_id', user.id)
 
   if (error) {
