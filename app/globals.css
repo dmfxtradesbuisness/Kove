@@ -60,7 +60,7 @@
   }
 
   .btn-secondary {
-    @apply bg-transparent border border-white/8 hover:border-white/20 hover:bg-white/4 active:bg-white/8 active:scale-[0.98] text-[#aaa] hover:text-white font-medium px-6 py-3 rounded-xl transition-all duration-150 text-sm min-h-[48px] flex items-center justify-center select-none;
+    @apply bg-transparent border border-white/10 hover:border-white/20 hover:bg-white/5 active:bg-white/10 active:scale-[0.98] text-[#aaa] hover:text-white font-medium px-6 py-3 rounded-xl transition-all duration-150 text-sm min-h-[48px] flex items-center justify-center select-none;
   }
 
   .btn-ghost {
