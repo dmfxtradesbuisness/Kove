@@ -151,7 +151,7 @@ export default function LandingPage() {
           {/* Animated badge */}
           <div className="badge-pulse inline-flex items-center gap-2 bg-blue-500/[0.08] border border-blue-500/20 text-blue-400/90 text-xs font-medium px-4 py-1.5 rounded-full mb-8 tracking-wide animate-fade-in">
             <Sparkles className="w-3 h-3 animate-pulse" />
-            AI-Powered Forex Journal
+            AI-Powered Trading Journal
           </div>
 
           {/* Headline */}
