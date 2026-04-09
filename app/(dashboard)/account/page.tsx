@@ -1,7 +1,14 @@
 'use client'
 
 import { Suspense, useState, useEffect } from 'react'
-import { User, CreditCard, CheckCircle, XCircle, Loader2, Sparkles } from 'lucide-react'
+import {
+  User,
+  CreditCard,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  Sparkles,
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
 
@@ -81,54 +88,57 @@ function AccountContent() {
   }
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white tracking-tight">Account</h1>
-        <p className="text-[#555] text-sm mt-1">Manage your profile and subscription</p>
+    <div className="animate-fade-in">
+      <div className="mb-5 md:mb-8">
+        <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">Account</h1>
+        <p className="text-[#555] text-xs md:text-sm mt-0.5">
+          Manage your profile and subscription
+        </p>
       </div>
 
+      {/* Banners */}
       {subscriptionMessage === 'success' && (
-        <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-5 py-4 mb-6 text-emerald-400 text-sm">
+        <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl px-4 py-3.5 mb-5 text-emerald-400 text-sm animate-fade-in-up">
           <CheckCircle className="w-5 h-5 flex-shrink-0" />
           Subscription activated! You now have access to AI insights.
         </div>
       )}
       {subscriptionMessage === 'canceled' && (
-        <div className="flex items-center gap-3 bg-[#111] border border-[#1a1a1a] rounded-xl px-5 py-4 mb-6 text-[#888] text-sm">
+        <div className="flex items-center gap-3 bg-[#111] border border-[#1a1a1a] rounded-2xl px-4 py-3.5 mb-5 text-[#888] text-sm animate-fade-in-up">
           <XCircle className="w-5 h-5 flex-shrink-0 text-[#555]" />
           Checkout canceled. No charge was made.
         </div>
       )}
 
-      <div className="max-w-lg flex flex-col gap-5">
+      <div className="max-w-lg flex flex-col gap-4">
         {/* Profile card */}
-        <div className="card p-6">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center">
+        <div className="card p-4 md:p-6">
+          <div className="flex items-center gap-3 mb-4 md:mb-5">
+            <div className="w-8 h-8 bg-white/5 rounded-xl flex items-center justify-center">
               <User className="w-4 h-4 text-[#888]" />
             </div>
             <h2 className="text-sm font-semibold text-white">Profile</h2>
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="label">Email</label>
-            <p className="text-sm text-white bg-[#0f0f0f] border border-[#1a1a1a] rounded-lg px-3.5 py-2.5">
+            <p className="text-sm text-white bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl px-4 py-3">
               {userEmail}
             </p>
           </div>
         </div>
 
         {/* Subscription card */}
-        <div className="card p-6">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
+        <div className="card p-4 md:p-6">
+          <div className="flex items-center gap-3 mb-4 md:mb-5">
+            <div className="w-8 h-8 bg-blue-500/10 rounded-xl flex items-center justify-center">
               <CreditCard className="w-4 h-4 text-blue-400" />
             </div>
             <h2 className="text-sm font-semibold text-white">Subscription</h2>
           </div>
 
           {subscription?.active ? (
-            <div className="flex flex-col gap-5">
-              <div className="flex items-center justify-between p-4 bg-emerald-500/5 border border-emerald-500/15 rounded-xl">
+            <div className="flex flex-col gap-4 md:gap-5">
+              <div className="flex items-center justify-between p-4 bg-emerald-500/5 border border-emerald-500/15 rounded-2xl">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Sparkles className="w-4 h-4 text-emerald-400" />
@@ -155,15 +165,15 @@ function AccountContent() {
               <button
                 onClick={handleManage}
                 disabled={portalLoading}
-                className="btn-secondary flex items-center gap-2 self-start"
+                className="btn-secondary gap-2 self-start"
               >
                 {portalLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Manage Billing
               </button>
             </div>
           ) : (
-            <div className="flex flex-col gap-5">
-              <div className="flex items-center justify-between p-4 bg-[#0f0f0f] border border-[#1a1a1a] rounded-xl">
+            <div className="flex flex-col gap-4 md:gap-5">
+              <div className="flex items-center justify-between p-4 bg-[#0a0a0a] border border-[#1f1f1f] rounded-2xl">
                 <div>
                   <p className="text-sm font-semibold text-white mb-1">Free Plan</p>
                   <p className="text-xs text-[#666]">Trade journal + basic stats</p>
@@ -173,15 +183,16 @@ function AccountContent() {
                 </span>
               </div>
 
-              <div className="p-4 bg-blue-600/5 border border-blue-500/15 rounded-xl">
+              <div className="p-4 bg-blue-600/5 border border-blue-500/15 rounded-2xl">
                 <p className="text-sm font-semibold text-white mb-1">Upgrade to Pro</p>
                 <p className="text-xs text-[#666] mb-4 leading-relaxed">
-                  Get AI-powered trade analysis, mistake identification, and pattern detection for $12/month.
+                  Get AI-powered trade analysis, mistake identification, and pattern
+                  detection for $12/month.
                 </p>
                 <button
                   onClick={handleUpgrade}
                   disabled={checkoutLoading}
-                  className="btn-primary flex items-center gap-2"
+                  className="btn-primary w-full gap-2"
                 >
                   {checkoutLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <Sparkles className="w-3.5 h-3.5" />
@@ -192,7 +203,7 @@ function AccountContent() {
           )}
 
           {error && (
-            <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5 mt-3">
+            <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 mt-4">
               {error}
             </div>
           )}
@@ -204,7 +215,7 @@ function AccountContent() {
 
 export default function AccountPage() {
   return (
-    <div className="p-8">
+    <div className="px-4 md:px-8 pt-5 md:pt-8 pb-6">
       <Suspense
         fallback={
           <div className="flex items-center justify-center min-h-[60vh]">

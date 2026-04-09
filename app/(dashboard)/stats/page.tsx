@@ -1,7 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { TrendingUp, TrendingDown, Activity, DollarSign, Target, BarChart2 } from 'lucide-react'
+import {
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  DollarSign,
+  Target,
+  BarChart2,
+} from 'lucide-react'
 import type { Trade } from '@/lib/types'
 
 function StatCard({
@@ -25,15 +32,17 @@ function StatCard({
   }
 
   return (
-    <div className="card p-6">
-      <div className="flex items-start justify-between mb-4">
-        <p className="text-xs font-medium text-[#555] uppercase tracking-wider">{label}</p>
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${iconColors[color]}`}>
-          <Icon className="w-4 h-4" />
+    <div className="card p-4 md:p-6 animate-fade-in-up">
+      <div className="flex items-start justify-between mb-3 md:mb-4">
+        <p className="text-[10px] md:text-xs font-medium text-[#555] uppercase tracking-wider">
+          {label}
+        </p>
+        <div className={`w-7 h-7 md:w-8 md:h-8 rounded-xl flex items-center justify-center ${iconColors[color]}`}>
+          <Icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
         </div>
       </div>
-      <p className="text-3xl font-bold text-white tracking-tight">{value}</p>
-      {sub && <p className="text-xs text-[#555] mt-1.5">{sub}</p>}
+      <p className="text-2xl md:text-3xl font-bold text-white tracking-tight">{value}</p>
+      {sub && <p className="text-[10px] md:text-xs text-[#555] mt-1.5">{sub}</p>}
     </div>
   )
 }
@@ -53,7 +62,7 @@ export default function StatsPage() {
 
   if (loading) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-[60vh]">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -75,12 +84,15 @@ export default function StatsPage() {
       : 0
   const profitFactor = avgLoss > 0 ? avgWin / avgLoss : 0
 
-  const pairStats = trades.reduce<Record<string, { count: number; pnl: number }>>((acc, t) => {
-    if (!acc[t.pair]) acc[t.pair] = { count: 0, pnl: 0 }
-    acc[t.pair].count++
-    acc[t.pair].pnl += t.pnl ?? 0
-    return acc
-  }, {})
+  const pairStats = trades.reduce<Record<string, { count: number; pnl: number }>>(
+    (acc, t) => {
+      if (!acc[t.pair]) acc[t.pair] = { count: 0, pnl: 0 }
+      acc[t.pair].count++
+      acc[t.pair].pnl += t.pnl ?? 0
+      return acc
+    },
+    {}
+  )
 
   const topPairs = Object.entries(pairStats)
     .sort((a, b) => b[1].count - a[1].count)
@@ -90,32 +102,31 @@ export default function StatsPage() {
 
   if (trades.length === 0) {
     return (
-      <div className="p-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white tracking-tight">Statistics</h1>
-          <p className="text-[#555] text-sm mt-1">Performance overview</p>
+      <div className="px-4 md:px-8 pt-5 md:pt-8">
+        <div className="mb-6">
+          <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">Statistics</h1>
+          <p className="text-[#555] text-xs md:text-sm mt-0.5">Performance overview</p>
         </div>
-        <div className="card p-16 text-center">
+        <div className="card p-12 md:p-16 text-center">
           <BarChart2 className="w-10 h-10 text-[#333] mx-auto mb-4" />
-          <p className="text-[#555] text-sm">
-            No trades yet. Log your first trade to see stats.
-          </p>
+          <p className="text-[#555] text-sm">No trades yet. Log your first trade to see stats.</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white tracking-tight">Statistics</h1>
-        <p className="text-[#555] text-sm mt-1">
-          Based on {closedTrades.length} closed {closedTrades.length === 1 ? 'trade' : 'trades'}
+    <div className="px-4 md:px-8 pt-5 md:pt-8 pb-6">
+      <div className="mb-5 md:mb-8">
+        <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">Statistics</h1>
+        <p className="text-[#555] text-xs md:text-sm mt-0.5">
+          Based on {closedTrades.length} closed{' '}
+          {closedTrades.length === 1 ? 'trade' : 'trades'}
         </p>
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-5 md:mb-8">
         <StatCard
           label="Total Trades"
           value={String(trades.length)}
@@ -140,14 +151,14 @@ export default function StatsPage() {
         <StatCard
           label="Avg Win"
           value={avgWin > 0 ? `+$${avgWin.toFixed(2)}` : '—'}
-          sub={`${wins.length} winning trades`}
+          sub={`${wins.length} winning`}
           icon={TrendingUp}
           color="green"
         />
         <StatCard
           label="Avg Loss"
           value={avgLoss > 0 ? `-$${avgLoss.toFixed(2)}` : '—'}
-          sub={`${losses.length} losing trades`}
+          sub={`${losses.length} losing`}
           icon={TrendingDown}
           color="red"
         />
@@ -156,19 +167,23 @@ export default function StatsPage() {
           value={profitFactor > 0 ? profitFactor.toFixed(2) : '—'}
           sub="Avg win / avg loss"
           icon={DollarSign}
-          color={profitFactor >= 1.5 ? 'green' : profitFactor > 0 ? 'default' : 'default'}
+          color={profitFactor >= 1.5 ? 'green' : 'default'}
         />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      {/* Bottom panels */}
+      <div className="grid md:grid-cols-2 gap-4">
         {/* Top pairs */}
         <div className="card overflow-hidden">
-          <div className="px-6 py-4 border-b border-[#1a1a1a]">
+          <div className="px-4 md:px-6 py-3.5 md:py-4 border-b border-[#1a1a1a]">
             <h2 className="text-sm font-semibold text-white">Top Pairs</h2>
           </div>
           <div className="divide-y divide-[#111]">
             {topPairs.map(([pair, { count, pnl }]) => (
-              <div key={pair} className="px-6 py-3.5 flex items-center justify-between">
+              <div
+                key={pair}
+                className="px-4 md:px-6 py-3.5 flex items-center justify-between"
+              >
                 <div>
                   <p className="text-sm font-medium text-white">{pair}</p>
                   <p className="text-xs text-[#555]">{count} trades</p>
@@ -190,15 +205,18 @@ export default function StatsPage() {
 
         {/* Recent trades */}
         <div className="card overflow-hidden">
-          <div className="px-6 py-4 border-b border-[#1a1a1a]">
+          <div className="px-4 md:px-6 py-3.5 md:py-4 border-b border-[#1a1a1a]">
             <h2 className="text-sm font-semibold text-white">Recent Trades</h2>
           </div>
           <div className="divide-y divide-[#111]">
             {recentTrades.map((trade) => (
-              <div key={trade.id} className="px-6 py-3.5 flex items-center justify-between">
+              <div
+                key={trade.id}
+                className="px-4 md:px-6 py-3.5 flex items-center justify-between"
+              >
                 <div className="flex items-center gap-3">
                   <span
-                    className={`text-xs font-semibold px-2 py-0.5 rounded ${
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
                       trade.type === 'BUY'
                         ? 'bg-emerald-500/15 text-emerald-400'
                         : 'bg-red-500/15 text-red-400'

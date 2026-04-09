@@ -1,7 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Sparkles, Lock, Loader2, ChevronDown, AlertTriangle, TrendingUp, MessageSquare } from 'lucide-react'
+import {
+  Sparkles,
+  Lock,
+  Loader2,
+  ChevronDown,
+  AlertTriangle,
+  TrendingUp,
+  MessageSquare,
+} from 'lucide-react'
 import type { Trade } from '@/lib/types'
 
 interface Analysis {
@@ -76,7 +84,6 @@ export default function AIPage() {
       })
 
       const data = await res.json()
-
       if (!res.ok) throw new Error(data.error || 'Analysis failed')
 
       setAnalysis(data.analysis)
@@ -89,7 +96,7 @@ export default function AIPage() {
 
   if (checkingSubscription) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-[60vh]">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -97,38 +104,40 @@ export default function AIPage() {
 
   if (!subscribed) {
     return (
-      <div className="p-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
-            <Sparkles className="w-6 h-6 text-blue-400" />
+      <div className="px-4 md:px-8 pt-5 md:pt-8 pb-6">
+        <div className="mb-6">
+          <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+            <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
             AI Insights
           </h1>
-          <p className="text-[#555] text-sm mt-1">
+          <p className="text-[#555] text-xs md:text-sm mt-0.5">
             AI-powered trade analysis and pattern detection
           </p>
         </div>
 
-        <div className="max-w-lg mx-auto mt-12 text-center">
-          <div className="w-16 h-16 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+        <div className="max-w-md mx-auto mt-8 text-center animate-fade-in-up">
+          <div className="w-16 h-16 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
             <Lock className="w-7 h-7 text-blue-400" />
           </div>
-          <h2 className="text-xl font-bold text-white mb-3">
+          <h2 className="text-xl font-bold text-white mb-2">
             Upgrade to unlock AI insights
           </h2>
-          <p className="text-[#666] text-sm leading-relaxed mb-8">
-            Get GPT-4 powered analysis of your trades. Identify recurring
-            mistakes, detect profitable patterns, and receive personalized
-            feedback to improve your trading.
+          <p className="text-[#666] text-sm leading-relaxed mb-7">
+            Get GPT-4 powered analysis of your trades. Identify recurring mistakes,
+            detect profitable patterns, and receive personalized feedback.
           </p>
 
-          <div className="card p-6 mb-6 text-left">
+          <div className="card p-5 mb-6 text-left">
             {[
               'Mistake identification in each trade',
               'Pattern detection across your journal',
               'Personalized improvement recommendations',
               'Detailed feedback on entries and exits',
             ].map((f) => (
-              <div key={f} className="flex items-center gap-3 py-2.5 border-b border-[#111] last:border-0">
+              <div
+                key={f}
+                className="flex items-center gap-3 py-3 border-b border-[#111] last:border-0"
+              >
                 <Sparkles className="w-4 h-4 text-blue-400 flex-shrink-0" />
                 <span className="text-sm text-[#ccc]">{f}</span>
               </div>
@@ -138,7 +147,7 @@ export default function AIPage() {
           <button
             onClick={handleUpgrade}
             disabled={upgrading}
-            className="btn-primary px-8 py-3 flex items-center gap-2 mx-auto"
+            className="btn-primary w-full gap-2 text-base"
           >
             {upgrading && <Loader2 className="w-4 h-4 animate-spin" />}
             Upgrade to Pro — $12/month
@@ -149,21 +158,21 @@ export default function AIPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
-          <Sparkles className="w-6 h-6 text-blue-400" />
+    <div className="px-4 md:px-8 pt-5 md:pt-8 pb-6">
+      <div className="mb-5 md:mb-8">
+        <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+          <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
           AI Insights
         </h1>
-        <p className="text-[#555] text-sm mt-1">
+        <p className="text-[#555] text-xs md:text-sm mt-0.5">
           Select a trade and let AI analyze your performance
         </p>
       </div>
 
       <div className="max-w-2xl">
         {/* Input section */}
-        <div className="card p-6 mb-5">
-          <div className="flex flex-col gap-5">
+        <div className="card p-4 md:p-6 mb-4">
+          <div className="flex flex-col gap-4 md:gap-5">
             {/* Trade selector */}
             <div className="flex flex-col gap-1.5">
               <label className="label">Select a Trade (optional)</label>
@@ -176,7 +185,8 @@ export default function AIPage() {
                   <option value="">— No trade selected —</option>
                   {trades.map((trade) => (
                     <option key={trade.id} value={trade.id}>
-                      {trade.pair} {trade.type} · {new Date(trade.created_at).toLocaleDateString()} ·{' '}
+                      {trade.pair} {trade.type} ·{' '}
+                      {new Date(trade.created_at).toLocaleDateString()} ·{' '}
                       {trade.pnl !== null
                         ? `${trade.pnl >= 0 ? '+' : ''}$${trade.pnl.toFixed(2)}`
                         : 'Open'}
@@ -193,14 +203,14 @@ export default function AIPage() {
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Describe market conditions, your reasoning, what you felt during the trade, anything you want AI to factor in..."
+                placeholder="Describe market conditions, your reasoning, what you felt during the trade…"
                 rows={4}
                 className="input resize-none"
               />
             </div>
 
             {error && (
-              <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">
+              <div className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
                 {error}
               </div>
             )}
@@ -208,12 +218,12 @@ export default function AIPage() {
             <button
               onClick={handleAnalyze}
               disabled={loading}
-              className="btn-primary flex items-center gap-2 self-start"
+              className="btn-primary w-full gap-2 text-sm"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Analyzing...
+                  Analyzing…
                 </>
               ) : (
                 <>
@@ -227,11 +237,11 @@ export default function AIPage() {
 
         {/* Analysis result */}
         {analysis && (
-          <div className="flex flex-col gap-4 animate-slide-up">
+          <div className="flex flex-col gap-3 md:gap-4 animate-fade-in-up">
             {analysis.mistakes && (
-              <div className="card p-6 border-red-500/15">
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-7 h-7 bg-red-500/15 rounded-lg flex items-center justify-center">
+              <div className="card p-4 md:p-6 border-red-500/15">
+                <div className="flex items-center gap-2.5 mb-3 md:mb-4">
+                  <div className="w-7 h-7 bg-red-500/15 rounded-xl flex items-center justify-center">
                     <AlertTriangle className="w-4 h-4 text-red-400" />
                   </div>
                   <h3 className="text-sm font-semibold text-white">Mistakes Identified</h3>
@@ -243,9 +253,9 @@ export default function AIPage() {
             )}
 
             {analysis.patterns && (
-              <div className="card p-6 border-blue-500/15">
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-7 h-7 bg-blue-500/15 rounded-lg flex items-center justify-center">
+              <div className="card p-4 md:p-6 border-blue-500/15">
+                <div className="flex items-center gap-2.5 mb-3 md:mb-4">
+                  <div className="w-7 h-7 bg-blue-500/15 rounded-xl flex items-center justify-center">
                     <TrendingUp className="w-4 h-4 text-blue-400" />
                   </div>
                   <h3 className="text-sm font-semibold text-white">Pattern Detection</h3>
@@ -257,9 +267,9 @@ export default function AIPage() {
             )}
 
             {analysis.feedback && (
-              <div className="card p-6 border-emerald-500/15">
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-7 h-7 bg-emerald-500/15 rounded-lg flex items-center justify-center">
+              <div className="card p-4 md:p-6 border-emerald-500/15">
+                <div className="flex items-center gap-2.5 mb-3 md:mb-4">
+                  <div className="w-7 h-7 bg-emerald-500/15 rounded-xl flex items-center justify-center">
                     <MessageSquare className="w-4 h-4 text-emerald-400" />
                   </div>
                   <h3 className="text-sm font-semibold text-white">Feedback Summary</h3>

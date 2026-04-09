@@ -64,92 +64,89 @@ export default function JournalPage() {
   const winRate = trades.length > 0 ? Math.round((wins / trades.length) * 100) : 0
 
   return (
-    <div className="p-8">
+    <div className="min-h-screen">
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
+      <div className="px-4 md:px-8 pt-5 md:pt-8 pb-5 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Trade Journal</h1>
-          <p className="text-[#555] text-sm mt-1">
+          <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">Trade Journal</h1>
+          <p className="text-[#555] text-xs md:text-sm mt-0.5">
             {trades.length} {trades.length === 1 ? 'trade' : 'trades'} logged
           </p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="btn-primary flex items-center gap-2"
+          className="btn-primary gap-2 !px-4 !py-2.5 !min-h-0 !h-10 md:!h-auto md:!min-h-[44px]"
         >
           <Plus className="w-4 h-4" />
-          Log Trade
+          <span className="hidden sm:inline">Log Trade</span>
+          <span className="sm:hidden">Add</span>
         </button>
       </div>
 
       {/* Quick stats */}
       {trades.length > 0 && (
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="card px-5 py-4">
-            <p className="text-xs text-[#555] mb-1 uppercase tracking-wider font-medium">
-              Total Trades
-            </p>
-            <p className="text-2xl font-bold text-white">{trades.length}</p>
-          </div>
-          <div className="card px-5 py-4">
-            <p className="text-xs text-[#555] mb-1 uppercase tracking-wider font-medium">
-              Win Rate
-            </p>
-            <p className="text-2xl font-bold text-white">{winRate}%</p>
-          </div>
-          <div className="card px-5 py-4">
-            <p className="text-xs text-[#555] mb-1 uppercase tracking-wider font-medium">
-              Total P&L
-            </p>
-            <p
-              className={`text-2xl font-bold ${
-                totalPnl >= 0 ? 'text-emerald-400' : 'text-red-400'
-              }`}
-            >
-              {totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(2)}
-            </p>
+        <div className="px-4 md:px-8 mb-5">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="card px-4 py-3 md:px-5 md:py-4">
+              <p className="text-[10px] md:text-xs text-[#555] mb-1 uppercase tracking-wider font-medium">
+                Trades
+              </p>
+              <p className="text-xl md:text-2xl font-bold text-white">{trades.length}</p>
+            </div>
+            <div className="card px-4 py-3 md:px-5 md:py-4">
+              <p className="text-[10px] md:text-xs text-[#555] mb-1 uppercase tracking-wider font-medium">
+                Win Rate
+              </p>
+              <p className="text-xl md:text-2xl font-bold text-white">{winRate}%</p>
+            </div>
+            <div className="card px-4 py-3 md:px-5 md:py-4">
+              <p className="text-[10px] md:text-xs text-[#555] mb-1 uppercase tracking-wider font-medium">
+                P&amp;L
+              </p>
+              <p
+                className={`text-xl md:text-2xl font-bold ${
+                  totalPnl >= 0 ? 'text-emerald-400' : 'text-red-400'
+                }`}
+              >
+                {totalPnl >= 0 ? '+' : ''}${totalPnl.toFixed(0)}
+              </p>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Table card */}
-      <div className="card overflow-hidden">
-        {/* Search bar */}
-        {trades.length > 0 && (
-          <div className="px-6 py-4 border-b border-[#1a1a1a]">
-            <div className="relative max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#444]" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by pair or notes..."
-                className="input pl-9"
-              />
+      {/* Search + Trade list card */}
+      <div className="px-4 md:px-8">
+        <div className="card overflow-hidden">
+          {/* Search */}
+          {trades.length > 0 && (
+            <div className="px-4 md:px-6 py-3.5 border-b border-[#1a1a1a]">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#444]" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search pair or notes…"
+                  className="input pl-9 !min-h-0 h-10 text-sm"
+                />
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {loading ? (
-          <div className="py-16 flex items-center justify-center">
-            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : (
-          <TradeTable
-            trades={filtered}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        )}
+          {loading ? (
+            <div className="py-16 flex items-center justify-center">
+              <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <TradeTable trades={filtered} onEdit={handleEdit} onDelete={handleDelete} />
+          )}
+        </div>
       </div>
 
       {/* Form modal */}
       {showForm && (
-        <TradeForm
-          trade={editingTrade}
-          onClose={handleClose}
-          onSuccess={handleSuccess}
-        />
+        <TradeForm trade={editingTrade} onClose={handleClose} onSuccess={handleSuccess} />
       )}
     </div>
   )
