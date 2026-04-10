@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { TrendingUp, ArrowRight, BarChart2, BookOpen, Sparkles, CheckCircle2, ChevronRight } from 'lucide-react'
+import { ArrowRight, BarChart2, BookOpen, Sparkles, CheckCircle2, ChevronRight } from 'lucide-react'
+import KoveLogo from '@/components/KoveLogo'
 
 /* ── Scroll reveal ── */
 function useReveal() {
@@ -79,7 +80,7 @@ export default function LandingPage() {
               className="w-[28px] h-[28px] rounded-md flex items-center justify-center transition-all duration-200"
               style={{ background: 'var(--accent)', boxShadow: '0 2px 8px rgba(37,99,235,0.35)' }}
             >
-              <TrendingUp className="w-[14px] h-[14px] text-white" />
+              <KoveLogo size={20} />
             </div>
             <span className="font-display font-semibold text-[#F1F5F9] text-sm tracking-tight">KoveFX</span>
           </Link>
@@ -506,7 +507,7 @@ export default function LandingPage() {
               className="w-[22px] h-[22px] rounded flex items-center justify-center"
               style={{ background: 'var(--accent)' }}
             >
-              <TrendingUp className="w-[11px] h-[11px] text-white" />
+              <KoveLogo size={16} />
             </div>
             <span className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-3)' }}>KoveFX</span>
           </div>

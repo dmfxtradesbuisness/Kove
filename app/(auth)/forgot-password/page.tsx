@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Loader2, TrendingUp, ArrowLeft } from 'lucide-react'
+import { Loader2, ArrowLeft } from 'lucide-react'
+import KoveLogo from '@/components/KoveLogo'
 import { createClient } from '@/lib/supabase/client'
 
 export default function ForgotPasswordPage() {
@@ -57,8 +58,8 @@ export default function ForgotPasswordPage() {
     <div className="auth-card animate-scale-in">
       {/* Logo */}
       <div className="flex justify-center pt-8 pb-2">
-        <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center">
-          <TrendingUp className="w-4 h-4 text-white" />
+        <div className="w-8 h-8 rounded-md flex items-center justify-center" style={{ background: 'var(--accent)', boxShadow: '0 2px 6px rgba(37,99,235,0.35)' }}>
+          <KoveLogo size={20} />
         </div>
       </div>
 

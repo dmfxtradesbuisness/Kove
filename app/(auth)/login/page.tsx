@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Eye, EyeOff, Loader2, TrendingUp } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import KoveLogo from '@/components/KoveLogo'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
@@ -34,7 +35,7 @@ export default function LoginPage() {
             className="w-7 h-7 rounded-md flex items-center justify-center"
             style={{ background: 'var(--accent)', boxShadow: '0 2px 8px rgba(37,99,235,0.35)' }}
           >
-            <TrendingUp className="w-3.5 h-3.5 text-white" />
+            <KoveLogo size={20} />
           </div>
           <span className="font-semibold text-sm tracking-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-1)' }}>
             KoveFX

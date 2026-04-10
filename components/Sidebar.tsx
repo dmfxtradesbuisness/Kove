@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
-  BookOpen, BarChart2, Sparkles, User, LogOut, TrendingUp,
+  BookOpen, BarChart2, Sparkles, User, LogOut,
   Target, Images, Users2, Newspaper,
 } from 'lucide-react'
+import KoveLogo from '@/components/KoveLogo'
 import { createClient } from '@/lib/supabase/client'
 
 const sections = [
@@ -63,7 +64,7 @@ export default function Sidebar() {
               className="w-7 h-7 rounded-md flex items-center justify-center transition-all duration-200"
               style={{ background: 'var(--accent)', boxShadow: '0 2px 6px rgba(37,99,235,0.3)' }}
             >
-              <TrendingUp className="w-3.5 h-3.5 text-white" />
+              <KoveLogo size={18} />
             </div>
             <div>
               <span className="font-semibold text-sm" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-1)', letterSpacing: '-0.01em' }}>KoveFX</span>
@@ -180,7 +181,7 @@ export default function Sidebar() {
             className="w-6 h-6 rounded flex items-center justify-center"
             style={{ background: 'var(--accent)' }}
           >
-            <TrendingUp className="w-3 h-3 text-white" />
+            <KoveLogo size={16} />
           </div>
           <span className="font-semibold text-sm" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-1)' }}>KoveFX</span>
         </Link>

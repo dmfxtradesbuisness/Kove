@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { TrendingUp } from 'lucide-react'
+import KoveLogo from '@/components/KoveLogo'
 
 export default function ConfirmedPage() {
   return (
@@ -24,8 +24,8 @@ export default function ConfirmedPage() {
       >
         {/* Logo */}
         <div className="flex justify-center mb-6">
-          <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center">
-            <TrendingUp className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent)', boxShadow: '0 2px 8px rgba(37,99,235,0.35)' }}>
+            <KoveLogo size={22} />
           </div>
         </div>
 
