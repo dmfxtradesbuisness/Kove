@@ -112,7 +112,7 @@ function PnlCalendar({ trades }: { trades: Trade[] }) {
           </thead>
           <tbody>
             {rows.map((row, rIdx) => {
-              const weekPnl = row.reduce((sum, day) => {
+              const weekPnl = row.reduce((sum: number, day) => {
                 if (day === null) return sum
                 return sum + (dayMap[day.toString()] ?? 0)
               }, 0)
