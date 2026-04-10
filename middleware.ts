@@ -34,6 +34,12 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
+  // Always allow auth callback / confirmation / error routes
+  const publicAuthRoutes = ['/auth/callback', '/auth/confirmed', '/auth/error', '/auth/reset-password']
+  if (publicAuthRoutes.some((r) => pathname.startsWith(r))) {
+    return supabaseResponse
+  }
+
   const protectedRoutes = ['/journal', '/ai', '/stats', '/account']
   const isProtected = protectedRoutes.some((route) =>
     pathname.startsWith(route)

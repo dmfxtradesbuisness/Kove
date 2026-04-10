@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { X, Upload, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import InstrumentPicker from '@/components/InstrumentPicker'
 import type { Trade, TradeFormData } from '@/lib/types'
 
 interface TradeFormProps {
@@ -10,66 +11,6 @@ interface TradeFormProps {
   onClose: () => void
   onSuccess: (trade: Trade) => void
 }
-
-const INSTRUMENTS: { group: string; items: string[] }[] = [
-  {
-    group: 'Forex',
-    items: [
-      'EUR/USD', 'GBP/USD', 'USD/JPY', 'USD/CHF', 'AUD/USD', 'USD/CAD',
-      'NZD/USD', 'EUR/GBP', 'EUR/JPY', 'GBP/JPY', 'EUR/CHF', 'GBP/CHF',
-      'AUD/JPY', 'NZD/JPY', 'EUR/CAD', 'EUR/AUD', 'GBP/AUD', 'USD/MXN',
-      'USD/SGD', 'USD/HKD', 'USD/NOK', 'USD/SEK', 'USD/DKK', 'USD/ZAR',
-    ],
-  },
-  {
-    group: 'Crypto',
-    items: [
-      'BTC/USD', 'ETH/USD', 'BNB/USD', 'SOL/USD', 'XRP/USD', 'ADA/USD',
-      'DOGE/USD', 'AVAX/USD', 'DOT/USD', 'MATIC/USD', 'LTC/USD', 'LINK/USD',
-      'UNI/USD', 'ATOM/USD', 'XLM/USD', 'BCH/USD', 'FIL/USD', 'APT/USD',
-    ],
-  },
-  {
-    group: 'US Stocks',
-    items: [
-      'AAPL', 'MSFT', 'NVDA', 'GOOGL', 'AMZN', 'META', 'TSLA', 'AVGO',
-      'JPM', 'V', 'UNH', 'XOM', 'LLY', 'JNJ', 'MA', 'HD', 'PG', 'MRK',
-      'COST', 'ABBV', 'CRM', 'AMD', 'NFLX', 'BAC', 'KO', 'PEP', 'TMO',
-      'WMT', 'MCD', 'ORCL', 'CSCO', 'DIS', 'NKE', 'INTC', 'ADBE',
-    ],
-  },
-  {
-    group: 'Indices',
-    items: [
-      'SPX (S&P 500)', 'NDX (NASDAQ 100)', 'DJI (Dow Jones)', 'RUT (Russell 2000)',
-      'VIX', 'DAX (Germany)', 'FTSE 100 (UK)', 'CAC 40 (France)', 'Nikkei 225 (Japan)',
-      'Hang Seng (HK)', 'ASX 200 (Australia)', 'Euro Stoxx 50',
-    ],
-  },
-  {
-    group: 'Commodities',
-    items: [
-      'XAU/USD (Gold)', 'XAG/USD (Silver)', 'XPT/USD (Platinum)', 'XPD/USD (Palladium)',
-      'CL (Crude Oil WTI)', 'BRN (Brent Crude)', 'NG (Natural Gas)',
-      'ZC (Corn)', 'ZW (Wheat)', 'ZS (Soybeans)', 'KC (Coffee)', 'CT (Cotton)',
-      'SB (Sugar)', 'CC (Cocoa)',
-    ],
-  },
-  {
-    group: 'Futures',
-    items: [
-      'ES (S&P 500 Futures)', 'NQ (NASDAQ Futures)', 'YM (Dow Futures)',
-      'RTY (Russell Futures)', 'CL (Oil Futures)', 'GC (Gold Futures)',
-      'SI (Silver Futures)', 'ZB (30Y Bond)', 'ZN (10Y Note)',
-      'ZF (5Y Note)', '6E (Euro Futures)', '6B (GBP Futures)',
-      '6J (JPY Futures)', '6A (AUD Futures)',
-    ],
-  },
-  {
-    group: 'Custom',
-    items: ['Other / Custom…'],
-  },
-]
 
 const emptyForm: TradeFormData = {
   pair: 'EUR/USD', type: 'BUY',
@@ -94,19 +35,10 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
-  const [customInstrument, setCustomInstrument] = useState(
-    // If the saved pair doesn't appear in any group, treat it as custom
-    trade
-      ? !INSTRUMENTS.flatMap((g) => g.items).includes(trade.pair) && trade.pair !== 'EUR/USD'
-        ? trade.pair
-        : ''
-      : ''
-  )
-  const isCustom = form.pair === 'Other / Custom…'
   const fileRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
@@ -135,13 +67,8 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
     setLoading(true)
     setError('')
 
-    // Use the typed custom value when "Other / Custom…" is selected
-    const submitForm = isCustom
-      ? { ...form, pair: customInstrument.trim() || 'Custom' }
-      : form
-
-    if (isCustom && !customInstrument.trim()) {
-      setError('Please enter an instrument name.')
+    if (!form.pair.trim()) {
+      setError('Please select an instrument.')
       setLoading(false)
       return
     }
@@ -151,7 +78,7 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
       const res = await fetch(url, {
         method: trade ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(submitForm),
+        body: JSON.stringify(form),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to save trade')
@@ -194,26 +121,10 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-2">
               <label className="label">Instrument</label>
-              <select name="pair" value={form.pair} onChange={handleChange} className="input" required>
-                {INSTRUMENTS.map(({ group, items }) => (
-                  <optgroup key={group} label={group}>
-                    {items.map((item) => (
-                      <option key={item} value={item}>{item}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-              {/* Custom instrument text input */}
-              {isCustom && (
-                <input
-                  type="text"
-                  value={customInstrument}
-                  onChange={(e) => setCustomInstrument(e.target.value)}
-                  placeholder="e.g. COIN, EURCAD, COPPER…"
-                  className="input !mt-1.5"
-                  autoFocus
-                />
-              )}
+              <InstrumentPicker
+                value={form.pair}
+                onChange={(val) => setForm((prev) => ({ ...prev, pair: val }))}
+              />
             </div>
             <div className="flex flex-col gap-2">
               <label className="label">Direction</label>

@@ -1,7 +1,10 @@
 'use client'
 
 import { Suspense, useState, useEffect } from 'react'
-import { User, CreditCard, CheckCircle, XCircle, Loader2, Sparkles } from 'lucide-react'
+import {
+  User, CreditCard, CheckCircle, XCircle, Loader2, Sparkles,
+  Lock, Mail, Receipt, ExternalLink, ChevronDown, ChevronUp,
+} from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
 
@@ -11,15 +14,73 @@ interface SubscriptionInfo {
   active: boolean
 }
 
+interface Invoice {
+  id: string
+  amount: number
+  currency: string
+  date: string
+  pdf: string | null
+  status: string | null
+  number: string | null
+}
+
+function SectionCard({
+  icon: Icon,
+  iconBg = 'bg-white/[0.04]',
+  iconBorder = 'border-white/[0.06]',
+  iconColor = 'text-[#555]',
+  title,
+  children,
+}: {
+  icon: React.ElementType
+  iconBg?: string
+  iconBorder?: string
+  iconColor?: string
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-6 md:p-7">
+      <div className="flex items-center gap-3 mb-6">
+        <div className={`w-9 h-9 ${iconBg} border ${iconBorder} rounded-2xl flex items-center justify-center`}>
+          <Icon className={`w-4 h-4 ${iconColor}`} />
+        </div>
+        <h2 className="text-sm font-bold text-white tracking-tight">{title}</h2>
+      </div>
+      {children}
+    </div>
+  )
+}
+
 function AccountContent() {
   const supabase = createClient()
   const searchParams = useSearchParams()
+
   const [userEmail, setUserEmail] = useState('')
   const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null)
+  const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
   const [portalLoading, setPortalLoading] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Change email state
+  const [newEmail, setNewEmail] = useState('')
+  const [emailLoading, setEmailLoading] = useState(false)
+  const [emailMsg, setEmailMsg] = useState('')
+  const [emailError, setEmailError] = useState('')
+
+  // Change password state
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [passwordMsg, setPasswordMsg] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+
+  // Billing history toggle
+  const [showInvoices, setShowInvoices] = useState(false)
+  const [invoicesLoading, setInvoicesLoading] = useState(false)
 
   const subscriptionMessage = searchParams.get('subscription')
 
@@ -44,10 +105,11 @@ function AccountContent() {
     try {
       const res = await fetch('/api/stripe/checkout', { method: 'POST' })
       const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to start checkout')
       if (data.url) window.location.href = data.url
-      else throw new Error('No checkout URL')
-    } catch {
-      setError('Failed to start checkout. Try again.')
+      else throw new Error('No checkout URL returned')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start checkout. Try again.')
     } finally {
       setCheckoutLoading(false)
     }
@@ -65,6 +127,84 @@ function AccountContent() {
       setError('Failed to open billing portal. Try again.')
     } finally {
       setPortalLoading(false)
+    }
+  }
+
+  async function handleChangeEmail(e: React.FormEvent) {
+    e.preventDefault()
+    setEmailLoading(true)
+    setEmailMsg('')
+    setEmailError('')
+
+    if (!newEmail.trim() || newEmail === userEmail) {
+      setEmailError('Please enter a different email address.')
+      setEmailLoading(false)
+      return
+    }
+
+    const { error } = await supabase.auth.updateUser({ email: newEmail })
+
+    if (error) {
+      setEmailError(error.message)
+    } else {
+      setEmailMsg('Confirmation sent to your new email. Check your inbox.')
+      setNewEmail('')
+    }
+    setEmailLoading(false)
+  }
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault()
+    setPasswordLoading(true)
+    setPasswordMsg('')
+    setPasswordError('')
+
+    if (newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters.')
+      setPasswordLoading(false)
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match.')
+      setPasswordLoading(false)
+      return
+    }
+
+    // Re-authenticate with current password first
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: userEmail,
+      password: currentPassword,
+    })
+
+    if (signInError) {
+      setPasswordError('Current password is incorrect.')
+      setPasswordLoading(false)
+      return
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+
+    if (error) {
+      setPasswordError(error.message)
+    } else {
+      setPasswordMsg('Password updated successfully.')
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+    }
+    setPasswordLoading(false)
+  }
+
+  async function loadInvoices() {
+    if (invoices.length > 0) { setShowInvoices((s) => !s); return }
+    setInvoicesLoading(true)
+    setShowInvoices(true)
+    try {
+      const res = await fetch('/api/stripe/invoices')
+      const data = await res.json()
+      setInvoices(data.invoices ?? [])
+    } finally {
+      setInvoicesLoading(false)
     }
   }
 
@@ -98,31 +238,117 @@ function AccountContent() {
       )}
 
       <div className="max-w-lg flex flex-col gap-4">
-        {/* Profile */}
-        <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-6 md:p-7">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-9 h-9 bg-white/[0.04] border border-white/[0.06] rounded-2xl flex items-center justify-center">
-              <User className="w-4 h-4 text-[#555]" />
-            </div>
-            <h2 className="text-sm font-bold text-white tracking-tight">Profile</h2>
-          </div>
+
+        {/* ── Profile ── */}
+        <SectionCard icon={User} title="Profile">
           <div className="flex flex-col gap-2">
-            <label className="label">Email address</label>
+            <label className="label">Current email</label>
             <p className="text-sm text-[#888] bg-[#080808] border border-white/[0.05] rounded-2xl px-4 py-3.5 font-light">
               {userEmail}
             </p>
           </div>
-        </div>
+        </SectionCard>
 
-        {/* Subscription */}
-        <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-6 md:p-7">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-9 h-9 bg-blue-500/8 border border-blue-500/15 rounded-2xl flex items-center justify-center">
-              <CreditCard className="w-4 h-4 text-blue-400/70" />
+        {/* ── Change Email ── */}
+        <SectionCard icon={Mail} title="Change Email">
+          <form onSubmit={handleChangeEmail} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="label">New email address</label>
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="new@example.com"
+                className="input"
+                required
+              />
             </div>
-            <h2 className="text-sm font-bold text-white tracking-tight">Subscription</h2>
-          </div>
+            {emailError && (
+              <p className="text-red-400 text-sm bg-red-500/8 border border-red-500/15 rounded-xl px-4 py-3 font-light">
+                {emailError}
+              </p>
+            )}
+            {emailMsg && (
+              <p className="text-emerald-400 text-sm bg-emerald-500/8 border border-emerald-500/15 rounded-xl px-4 py-3 font-light">
+                {emailMsg}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={emailLoading}
+              className="btn-secondary gap-2 self-start !min-h-0 h-10 !px-5 !py-2.5 text-xs"
+            >
+              {emailLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              Update Email
+            </button>
+          </form>
+        </SectionCard>
 
+        {/* ── Change Password ── */}
+        <SectionCard icon={Lock} title="Change Password">
+          <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="label">Current password</label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Your current password"
+                className="input"
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="label">New password</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="At least 8 characters…"
+                className="input"
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="label">Confirm new password</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Repeat new password…"
+                className="input"
+                required
+              />
+            </div>
+            {passwordError && (
+              <p className="text-red-400 text-sm bg-red-500/8 border border-red-500/15 rounded-xl px-4 py-3 font-light">
+                {passwordError}
+              </p>
+            )}
+            {passwordMsg && (
+              <p className="text-emerald-400 text-sm bg-emerald-500/8 border border-emerald-500/15 rounded-xl px-4 py-3 font-light">
+                {passwordMsg}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={passwordLoading}
+              className="btn-secondary gap-2 self-start !min-h-0 h-10 !px-5 !py-2.5 text-xs"
+            >
+              {passwordLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              Update Password
+            </button>
+          </form>
+        </SectionCard>
+
+        {/* ── Subscription ── */}
+        <SectionCard
+          icon={CreditCard}
+          iconBg="bg-blue-500/8"
+          iconBorder="border-blue-500/15"
+          iconColor="text-blue-400/70"
+          title="Subscription"
+        >
           {subscription?.active ? (
             <div className="flex flex-col gap-5">
               <div className="flex items-center justify-between p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
@@ -183,7 +409,72 @@ function AccountContent() {
               {error}
             </div>
           )}
-        </div>
+        </SectionCard>
+
+        {/* ── Billing History ── */}
+        <SectionCard icon={Receipt} title="Billing History">
+          <button
+            onClick={loadInvoices}
+            className="flex items-center gap-2 text-sm text-[#555] hover:text-white transition-colors"
+          >
+            {showInvoices ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
+            {showInvoices ? 'Hide invoices' : 'Show payment history'}
+          </button>
+
+          {showInvoices && (
+            <div className="mt-5">
+              {invoicesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-4 h-4 border-2 border-white/10 border-t-white/40 rounded-full animate-spin" />
+                </div>
+              ) : invoices.length === 0 ? (
+                <p className="text-[#444] text-sm font-light py-4">No invoices found.</p>
+              ) : (
+                <div className="flex flex-col divide-y divide-white/[0.04]">
+                  {invoices.map((inv) => (
+                    <div key={inv.id} className="flex items-center justify-between py-3.5">
+                      <div>
+                        <p className="text-sm text-white font-medium">
+                          ${inv.amount.toFixed(2)} {inv.currency}
+                        </p>
+                        <p className="text-xs text-[#444] font-light mt-0.5">
+                          {new Date(inv.date).toLocaleDateString('en-US', {
+                            month: 'short', day: 'numeric', year: 'numeric',
+                          })}
+                          {inv.number ? ` · ${inv.number}` : ''}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/15 px-2 py-0.5 rounded-full tracking-wide uppercase">
+                          {inv.status ?? 'paid'}
+                        </span>
+                        {inv.pdf && (
+                          <a
+                            href={inv.pdf}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#444] hover:text-white transition-colors"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </SectionCard>
+
+        {/* DMFX Branding */}
+        <p className="text-center text-[#333] text-[11px] font-light pt-2 pb-4">
+          KoveFX by <span className="text-[#444]">DMFX</span> · Trading ecosystem
+        </p>
       </div>
     </div>
   )
