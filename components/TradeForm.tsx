@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { X, Upload, Loader2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { X, Upload, Loader2, CheckSquare, Square, ListChecks } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import InstrumentPicker from '@/components/InstrumentPicker'
 import type { Trade, TradeFormData } from '@/lib/types'
@@ -10,6 +10,11 @@ interface TradeFormProps {
   trade?: Trade | null
   onClose: () => void
   onSuccess: (trade: Trade) => void
+}
+
+interface ChecklistItem {
+  id: string
+  label: string
 }
 
 const emptyForm: TradeFormData = {
@@ -38,6 +43,29 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
   const fileRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
+  // Checklist state
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([])
+  const [checklistChecked, setChecklistChecked] = useState<Record<string, boolean>>({})
+  const [showChecklist, setShowChecklist] = useState(false)
+  const [pendingFormData, setPendingFormData] = useState<TradeFormData | null>(null)
+
+  useEffect(() => {
+    if (!trade) {
+      // Preload checklist silently
+      fetch('/api/checklist')
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.items && d.items.length > 0) {
+            setChecklistItems(d.items)
+            const init: Record<string, boolean> = {}
+            d.items.forEach((item: ChecklistItem) => { init[item.id] = false })
+            setChecklistChecked(init)
+          }
+        })
+        .catch(() => {/* silently ignore */})
+    }
+  }, [trade])
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
@@ -62,34 +90,166 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function saveTrade(formData: TradeFormData) {
     setLoading(true)
     setError('')
-
-    if (!form.pair.trim()) {
-      setError('Please select an instrument.')
-      setLoading(false)
-      return
-    }
-
     try {
       const url = trade ? `/api/trades/${trade.id}` : '/api/trades'
       const res = await fetch(url, {
         method: trade ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(formData),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to save trade')
+
+      // Save checklist results if we have them
+      if (checklistItems.length > 0 && !trade) {
+        const results = checklistItems.map((item) => ({
+          checklist_item_id: item.id,
+          checked: checklistChecked[item.id] ?? false,
+        }))
+        await fetch('/api/checklist/results', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ trade_id: data.trade.id, results }),
+        })
+      }
+
       onSuccess(data.trade)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
+      setShowChecklist(false)
     } finally {
       setLoading(false)
     }
   }
 
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!form.pair.trim()) {
+      setError('Please select an instrument.')
+      return
+    }
+    // If new trade and has checklist items, show checklist first
+    if (!trade && checklistItems.length > 0) {
+      setPendingFormData(form)
+      setShowChecklist(true)
+      return
+    }
+    await saveTrade(form)
+  }
+
+  async function handleChecklistConfirm() {
+    if (pendingFormData) {
+      await saveTrade(pendingFormData)
+    }
+  }
+
+  const checkedCount = Object.values(checklistChecked).filter(Boolean).length
+  const totalItems = checklistItems.length
+
+  // ── Checklist Modal ─────────────────────────────────────────────────────────
+  if (showChecklist) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in"
+        onClick={(e) => e.target === e.currentTarget && setShowChecklist(false)}
+      >
+        <div
+          className="bg-[#111] border border-white/[0.07] rounded-t-3xl md:rounded-3xl w-full md:max-w-md max-h-[90vh] overflow-y-auto shadow-2xl"
+          style={{ boxShadow: '0 0 0 1px rgba(255,255,255,0.05), 0 40px 80px rgba(0,0,0,0.9)' }}
+        >
+          <div className="flex justify-center pt-3 pb-0 md:hidden">
+            <div className="w-10 h-1 bg-white/10 rounded-full" />
+          </div>
+
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center">
+                <ListChecks className="w-4 h-4 text-blue-400" />
+              </div>
+              <div>
+                <h2 className="text-white font-bold text-sm tracking-tight">Pre-Trade Checklist</h2>
+                <p className="text-[#444] text-xs font-light">{checkedCount}/{totalItems} checked</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowChecklist(false)}
+              className="w-8 h-8 flex items-center justify-center rounded-xl text-[#555] hover:text-white hover:bg-white/[0.05] transition-all"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="p-5 flex flex-col gap-3">
+            {checklistItems.map((item) => {
+              const checked = checklistChecked[item.id] ?? false
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setChecklistChecked((prev) => ({ ...prev, [item.id]: !prev[item.id] }))}
+                  className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left w-full transition-all duration-150 ${
+                    checked
+                      ? 'bg-emerald-500/8 border-emerald-500/15 text-white'
+                      : 'bg-white/[0.02] border-white/[0.06] text-[#666] hover:border-white/[0.1] hover:text-[#aaa]'
+                  }`}
+                >
+                  {checked
+                    ? <CheckSquare className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    : <Square className="w-4 h-4 text-[#333] flex-shrink-0" />
+                  }
+                  <span className={`text-sm font-medium transition-all ${checked ? 'line-through text-[#555]' : ''}`}>
+                    {item.label}
+                  </span>
+                </button>
+              )
+            })}
+
+            {/* Progress bar */}
+            <div className="mt-1">
+              <div className="w-full h-1 bg-white/[0.05] rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    checkedCount === totalItems ? 'bg-emerald-500' : 'bg-blue-500'
+                  }`}
+                  style={{ width: `${totalItems > 0 ? (checkedCount / totalItems) * 100 : 0}%` }}
+                />
+              </div>
+            </div>
+
+            {error && (
+              <div className="text-red-400 text-sm bg-red-500/8 border border-red-500/15 rounded-2xl px-4 py-3 font-light">
+                {error}
+              </div>
+            )}
+
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowChecklist(false)}
+                className="btn-secondary flex-1"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={handleChecklistConfirm}
+                disabled={loading}
+                className="btn-blue flex-1 gap-2"
+              >
+                {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {checkedCount < totalItems ? `Log Anyway (${checkedCount}/${totalItems})` : 'Log Trade ✓'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Main Trade Form ─────────────────────────────────────────────────────────
   return (
     <div
       className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in"
@@ -202,6 +362,14 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
               )}
             </div>
           </div>
+
+          {/* Checklist badge */}
+          {checklistItems.length > 0 && !trade && (
+            <div className="flex items-center gap-2 text-xs text-[#444] bg-white/[0.02] border border-white/[0.04] rounded-xl px-3.5 py-2.5">
+              <ListChecks className="w-3.5 h-3.5 text-[#333]" />
+              Pre-trade checklist will appear after you hit Log Trade
+            </div>
+          )}
 
           {/* Error */}
           {error && (

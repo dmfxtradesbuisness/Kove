@@ -6,7 +6,20 @@ import TradeForm from '@/components/TradeForm'
 import TradeTable from '@/components/TradeTable'
 import type { Trade } from '@/lib/types'
 
-// ─── P&L Calendar ────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function fmtPnl(pnl: number): string {
+  const abs = Math.abs(pnl)
+  if (abs >= 10000) return `${pnl >= 0 ? '+' : '-'}$${(abs / 1000).toFixed(1)}k`
+  return `${pnl >= 0 ? '+' : '-'}$${abs.toFixed(2)}`
+}
+
+function fmtPnlCompact(pnl: number): string {
+  const abs = Math.abs(pnl)
+  if (abs >= 1000) return `${pnl >= 0 ? '+' : '-'}${(abs / 1000).toFixed(1)}k`
+  return `${pnl >= 0 ? '+' : '-'}${abs.toFixed(0)}`
+}
+
+// ─── P&L Calendar (Topstep-style) ────────────────────────────────────────────
 function PnlCalendar({ trades }: { trades: Trade[] }) {
   const now = new Date()
   const [month, setMonth] = useState(now.getMonth())
@@ -25,11 +38,12 @@ function PnlCalendar({ trades }: { trades: Trade[] }) {
     return map
   }, [trades, month, year])
 
-  // Grid helpers
   const firstDay = new Date(year, month, 1).getDay() // 0 = Sun
   const daysInMonth = new Date(year, month + 1, 0).getDate()
-
   const monthName = new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+
+  // Monthly total
+  const monthTotal = Object.values(dayMap).reduce((s, v) => s + v, 0)
 
   function prevMonth() {
     if (month === 0) { setMonth(11); setYear((y) => y - 1) }
@@ -40,10 +54,17 @@ function PnlCalendar({ trades }: { trades: Trade[] }) {
     else setMonth((m) => m + 1)
   }
 
-  const cells: (number | null)[] = [
+  // Build rows: each row = 7 cells (Sun–Sat) + weekly total
+  const allCells: (number | null)[] = [
     ...Array(firstDay).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ]
+  // Pad to full weeks
+  while (allCells.length % 7 !== 0) allCells.push(null)
+  const rows: (number | null)[][] = []
+  for (let i = 0; i < allCells.length; i += 7) {
+    rows.push(allCells.slice(i, i + 7))
+  }
 
   const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -51,7 +72,14 @@ function PnlCalendar({ trades }: { trades: Trade[] }) {
     <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl overflow-hidden mb-4">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.05]">
-        <h2 className="text-sm font-bold text-white tracking-tight">{monthName}</h2>
+        <div>
+          <h2 className="text-sm font-bold text-white tracking-tight">{monthName}</h2>
+          {Object.keys(dayMap).length > 0 && (
+            <p className={`text-xs font-black mt-0.5 ${monthTotal >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              {fmtPnl(monthTotal)} this month
+            </p>
+          )}
+        </div>
         <div className="flex items-center gap-1">
           <button
             onClick={prevMonth}
@@ -68,55 +96,90 @@ function PnlCalendar({ trades }: { trades: Trade[] }) {
         </div>
       </div>
 
-      <div className="p-4">
-        {/* Day labels */}
-        <div className="grid grid-cols-7 mb-1">
-          {DAYS.map((d) => (
-            <div key={d} className="text-center text-[10px] font-medium text-[#333] uppercase tracking-wider py-1">
-              {d}
-            </div>
-          ))}
-        </div>
+      <div className="p-3 md:p-4 overflow-x-auto">
+        <table className="w-full border-separate border-spacing-1 min-w-[400px]">
+          <thead>
+            <tr>
+              {DAYS.map((d) => (
+                <th key={d} className="text-center text-[10px] font-medium text-[#333] uppercase tracking-wider pb-1 w-[calc(100%/8)]">
+                  {d}
+                </th>
+              ))}
+              <th className="text-center text-[10px] font-medium text-[#333] uppercase tracking-wider pb-1 w-[calc(100%/8)]">
+                Week
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, rIdx) => {
+              const weekPnl = row.reduce((sum, day) => {
+                if (day === null) return sum
+                return sum + (dayMap[day.toString()] ?? 0)
+              }, 0)
+              const weekHasData = row.some((day) => day !== null && dayMap[day.toString()] !== undefined)
 
-        {/* Calendar grid */}
-        <div className="grid grid-cols-7 gap-1">
-          {cells.map((day, i) => {
-            if (day === null) return <div key={`empty-${i}`} />
-            const pnl = dayMap[day.toString()]
-            const hasData = pnl !== undefined
-            const isToday =
-              day === now.getDate() &&
-              month === now.getMonth() &&
-              year === now.getFullYear()
+              return (
+                <tr key={rIdx}>
+                  {row.map((day, cIdx) => {
+                    if (day === null) {
+                      return <td key={`e-${rIdx}-${cIdx}`} className="h-12 md:h-14" />
+                    }
+                    const pnl = dayMap[day.toString()]
+                    const hasData = pnl !== undefined
+                    const isToday =
+                      day === now.getDate() &&
+                      month === now.getMonth() &&
+                      year === now.getFullYear()
 
-            return (
-              <div
-                key={day}
-                className={`relative rounded-xl flex flex-col items-center justify-center aspect-square text-xs transition-all ${
-                  hasData
-                    ? pnl >= 0
-                      ? 'bg-emerald-500/10 border border-emerald-500/15'
-                      : 'bg-red-500/10 border border-red-500/15'
-                    : 'bg-white/[0.02] border border-transparent'
-                } ${isToday ? 'ring-1 ring-blue-500/40' : ''}`}
-              >
-                <span className={`text-[11px] font-medium leading-none mb-0.5 ${
-                  isToday ? 'text-blue-400' : hasData ? 'text-white' : 'text-[#333]'
-                }`}>
-                  {day}
-                </span>
-                {hasData && (
-                  <span className={`text-[9px] font-bold leading-none ${pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {pnl >= 0 ? '+' : ''}
-                    {Math.abs(pnl) >= 1000
-                      ? (pnl / 1000).toFixed(1) + 'k'
-                      : pnl.toFixed(0)}
-                  </span>
-                )}
-              </div>
-            )
-          })}
-        </div>
+                    return (
+                      <td key={day} className="p-0">
+                        <div
+                          className={`h-12 md:h-14 rounded-xl flex flex-col items-center justify-center transition-all ${
+                            hasData
+                              ? pnl >= 0
+                                ? 'bg-emerald-500/10 border border-emerald-500/20'
+                                : 'bg-red-500/10 border border-red-500/20'
+                              : 'bg-white/[0.02] border border-transparent'
+                          } ${isToday ? 'ring-1 ring-blue-500/40' : ''}`}
+                        >
+                          <span className={`text-[11px] font-medium leading-none mb-0.5 ${
+                            isToday ? 'text-blue-400' : hasData ? 'text-white' : 'text-[#2a2a2a]'
+                          }`}>
+                            {day}
+                          </span>
+                          {hasData && (
+                            <span className={`text-[9px] font-bold leading-none ${pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                              {fmtPnlCompact(pnl)}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    )
+                  })}
+                  {/* Weekly total */}
+                  <td className="p-0 pl-1">
+                    <div className={`h-12 md:h-14 rounded-xl flex flex-col items-center justify-center border ${
+                      weekHasData
+                        ? weekPnl >= 0
+                          ? 'bg-emerald-500/5 border-emerald-500/10'
+                          : 'bg-red-500/5 border-red-500/10'
+                        : 'border-transparent'
+                    }`}>
+                      {weekHasData && (
+                        <>
+                          <span className="text-[8px] text-[#333] uppercase tracking-wider font-medium leading-none mb-0.5">Wk</span>
+                          <span className={`text-[10px] font-black leading-none ${weekPnl >= 0 ? 'text-emerald-500/80' : 'text-red-500/80'}`}>
+                            {fmtPnlCompact(weekPnl)}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
 
         {/* Legend */}
         <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/[0.04]">
@@ -127,6 +190,9 @@ function PnlCalendar({ trades }: { trades: Trade[] }) {
           <div className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-sm bg-red-500/20 border border-red-500/30" />
             <span className="text-[10px] text-[#444] font-light">Loss</span>
+          </div>
+          <div className="flex items-center gap-1.5 ml-auto">
+            <span className="text-[10px] text-[#333] font-light">Week column = weekly total</span>
           </div>
         </div>
       </div>
@@ -187,9 +253,10 @@ export default function JournalPage() {
       t.notes?.toLowerCase().includes(search.toLowerCase())
   )
 
-  const totalPnl = trades.reduce((sum, t) => sum + (t.pnl ?? 0), 0)
-  const wins = trades.filter((t) => (t.pnl ?? 0) > 0).length
-  const winRate = trades.length > 0 ? Math.round((wins / trades.length) * 100) : 0
+  const closedTrades = trades.filter((t) => t.pnl !== null)
+  const totalPnl = closedTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0)
+  const wins = closedTrades.filter((t) => (t.pnl ?? 0) > 0).length
+  const winRate = closedTrades.length > 0 ? Math.round((wins / closedTrades.length) * 100) : 0
 
   return (
     <div className="min-h-screen">
@@ -240,16 +307,20 @@ export default function JournalPage() {
           <div className="grid grid-cols-3 gap-3">
             {[
               { label: 'Trades', value: String(trades.length), color: 'text-white' },
-              { label: 'Win Rate', value: `${winRate}%`, color: winRate >= 50 ? 'text-emerald-400' : 'text-red-400' },
               {
-                label: 'P&L',
-                value: `${totalPnl >= 0 ? '+' : ''}$${Math.abs(totalPnl) >= 1000 ? (totalPnl / 1000).toFixed(1) + 'k' : totalPnl.toFixed(0)}`,
+                label: 'Win Rate',
+                value: `${winRate}%`,
+                color: winRate >= 50 ? 'text-emerald-400' : 'text-red-400',
+              },
+              {
+                label: 'Total P&L',
+                value: fmtPnl(totalPnl),
                 color: totalPnl >= 0 ? 'text-emerald-400' : 'text-red-400',
               },
             ].map(({ label, value, color }) => (
               <div key={label} className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl px-4 py-4">
                 <p className="text-[10px] text-[#444] mb-2 uppercase tracking-widest font-medium">{label}</p>
-                <p className={`text-2xl md:text-3xl font-black tracking-tight ${color}`}>{value}</p>
+                <p className={`text-xl md:text-2xl font-black tracking-tight ${color}`}>{value}</p>
               </div>
             ))}
           </div>

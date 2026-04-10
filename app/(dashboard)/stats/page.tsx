@@ -10,6 +10,16 @@ import type { Trade } from '@/lib/types'
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Period = '1D' | '1W' | '1M' | '3M' | '1Y' | 'ALL'
 
+interface WeeklyWrap {
+  label: string
+  pnl: number
+  trades: number
+  wins: number
+  closed: number
+  best: number
+  worst: number
+}
+
 const PERIODS: { label: string; key: Period }[] = [
   { label: '1D', key: '1D' },
   { label: '1W', key: '1W' },
@@ -137,6 +147,52 @@ function calcPerformanceWrap(trades: Trade[]) {
   return { thisMonth: calc(thisMonth), lastMonth: calc(lastMonth) }
 }
 
+function getISOWeek(date: Date): string {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+  const dayNum = d.getUTCDay() || 7
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum)
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+  const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`
+}
+
+function calcWeeklyWrap(trades: Trade[]): WeeklyWrap[] {
+  const weekMap: Record<string, { pnl: number; trades: number; wins: number; closed: number; best: number; worst: number; start: Date }> = {}
+
+  for (const t of trades) {
+    const d = new Date(t.created_at)
+    const key = getISOWeek(d)
+    if (!weekMap[key]) {
+      // Find Monday of this week for label
+      const monday = new Date(d)
+      const day = monday.getDay()
+      monday.setDate(monday.getDate() - (day === 0 ? 6 : day - 1))
+      weekMap[key] = { pnl: 0, trades: 0, wins: 0, closed: 0, best: 0, worst: 0, start: monday }
+    }
+    weekMap[key].trades++
+    if (t.pnl !== null) {
+      weekMap[key].closed++
+      weekMap[key].pnl += t.pnl
+      if (t.pnl > 0) weekMap[key].wins++
+      if (t.pnl > weekMap[key].best) weekMap[key].best = t.pnl
+      if (t.pnl < weekMap[key].worst) weekMap[key].worst = t.pnl
+    }
+  }
+
+  return Object.entries(weekMap)
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .slice(0, 12)
+    .map(([, v]) => ({
+      label: v.start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      pnl: v.pnl,
+      trades: v.trades,
+      wins: v.wins,
+      closed: v.closed,
+      best: v.best,
+      worst: v.worst,
+    }))
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function StatCard({ label, value, sub, icon: Icon, positive, neutral }: {
   label: string; value: string; sub?: string; icon: React.ElementType; positive?: boolean; neutral?: boolean
@@ -231,6 +287,7 @@ export default function StatsPage() {
   const { score: discScore, breakdown } = useMemo(() => calcDisciplineScore(allTrades), [allTrades])
   const { currentStreak, bestStreak, greenDayStreak } = useMemo(() => calcStreaks(allTrades), [allTrades])
   const { thisMonth, lastMonth } = useMemo(() => calcPerformanceWrap(allTrades), [allTrades])
+  const weeklyWrap = useMemo(() => calcWeeklyWrap(allTrades), [allTrades])
 
   const pairStats = trades.reduce<Record<string, { count: number; pnl: number }>>((acc, t) => {
     if (!acc[t.pair]) acc[t.pair] = { count: 0, pnl: 0 }
@@ -328,10 +385,10 @@ export default function StatsPage() {
           {/* Stat cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
             <StatCard label="Total Trades" value={String(trades.length)} sub={`${closedTrades.length} closed`} icon={Activity} neutral />
-            <StatCard label="Win Rate" value={`${winRate.toFixed(0)}%`} sub={`${wins.length}W / ${losses.length}L`} icon={Target} positive={winRate >= 50} />
-            <StatCard label="Total P&L" value={`${totalPnl >= 0 ? '+' : ''}$${Math.abs(totalPnl) >= 1000 ? (totalPnl / 1000).toFixed(1) + 'k' : totalPnl.toFixed(0)}`} sub="All closed" icon={totalPnl >= 0 ? TrendingUp : TrendingDown} positive={totalPnl >= 0} />
-            <StatCard label="Avg Win" value={avgWin > 0 ? `$${avgWin.toFixed(0)}` : '—'} sub={`${wins.length} winners`} icon={TrendingUp} positive={avgWin > 0 || undefined} neutral={avgWin === 0} />
-            <StatCard label="Avg Loss" value={avgLoss > 0 ? `$${avgLoss.toFixed(0)}` : '—'} sub={`${losses.length} losers`} icon={TrendingDown} positive={avgLoss > 0 ? false : undefined} neutral={avgLoss === 0} />
+            <StatCard label="Win Rate" value={`${winRate.toFixed(1)}%`} sub={`${wins.length}W / ${losses.length}L`} icon={Target} positive={winRate >= 50} />
+            <StatCard label="Total P&L" value={`${totalPnl >= 0 ? '+' : ''}$${Math.abs(totalPnl) >= 10000 ? (totalPnl / 1000).toFixed(2) + 'k' : totalPnl.toFixed(2)}`} sub="All closed" icon={totalPnl >= 0 ? TrendingUp : TrendingDown} positive={totalPnl >= 0} />
+            <StatCard label="Avg Win" value={avgWin > 0 ? `$${avgWin.toFixed(2)}` : '—'} sub={`${wins.length} winners`} icon={TrendingUp} positive={avgWin > 0 || undefined} neutral={avgWin === 0} />
+            <StatCard label="Avg Loss" value={avgLoss > 0 ? `$${avgLoss.toFixed(2)}` : '—'} sub={`${losses.length} losers`} icon={TrendingDown} positive={avgLoss > 0 ? false : undefined} neutral={avgLoss === 0} />
             <StatCard label="Profit Factor" value={profitFactor > 0 ? profitFactor.toFixed(2) : '—'} sub="Win / loss ratio" icon={DollarSign} positive={profitFactor >= 1.5 || undefined} neutral={profitFactor === 0} />
           </div>
 
@@ -498,8 +555,8 @@ export default function StatsPage() {
               {[
                 { label: 'Trades', this: thisMonth.trades, last: lastMonth.trades, fmt: (v: number) => String(v) },
                 { label: 'Win Rate', this: thisMonth.wr, last: lastMonth.wr, fmt: (v: number) => `${v}%` },
-                { label: 'Total P&L', this: thisMonth.pnl, last: lastMonth.pnl, fmt: (v: number) => `${v >= 0 ? '+' : ''}$${Math.abs(v).toFixed(0)}` },
-                { label: 'Best Trade', this: thisMonth.best, last: lastMonth.best, fmt: (v: number) => `+$${v.toFixed(0)}` },
+                { label: 'Total P&L', this: thisMonth.pnl, last: lastMonth.pnl, fmt: (v: number) => `${v >= 0 ? '+' : ''}$${Math.abs(v).toFixed(2)}` },
+                { label: 'Best Trade', this: thisMonth.best, last: lastMonth.best, fmt: (v: number) => `+$${v.toFixed(2)}` },
               ].map(({ label, this: cur, last: prev, fmt }) => {
                 const up = cur >= prev
                 return (
@@ -524,6 +581,41 @@ export default function StatsPage() {
 
           {thisMonth.trades === 0 && (
             <p className="text-center text-[#444] text-sm font-light py-4">No trades logged this month yet.</p>
+          )}
+
+          {/* Weekly Breakdown */}
+          {weeklyWrap.length > 0 && (
+            <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl overflow-hidden">
+              <div className="px-6 py-5 border-b border-white/[0.05]">
+                <h2 className="text-sm font-bold text-white">Weekly Breakdown</h2>
+                <p className="text-[10px] text-[#444] font-light mt-0.5">Last 12 weeks · exact P&L per week</p>
+              </div>
+              <div className="divide-y divide-white/[0.04]">
+                {weeklyWrap.map((week, i) => {
+                  const wr = week.closed > 0 ? Math.round((week.wins / week.closed) * 100) : 0
+                  return (
+                    <div key={i} className="px-6 py-4 flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-white">Week of {week.label}</p>
+                        <p className="text-[10px] text-[#444] font-light mt-0.5">
+                          {week.trades} trade{week.trades !== 1 ? 's' : ''} · {wr}% WR
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className={`text-sm font-black ${week.pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {week.pnl >= 0 ? '+' : ''}${Math.abs(week.pnl).toFixed(2)}
+                        </p>
+                        {week.best !== 0 && (
+                          <p className="text-[10px] text-[#333] font-light mt-0.5">
+                            Best: +${week.best.toFixed(2)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -572,7 +664,7 @@ export default function StatsPage() {
                     <div className="text-right">
                       <p className="text-sm font-bold text-white">{entry.winRate}%</p>
                       <p className={`text-xs font-medium ${entry.totalPnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {entry.totalPnl >= 0 ? '+' : ''}${entry.totalPnl.toFixed(0)}
+                        {entry.totalPnl >= 0 ? '+' : ''}${entry.totalPnl.toFixed(2)}
                       </p>
                     </div>
                   </div>
