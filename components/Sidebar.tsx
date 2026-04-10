@@ -2,12 +2,13 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { BookOpen, BarChart2, Sparkles, User, LogOut, TrendingUp } from 'lucide-react'
+import { BookOpen, BarChart2, Sparkles, User, LogOut, TrendingUp, Target } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const navItems = [
   { href: '/journal', label: 'Journal', icon: BookOpen },
   { href: '/stats', label: 'Stats', icon: BarChart2 },
+  { href: '/goals', label: 'Goals', icon: Target },
   { href: '/ai', label: 'AI', icon: Sparkles },
   { href: '/account', label: 'Account', icon: User },
 ]

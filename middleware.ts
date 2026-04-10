@@ -40,7 +40,7 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
-  const protectedRoutes = ['/journal', '/ai', '/stats', '/account']
+  const protectedRoutes = ['/journal', '/ai', '/stats', '/account', '/goals']
   const isProtected = protectedRoutes.some((route) =>
     pathname.startsWith(route)
   )
