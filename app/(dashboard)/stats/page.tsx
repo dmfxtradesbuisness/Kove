@@ -305,8 +305,8 @@ export default function StatsPage() {
   if (allTrades.length === 0) return (
     <div className="px-4 md:px-8 pt-6 md:pt-10">
       <div className="mb-8">
-        <p className="text-[#444] text-xs uppercase tracking-widest mb-2 font-medium">Overview</p>
-        <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Statistics</h1>
+        <p className="page-label">Statistics</p>
+        <h1 className="page-title">Statistics</h1>
       </div>
       <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-16 text-center">
         <BarChart2 className="w-10 h-10 text-[#222] mx-auto mb-4" />
@@ -322,10 +322,10 @@ export default function StatsPage() {
     <div className="px-4 md:px-8 pt-6 md:pt-10 pb-10">
       {/* Header */}
       <div className="mb-6">
-        <p className="text-[#444] text-xs uppercase tracking-widest mb-2 font-medium">Overview</p>
+        <p className="page-label">Statistics</p>
         <div className="flex items-end justify-between flex-wrap gap-3">
-          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Statistics</h1>
-          <p className="text-[#444] text-xs font-light">{closedTrades.length} closed trades</p>
+          <h1 className="page-title">Statistics</h1>
+          <p className="text-xs font-light mt-1" style={{ color: 'var(--text-3)' }}>{closedTrades.length} closed trades</p>
         </div>
       </div>
 

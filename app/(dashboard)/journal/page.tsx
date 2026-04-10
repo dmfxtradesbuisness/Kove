@@ -69,9 +69,9 @@ function PnlCalendar({ trades }: { trades: Trade[] }) {
   const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   return (
-    <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl overflow-hidden mb-4">
+    <div className="overflow-hidden rounded-[10px] mb-4" style={{ background: 'var(--surface-1)', border: '1px solid rgba(255,255,255,0.07)' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.05]">
+      <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div>
           <h2 className="text-sm font-bold text-white tracking-tight">{monthName}</h2>
           {Object.keys(dayMap).length > 0 && (
@@ -263,9 +263,9 @@ export default function JournalPage() {
       {/* Header */}
       <div className="px-4 md:px-8 pt-6 md:pt-10 pb-6 flex items-start justify-between">
         <div>
-          <p className="text-[#444] text-xs uppercase tracking-widest mb-2 font-medium">Journal</p>
-          <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">Trade Log</h1>
-          <p className="text-[#444] text-xs font-light mt-1">
+          <p className="page-label">Journal</p>
+          <h1 className="page-title">Trade Log</h1>
+          <p className="text-xs font-light mt-1" style={{ color: 'var(--text-3)' }}>
             {trades.length} {trades.length === 1 ? 'trade' : 'trades'} recorded
           </p>
         </div>
@@ -318,9 +318,9 @@ export default function JournalPage() {
                 color: totalPnl >= 0 ? 'text-emerald-400' : 'text-red-400',
               },
             ].map(({ label, value, color }) => (
-              <div key={label} className="bg-[#0f0f0f] border border-white/[0.05] rounded-2xl px-4 py-4">
-                <p className="text-[10px] text-[#444] mb-2 uppercase tracking-widest font-medium">{label}</p>
-                <p className={`text-xl md:text-2xl font-black tracking-tight ${color}`}>{value}</p>
+              <div key={label} className="stat-tile px-4 py-4">
+                <p className="stat-tile-label">{label}</p>
+                <p className={`stat-tile-value ${color}`}>{value}</p>
               </div>
             ))}
           </div>
@@ -332,10 +332,10 @@ export default function JournalPage() {
         {view === 'calendar' ? (
           <PnlCalendar trades={trades} />
         ) : (
-          <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl overflow-hidden">
+          <div className="overflow-hidden rounded-[10px]" style={{ background: 'var(--surface-1)', border: '1px solid rgba(255,255,255,0.07)' }}>
             {/* Search */}
             {trades.length > 0 && (
-              <div className="px-4 md:px-6 py-4 border-b border-white/[0.04]">
+              <div className="px-4 md:px-6 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="relative max-w-xs">
                   <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#333]" />
                   <input

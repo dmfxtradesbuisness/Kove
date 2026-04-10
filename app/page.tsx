@@ -1,273 +1,388 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { BookOpen, BarChart2, Sparkles, ArrowRight, TrendingUp, Check, TrendingDown } from 'lucide-react'
+import { TrendingUp, ArrowRight, BarChart2, BookOpen, Sparkles, CheckCircle2, ChevronRight } from 'lucide-react'
 
-/* ── Scroll-reveal hook ───────────────────────────────── */
+/* ── Scroll reveal ── */
 function useReveal() {
   useEffect(() => {
     const els = document.querySelectorAll('.reveal')
     const io = new IntersectionObserver(
       (entries) => entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add('visible') }),
-      { threshold: 0.12 }
+      { threshold: 0.1 }
     )
     els.forEach((el) => io.observe(el))
     return () => io.disconnect()
   }, [])
 }
 
-/* ── Mouse-parallax glow ─────────────────────────────── */
-function useParallax(strength = 0.03) {
-  const [pos, setPos] = useState({ x: 0, y: 0 })
-  useEffect(() => {
-    const handle = (e: MouseEvent) => {
-      setPos({
-        x: (e.clientX - window.innerWidth / 2) * strength,
-        y: (e.clientY - window.innerHeight / 2) * strength,
-      })
-    }
-    window.addEventListener('mousemove', handle)
-    return () => window.removeEventListener('mousemove', handle)
-  }, [strength])
-  return pos
-}
-
-/* ── Live ticker data ────────────────────────────────── */
 const TICKER = [
   { pair: 'EUR/USD', price: '1.0854', change: '+0.12%', up: true },
   { pair: 'GBP/USD', price: '1.2634', change: '-0.08%', up: false },
+  { pair: 'XAU/USD', price: '2,345.10', change: '+0.54%', up: true },
   { pair: 'USD/JPY', price: '149.22', change: '+0.31%', up: true },
-  { pair: 'XAU/USD', price: '2,345', change: '+0.54%', up: true },
+  { pair: 'BTC/USD', price: '68,210', change: '+1.24%', up: true },
   { pair: 'GBP/JPY', price: '192.34', change: '-0.19%', up: false },
+  { pair: 'NAS100', price: '18,420', change: '+0.44%', up: true },
   { pair: 'AUD/USD', price: '0.6482', change: '+0.07%', up: true },
   { pair: 'USD/CHF', price: '0.9012', change: '-0.22%', up: false },
-  { pair: 'NZD/USD', price: '0.5934', change: '+0.15%', up: true },
+  { pair: 'ETH/USD', price: '3,412', change: '+0.91%', up: true },
+]
+
+const FEATURES = [
+  {
+    icon: BookOpen,
+    label: 'Trade Journal',
+    title: 'Log every trade with context.',
+    body: 'Entry, exit, stop, target, lot size, P&L, screenshots, and notes. Structured enough to be useful. Fast enough to not get in the way.',
+  },
+  {
+    icon: BarChart2,
+    label: 'Performance Analytics',
+    title: 'See how you actually trade.',
+    body: 'Win rate, equity curve, discipline score, streak tracking, pair breakdown. Data that tells the truth — not what you want to hear.',
+  },
+  {
+    icon: Sparkles,
+    label: 'AI Insights',
+    title: 'Pattern detection, not motivation.',
+    body: 'AI reads your trade history and surfaces real mistakes, recurring patterns, and behavioral tendencies. Specific. Actionable. Pro plan.',
+  },
+]
+
+const STATS = [
+  { value: '180+', label: 'Instruments tracked' },
+  { value: '100%', label: 'Exact P&L — no rounding' },
+  { value: '4', label: 'Discipline factors scored' },
 ]
 
 export default function LandingPage() {
   useReveal()
-  const parallax = useParallax(0.025)
-  const heroRef = useRef<HTMLDivElement>(null)
+  const [tickerItems] = useState([...TICKER, ...TICKER])
 
   return (
-    <div className="min-h-screen bg-[#080808] text-[#f0f0f0] overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden" style={{ background: 'var(--base)', color: 'var(--text-1)' }}>
 
-      {/* ── Animated background grid ─────────────────── */}
-      <div
-        className="fixed inset-0 pointer-events-none z-0"
+      {/* ── Nav ─────────────────────────────────────────── */}
+      <nav
+        className="fixed top-0 left-0 right-0 z-50"
         style={{
-          backgroundImage: `
-            linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px)
-          `,
-          backgroundSize: '80px 80px',
+          background: 'rgba(11,13,16,0.85)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          backdropFilter: 'blur(20px)',
         }}
-      />
-
-      {/* ── Nav ─────────────────────────────────────── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/[0.05] bg-[#080808]/80 backdrop-blur-xl">
-        <div className="max-w-6xl mx-auto px-5 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-500 transition-all duration-300 group-hover:shadow-[0_0_16px_rgba(59,130,246,0.5)]">
-              <TrendingUp className="w-4 h-4 text-white" />
+      >
+        <div className="max-w-5xl mx-auto px-5 h-[56px] flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div
+              className="w-[28px] h-[28px] rounded-md flex items-center justify-center transition-all duration-200"
+              style={{ background: 'var(--accent)', boxShadow: '0 2px 8px rgba(37,99,235,0.35)' }}
+            >
+              <TrendingUp className="w-[14px] h-[14px] text-white" />
             </div>
-            <span className="font-semibold text-white tracking-tight text-sm group-hover:text-blue-100 transition-colors duration-200">KoveFX</span>
+            <span className="font-display font-semibold text-[#F1F5F9] text-sm tracking-tight">KoveFX</span>
           </Link>
           <div className="flex items-center gap-2">
             <Link
               href="/login"
-              className="relative text-[#555] hover:text-white text-sm font-medium px-4 py-2 rounded-xl transition-all duration-200 hover:bg-white/[0.04]"
+              className="text-[#475569] hover:text-[#94A3B8] text-sm font-medium px-4 py-2 rounded-md transition-colors duration-150"
+              style={{ fontFamily: 'var(--font-display)' }}
             >
               Sign in
             </Link>
             <Link
               href="/signup"
-              className="bg-white hover:bg-blue-50 text-black text-sm font-bold px-4 py-2 rounded-xl transition-all duration-200 hover:shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:scale-[1.02] active:scale-[0.98]"
+              className="text-white text-sm font-semibold px-4 py-2 rounded-md transition-all duration-150 hover:opacity-90"
+              style={{
+                fontFamily: 'var(--font-display)',
+                background: 'var(--accent)',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+              }}
             >
-              Get Started
+              Get started
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* ── Hero ─────────────────────────────────────── */}
-      <section ref={heroRef} className="relative pt-32 pb-24 px-5 min-h-[92vh] flex flex-col items-center justify-center z-10">
+      {/* ── Hero ─────────────────────────────────────────── */}
+      <section className="relative pt-[120px] pb-[80px] px-5">
+        {/* Subtle grid */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: `linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)`,
+            backgroundSize: '64px 64px',
+            maskImage: 'radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 100%)',
+          }}
+        />
 
-        {/* Animated atmospheric blobs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div
-            className="blob-1 absolute top-[2%] right-[-8%] w-[700px] h-[600px] rounded-full blur-[160px] opacity-50"
-            style={{
-              background: 'radial-gradient(ellipse, rgba(59,130,246,0.18) 0%, rgba(99,102,241,0.08) 50%, transparent 80%)',
-              transform: `translate(${parallax.x * 1.5}px, ${parallax.y * 1.5}px)`,
-            }}
-          />
-          <div
-            className="blob-2 absolute bottom-[5%] left-[-8%] w-[550px] h-[450px] rounded-full blur-[140px] opacity-40"
-            style={{
-              background: 'radial-gradient(ellipse, rgba(99,102,241,0.14) 0%, rgba(59,130,246,0.06) 60%, transparent 80%)',
-              transform: `translate(${-parallax.x}px, ${-parallax.y}px)`,
-            }}
-          />
-          <div
-            className="blob-3 absolute top-[35%] left-[40%] w-[500px] h-[300px] rounded-full blur-[120px]"
-            style={{
-              background: 'radial-gradient(ellipse, rgba(59,130,246,0.1) 0%, transparent 70%)',
-              transform: `translate(${parallax.x * 0.5}px, ${parallax.y * 0.5}px)`,
-            }}
-          />
-        </div>
+        {/* Single atmospheric glow — not a blob, just depth */}
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse at 50% 0%, rgba(37,99,235,0.14) 0%, transparent 70%)',
+            filter: 'blur(40px)',
+          }}
+        />
 
-        {/* Floating forex data nodes */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden hidden md:block">
-          {[
-            { pair: 'EUR/USD', price: '1.08542', pos: 'top-[27%] left-[7%]', cls: 'node-float', up: true },
-            { pair: 'GBP/JPY', price: '192.34', pos: 'top-[20%] right-[10%]', cls: 'node-float-2', up: false },
-            { pair: 'XAU/USD', price: '2,345', pos: 'top-[57%] left-[4%]', cls: 'node-float-3', up: true },
-            { pair: 'USD/JPY', price: '149.22', pos: 'top-[52%] right-[6%]', cls: 'node-float-4', up: true },
-          ].map(({ pair, price, pos, cls, up }) => (
-            <div key={pair} className={`absolute ${pos} ${cls}`}>
-              <div className="flex items-center gap-2 bg-[#111]/80 border border-white/[0.06] rounded-xl px-3 py-2 backdrop-blur-sm">
-                <div className={`w-1.5 h-1.5 rounded-full ${up ? 'bg-emerald-400' : 'bg-red-400'}`}
-                  style={{ boxShadow: up ? '0 0 6px rgba(52,211,153,0.6)' : '0 0 6px rgba(248,113,113,0.6)' }}
-                />
-                <div>
-                  <p className="text-[#666] text-[10px] font-medium">{pair}</p>
-                  <p className="text-white text-xs font-mono font-semibold">{price}</p>
-                </div>
-                {up ? (
-                  <TrendingUp className="w-3 h-3 text-emerald-400 ml-1" />
-                ) : (
-                  <TrendingDown className="w-3 h-3 text-red-400 ml-1" />
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Hero content */}
         <div className="relative max-w-4xl mx-auto text-center">
-          {/* Animated badge */}
-          <div className="badge-pulse inline-flex items-center gap-2 bg-blue-500/[0.08] border border-blue-500/20 text-blue-400/90 text-xs font-medium px-4 py-1.5 rounded-full mb-8 tracking-wide animate-fade-in">
-            <Sparkles className="w-3 h-3 animate-pulse" />
-            AI-Powered Trading Journal
+          {/* Eyebrow */}
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-8 animate-fade-in"
+            style={{
+              fontFamily: 'var(--font-display)',
+              background: 'rgba(37,99,235,0.1)',
+              border: '1px solid rgba(37,99,235,0.2)',
+              color: '#93C5FD',
+              letterSpacing: '0.04em',
+            }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block" />
+            Built for serious traders
           </div>
 
           {/* Headline */}
           <h1
-            className="text-[clamp(2.8rem,8vw,5.5rem)] font-black leading-[1.02] tracking-tight mb-6 text-white animate-fade-in-up"
-            style={{ animationDelay: '0.1s' }}
+            className="animate-fade-in-up"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(2.4rem, 6vw, 3.75rem)',
+              fontWeight: 700,
+              letterSpacing: '-0.03em',
+              lineHeight: 1.08,
+              color: 'var(--text-1)',
+              marginBottom: '1.25rem',
+            }}
           >
-            Trade smarter,<br />
-            <span
-              className="text-transparent bg-clip-text"
-              style={{
-                backgroundImage: 'linear-gradient(135deg, #60a5fa 0%, #a5b4fc 40%, #60a5fa 100%)',
-                backgroundSize: '200% auto',
-                animation: 'shimmer 4s linear infinite',
-              }}
-            >
-              grow faster.
-            </span>
+            This tool shows you how you
+            <br />
+            <span style={{ color: '#60A5FA' }}>actually trade.</span>
           </h1>
 
+          {/* Sub */}
           <p
-            className="text-base md:text-lg text-[#555] max-w-md mx-auto mb-10 leading-relaxed font-light animate-fade-in-up"
-            style={{ animationDelay: '0.2s' }}
+            className="animate-fade-in reveal-delay-1 max-w-lg mx-auto"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '1.0625rem',
+              color: 'var(--text-2)',
+              fontWeight: 400,
+              lineHeight: 1.65,
+              marginBottom: '2.5rem',
+            }}
           >
-            Log every trade, track your edge, and let AI surface the patterns that separate profitable traders from the rest.
+            KoveFX is a trading journal and performance system. Log trades, track patterns, measure discipline — across every market.
           </p>
 
-          {/* CTAs */}
-          <div
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 animate-fade-in-up"
-            style={{ animationDelay: '0.3s' }}
-          >
+          {/* CTA row */}
+          <div className="flex items-center justify-center gap-3 flex-wrap animate-fade-in reveal-delay-2">
             <Link
               href="/signup"
-              className="w-full sm:w-auto bg-white text-black text-sm font-bold px-8 py-4 rounded-2xl flex items-center justify-center gap-2 group transition-all duration-300 hover:bg-blue-50 hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] hover:scale-[1.03] active:scale-[0.98]"
+              className="inline-flex items-center gap-2 text-white text-sm font-semibold px-6 py-3 rounded-lg transition-all duration-150 hover:opacity-90 active:scale-[0.98]"
+              style={{
+                fontFamily: 'var(--font-display)',
+                background: 'var(--accent)',
+                boxShadow: '0 2px 8px rgba(37,99,235,0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
+              }}
             >
-              Open App
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
+              Start free
+              <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
-              href="#pricing"
-              className="w-full sm:w-auto border border-white/10 text-[#666] text-sm font-medium px-8 py-4 rounded-2xl flex items-center justify-center transition-all duration-300 hover:border-white/25 hover:text-white hover:bg-white/[0.03] hover:scale-[1.02]"
+              href="/login"
+              className="inline-flex items-center gap-2 text-sm font-medium px-6 py-3 rounded-lg transition-all duration-150"
+              style={{
+                fontFamily: 'var(--font-display)',
+                color: 'var(--text-2)',
+                border: '1px solid rgba(255,255,255,0.08)',
+              }}
             >
-              See Pricing
+              Sign in
             </Link>
           </div>
+        </div>
+      </section>
 
-          {/* Scroll indicator */}
+      {/* ── Ticker ─────────────────────────────────────── */}
+      <div
+        className="relative overflow-hidden py-3"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(17,19,24,0.6)' }}
+      >
+        <div className="flex gap-10 ticker-track whitespace-nowrap">
+          {tickerItems.map((t, i) => (
+            <div key={i} className="flex items-center gap-2.5 shrink-0">
+              <span className="text-[13px] font-semibold text-[#94A3B8]" style={{ fontFamily: 'var(--font-display)' }}>{t.pair}</span>
+              <span className="text-[13px] text-[#475569] font-mono">{t.price}</span>
+              <span className={`text-[11px] font-semibold ${t.up ? 'text-emerald-400' : 'text-red-400'}`}>{t.change}</span>
+            </div>
+          ))}
+        </div>
+        <div className="absolute left-0 top-0 bottom-0 w-20 pointer-events-none" style={{ background: 'linear-gradient(to right, var(--base), transparent)' }} />
+        <div className="absolute right-0 top-0 bottom-0 w-20 pointer-events-none" style={{ background: 'linear-gradient(to left, var(--base), transparent)' }} />
+      </div>
+
+      {/* ── Dashboard preview panel ─────────────────────── */}
+      <section className="py-20 px-5">
+        <div className="max-w-5xl mx-auto reveal">
           <div
-            className="absolute -bottom-16 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2 text-[#333] animate-fade-in"
-            style={{ animationDelay: '1s' }}
+            className="rounded-xl overflow-hidden"
+            style={{
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'var(--surface-1)',
+              boxShadow: '0 32px 64px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.4)',
+            }}
           >
-            <div className="w-6 h-10 rounded-full border border-[#252525] flex items-start justify-center pt-2">
+            {/* Window chrome */}
+            <div
+              className="flex items-center gap-1.5 px-4 py-3"
+              style={{ background: 'var(--surface-2)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              {['#FF5F57', '#FEBC2E', '#28C840'].map((c) => (
+                <div key={c} className="w-3 h-3 rounded-full" style={{ background: c, opacity: 0.7 }} />
+              ))}
               <div
-                className="w-1 h-2 bg-[#444] rounded-full"
-                style={{ animation: 'nodeFloat 1.8s ease-in-out infinite' }}
-              />
+                className="flex-1 mx-3 h-6 rounded text-[11px] flex items-center px-3"
+                style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-3)', fontFamily: 'var(--font-body)' }}
+              >
+                app.kovefx.com/journal
+              </div>
+            </div>
+
+            {/* Mock dashboard content */}
+            <div className="p-6 grid grid-cols-3 gap-4">
+              {/* Sidebar mock */}
+              <div className="hidden md:flex flex-col gap-1 col-span-0 w-32">
+                {['Journal', 'Stats', 'Goals', 'Gallery', 'AI Insights'].map((item, i) => (
+                  <div
+                    key={item}
+                    className="flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium"
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      background: i === 0 ? 'rgba(37,99,235,0.12)' : 'transparent',
+                      color: i === 0 ? '#60A5FA' : 'var(--text-3)',
+                    }}
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: i === 0 ? '#3B82F6' : 'var(--text-4)' }} />
+                    {item}
+                  </div>
+                ))}
+              </div>
+
+              {/* Main content mock */}
+              <div className="col-span-3 md:col-span-2 flex flex-col gap-4">
+                {/* Stats row */}
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'Total P&L', value: '+$4,820.00', pos: true },
+                    { label: 'Win Rate', value: '63.2%', pos: true },
+                    { label: 'Trades', value: '47', pos: null },
+                  ].map(({ label, value, pos }) => (
+                    <div key={label} className="rounded-lg p-3.5" style={{ background: 'var(--surface-2)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <p className="text-[10px] mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</p>
+                      <p className="text-base font-semibold" style={{ fontFamily: 'var(--font-display)', color: pos === true ? '#34D399' : pos === false ? '#F87171' : 'var(--text-1)' }}>{value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Equity curve mock */}
+                <div className="rounded-lg p-4" style={{ background: 'var(--surface-2)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <p className="text-[10px] mb-3" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Equity Curve</p>
+                  <svg viewBox="0 0 300 60" className="w-full" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="mockGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
+                        <stop offset="100%" stopColor="#10b981" stopOpacity="0.02" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M 0 50 L 30 44 L 60 48 L 90 38 L 120 42 L 150 30 L 180 22 L 210 18 L 240 12 L 270 8 L 300 5 L 300 60 L 0 60 Z" fill="url(#mockGrad)" />
+                    <path d="M 0 50 L 30 44 L 60 48 L 90 38 L 120 42 L 150 30 L 180 22 L 210 18 L 240 12 L 270 8 L 300 5" fill="none" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+
+                {/* Recent trades mock */}
+                <div className="rounded-lg overflow-hidden" style={{ background: 'var(--surface-2)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  {[
+                    { pair: 'EUR/USD', type: 'BUY', pnl: '+$240.00', pos: true, date: 'Apr 9' },
+                    { pair: 'XAU/USD', type: 'SELL', pnl: '-$80.00', pos: false, date: 'Apr 8' },
+                    { pair: 'GBP/USD', type: 'BUY', pnl: '+$185.50', pos: true, date: 'Apr 7' },
+                  ].map((t, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between px-4 py-2.5"
+                      style={{ borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+                          style={{
+                            fontFamily: 'var(--font-display)',
+                            background: t.type === 'BUY' ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+                            color: t.type === 'BUY' ? '#34D399' : '#F87171',
+                          }}
+                        >{t.type}</span>
+                        <span className="text-xs font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-1)' }}>{t.pair}</span>
+                        <span className="text-[11px]" style={{ color: 'var(--text-3)' }}>{t.date}</span>
+                      </div>
+                      <span className="text-xs font-semibold" style={{ fontFamily: 'var(--font-display)', color: t.pos ? '#34D399' : '#F87171' }}>{t.pnl}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Live ticker strip ────────────────────────── */}
-      <div className="relative z-10 border-t border-b border-white/[0.04] py-3 overflow-hidden bg-[#080808]/60 backdrop-blur-sm">
-        <div className="ticker-track flex gap-10 w-max">
-          {[...TICKER, ...TICKER].map(({ pair, price, change, up }, i) => (
-            <div key={i} className="flex items-center gap-2.5 shrink-0 px-2">
-              <span className="text-[#555] text-xs font-medium">{pair}</span>
-              <span className="text-white text-xs font-mono">{price}</span>
-              <span className={`text-[11px] font-semibold ${up ? 'text-emerald-400' : 'text-red-400'}`}>
-                {change}
-              </span>
-            </div>
-          ))}
+      {/* ── Stats bar ──────────────────────────────────── */}
+      <section className="py-12 px-5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="max-w-4xl mx-auto reveal">
+          <div className="grid grid-cols-3 gap-8 md:gap-16 text-center">
+            {STATS.map(({ value, label }) => (
+              <div key={label}>
+                <p className="text-2xl md:text-3xl font-semibold mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-1)' }}>{value}</p>
+                <p className="text-sm" style={{ color: 'var(--text-3)', fontFamily: 'var(--font-body)' }}>{label}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── Features ─────────────────────────────────── */}
-      <section className="relative z-10 py-24 md:py-32 px-5 border-t border-white/[0.04]">
-        <div className="max-w-5xl mx-auto">
-          <div className="mb-16 md:mb-20 reveal">
-            <p className="text-[#444] text-xs uppercase tracking-widest mb-4 font-medium">Features</p>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight text-white leading-tight max-w-2xl">
-              Everything you need<br className="hidden md:block" /> to improve
+      {/* ── Features ───────────────────────────────────── */}
+      <section className="py-20 px-5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-14 reveal">
+            <p className="text-[11px] font-medium mb-3" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              What it does
+            </p>
+            <h2 className="text-3xl md:text-4xl font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-1)', letterSpacing: '-0.025em' }}>
+              Everything a trader actually needs.
+              <br />
+              <span style={{ color: 'var(--text-3)' }}>Nothing they don&apos;t.</span>
             </h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-4">
-            {[
-              { icon: BookOpen, title: 'Trade Journal', description: 'Log every entry, exit, stop loss, take profit, and lot size. Attach screenshots and notes for each trade.', tag: '01', delay: '' },
-              { icon: BarChart2, title: 'Performance Stats', description: 'Win rate, total P&L, profit factor, average win/loss. Clean stats that show exactly where you stand.', tag: '02', delay: 'reveal-delay-2' },
-              { icon: Sparkles, title: 'AI Insights', description: 'GPT-4 analyzes your trades to identify mistakes, detect patterns, and give specific actionable feedback.', tag: '03', delay: 'reveal-delay-3' },
-            ].map(({ icon: Icon, title, description, tag, delay }) => (
+            {FEATURES.map(({ icon: Icon, label, title, body }, i) => (
               <div
-                key={title}
-                className={`reveal ${delay} group relative bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-7 flex flex-col gap-5 cursor-default
-                  transition-all duration-500
-                  hover:-translate-y-2
-                  hover:border-blue-500/20
-                  hover:shadow-[0_20px_60px_rgba(0,0,0,0.5),0_0_0_1px_rgba(59,130,246,0.08)]`}
+                key={label}
+                className={`reveal reveal-delay-${i + 1} p-6 rounded-xl flex flex-col gap-4`}
+                style={{
+                  background: 'var(--surface-1)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                }}
               >
-                {/* Card glow on hover */}
-                <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                  style={{ background: 'radial-gradient(ellipse at top left, rgba(59,130,246,0.06) 0%, transparent 60%)' }}
-                />
-                <div className="flex items-start justify-between relative z-10">
-                  <div className="w-11 h-11 rounded-2xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center
-                    group-hover:bg-blue-500/12 group-hover:border-blue-500/25 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.15)]
-                    transition-all duration-400">
-                    <Icon className="w-5 h-5 text-[#444] group-hover:text-blue-400 transition-colors duration-300" />
-                  </div>
-                  <span className="text-[#222] text-xs font-mono group-hover:text-[#444] transition-colors duration-300">{tag}</span>
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.2)' }}
+                >
+                  <Icon className="w-4 h-4" style={{ color: '#60A5FA' }} />
                 </div>
-                <div className="relative z-10">
-                  <h3 className="font-bold text-[#ccc] group-hover:text-white mb-2 text-base tracking-tight transition-colors duration-300">{title}</h3>
-                  <p className="text-[#3a3a3a] group-hover:text-[#555] text-sm leading-relaxed font-light transition-colors duration-300">{description}</p>
+                <div>
+                  <p className="text-[10px] font-medium mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-3)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</p>
+                  <p className="text-base font-semibold mb-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-1)', letterSpacing: '-0.01em' }}>{title}</p>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>{body}</p>
                 </div>
               </div>
             ))}
@@ -275,142 +390,129 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Stats bar ────────────────────────────────── */}
-      <div className="relative z-10 border-t border-white/[0.04] py-14 px-5">
-        <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 reveal">
-          {[
-            { value: '10k+', label: 'Trades Analyzed' },
-            { value: '94%', label: 'Pattern Accuracy' },
-            { value: '$2.4M', label: 'P&L Tracked' },
-            { value: '< 2s', label: 'AI Response Time' },
-          ].map(({ value, label }, i) => (
-            <div key={label} className={`text-center reveal reveal-delay-${i + 1}`}>
-              <p className="text-3xl md:text-4xl font-black text-white tracking-tight mb-1">{value}</p>
-              <p className="text-[#444] text-xs font-light tracking-wide">{label}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Pricing ──────────────────────────────────── */}
-      <section id="pricing" className="relative z-10 py-24 md:py-32 px-5 border-t border-white/[0.04]">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-16 md:mb-20 reveal">
-            <p className="text-[#444] text-xs uppercase tracking-widest mb-4 font-medium">Pricing</p>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight text-white leading-tight">Simple pricing</h2>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-5 max-w-2xl">
-            {/* Free */}
-            <div className="reveal group bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-7 flex flex-col
-              transition-all duration-500 hover:-translate-y-2 hover:border-white/10 hover:shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
-              <p className="text-[#444] text-xs uppercase tracking-widest mb-5 font-medium">Free</p>
-              <div className="flex items-end gap-1 mb-7">
-                <span className="text-5xl font-black text-white tracking-tight group-hover:text-[#f0f0f0] transition-colors">$0</span>
-                <span className="text-[#444] text-sm mb-2 font-light">/mo</span>
-              </div>
-              <ul className="flex flex-col gap-3.5 mb-8 flex-1">
-                {['Unlimited trade logging', 'Performance stats', 'Screenshot uploads', 'Trade history'].map((f) => (
-                  <li key={f} className="flex items-center gap-2.5 text-sm text-[#555] group-hover:text-[#666] transition-colors">
-                    <Check className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/signup"
-                className="border border-white/[0.08] text-[#666] text-sm font-medium py-3.5 rounded-2xl text-center
-                  transition-all duration-300 hover:border-white/20 hover:text-white hover:bg-white/[0.03]"
-              >
-                Get Started
-              </Link>
-            </div>
-
-            {/* Pro — animated border glow */}
-            <div className="reveal reveal-delay-2 group relative bg-[#0a0a0a] rounded-3xl p-7 flex flex-col border-glow border
-              transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_60px_rgba(59,130,246,0.15)]">
-              {/* Inner glow */}
-              <div className="absolute inset-0 rounded-3xl pointer-events-none"
-                style={{ background: 'radial-gradient(ellipse at top right, rgba(59,130,246,0.08) 0%, transparent 55%)' }}
-              />
-              <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                style={{ background: 'radial-gradient(ellipse at center, rgba(59,130,246,0.06) 0%, transparent 70%)' }}
-              />
-
-              <div className="absolute -top-3.5 left-6 z-10">
-                <span className="bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-full tracking-widest uppercase">
-                  Popular
-                </span>
-              </div>
-
-              <p className="text-blue-400/70 text-xs uppercase tracking-widest mb-5 font-medium relative z-10">Pro</p>
-              <div className="flex items-end gap-1 mb-7 relative z-10">
-                <span className="text-5xl font-black text-white tracking-tight">$12</span>
-                <span className="text-[#444] text-sm mb-2 font-light">/mo</span>
-              </div>
-              <ul className="flex flex-col gap-3.5 mb-8 flex-1 relative z-10">
-                {['Everything in Free', 'AI trade analysis', 'Mistake identification', 'Pattern detection', 'Personalized feedback'].map((f) => (
-                  <li key={f} className="flex items-center gap-2.5 text-sm text-[#666] group-hover:text-[#888] transition-colors">
-                    <Check className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href="/signup"
-                className="relative z-10 bg-blue-600 text-white text-sm font-bold py-3.5 rounded-2xl text-center block
-                  transition-all duration-300 hover:bg-blue-500 hover:shadow-[0_0_30px_rgba(59,130,246,0.4)] active:scale-[0.98]"
-              >
-                Start with Pro
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA banner ──────────────────────────────── */}
-      <section className="relative z-10 py-24 px-5 border-t border-white/[0.04]">
-        <div className="max-w-3xl mx-auto text-center reveal">
-          <div
-            className="relative rounded-3xl p-12 md:p-16 overflow-hidden border border-white/[0.06]"
-            style={{ background: 'linear-gradient(135deg, #0f0f0f 0%, #111827 100%)' }}
-          >
-            {/* Glow blob inside banner */}
-            <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-[80px] opacity-40 pointer-events-none"
-              style={{ background: 'radial-gradient(ellipse, rgba(59,130,246,0.2) 0%, transparent 70%)' }}
-            />
-            <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-4 relative z-10">
-              Start trading smarter today
-            </h2>
-            <p className="text-[#555] text-sm md:text-base font-light mb-8 max-w-md mx-auto relative z-10">
-              Join traders who use KoveFX to track, analyze, and improve their performance.
+      {/* ── What you get list ──────────────────────────── */}
+      <section className="py-20 px-5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-12 items-center reveal">
+          <div>
+            <p className="text-[11px] font-medium mb-3" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              Included on every plan
             </p>
-            <Link
-              href="/signup"
-              className="relative z-10 inline-flex items-center gap-2 bg-white text-black text-sm font-bold px-8 py-4 rounded-2xl
-                transition-all duration-300 hover:bg-blue-50 hover:shadow-[0_0_40px_rgba(255,255,255,0.15)] hover:scale-[1.04] active:scale-[0.98] group"
-            >
-              Get Started Free
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
-            </Link>
+            <h2 className="text-2xl md:text-3xl font-semibold mb-6" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-1)', letterSpacing: '-0.02em' }}>
+              The full journal. Free.
+            </h2>
+            <div className="flex flex-col gap-3">
+              {[
+                'Trade log with 180+ instruments',
+                'Screenshot gallery with filters',
+                'P&L calendar — Topstep-style',
+                'Equity curve and win rate stats',
+                'Streak tracking and discipline score',
+                'Pre-trade checklist system',
+                'Weekly and monthly performance wrap',
+                'Goals and milestone tracking',
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-3">
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#34D399' }} />
+                  <span className="text-sm" style={{ color: 'var(--text-2)' }}>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div
+            className="rounded-xl p-6 flex flex-col gap-5"
+            style={{
+              background: 'var(--surface-1)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            }}
+          >
+            <div>
+              <p className="text-[10px] font-medium mb-1" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-3)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Pro Plan</p>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-4xl font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-1)' }}>$12</span>
+                <span className="text-sm" style={{ color: 'var(--text-3)' }}>/month</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2.5">
+              {[
+                'Everything in free',
+                'AI trade analysis (GPT-4o)',
+                'Pattern & mistake detection',
+                'Goals & milestone tracking',
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#60A5FA' }} />
+                  <span className="text-sm" style={{ color: 'var(--text-2)' }}>{item}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-2 pt-1">
+              <Link href="/signup" className="btn-blue w-full gap-2">
+                Get Pro
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+              <Link href="/signup" className="btn-secondary w-full">
+                Start free
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── Footer ───────────────────────────────────── */}
-      <footer className="relative z-10 border-t border-white/[0.04] py-10 px-5">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 group">
-            <div className="w-6 h-6 bg-blue-600 rounded-md flex items-center justify-center group-hover:shadow-[0_0_12px_rgba(59,130,246,0.4)] transition-all duration-300">
-              <TrendingUp className="w-3.5 h-3.5 text-white" />
+      {/* ── CTA ─────────────────────────────────────────── */}
+      <section className="py-24 px-5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="max-w-2xl mx-auto text-center reveal">
+          <h2
+            className="mb-4"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+              fontWeight: 700,
+              letterSpacing: '-0.025em',
+              color: 'var(--text-1)',
+            }}
+          >
+            Start journaling. Start improving.
+          </h2>
+          <p className="mb-8 text-base" style={{ color: 'var(--text-2)' }}>
+            Free to use. No card required. Set up in under two minutes.
+          </p>
+          <Link
+            href="/signup"
+            className="inline-flex items-center gap-2 text-white text-sm font-semibold px-7 py-3.5 rounded-lg transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{
+              fontFamily: 'var(--font-display)',
+              background: 'var(--accent)',
+              boxShadow: '0 2px 12px rgba(37,99,235,0.45)',
+            }}
+          >
+            Create your account
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </section>
+
+      {/* ── Footer ──────────────────────────────────────── */}
+      <footer
+        className="py-8 px-5"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+      >
+        <div className="max-w-5xl mx-auto flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-[22px] h-[22px] rounded flex items-center justify-center"
+              style={{ background: 'var(--accent)' }}
+            >
+              <TrendingUp className="w-[11px] h-[11px] text-white" />
             </div>
-            <span className="font-semibold text-sm text-[#555] group-hover:text-[#888] transition-colors">KoveFX</span>
+            <span className="text-sm font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-3)' }}>KoveFX</span>
           </div>
-          <div className="flex items-center gap-6 text-[#333] text-sm">
-            <Link href="/login" className="hover:text-white transition-colors duration-200">Sign in</Link>
-            <Link href="/signup" className="hover:text-white transition-colors duration-200">Join</Link>
-            <span>© {new Date().getFullYear()} KoveFX</span>
-          </div>
+          <p className="text-xs" style={{ color: 'var(--text-4)' }}>
+            Built by DMFX · Trading performance system · {new Date().getFullYear()}
+          </p>
         </div>
       </footer>
     </div>
