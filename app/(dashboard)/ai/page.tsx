@@ -98,8 +98,8 @@ export default function AIPage() {
 
         <div className="max-w-md animate-fade-in-up">
           <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-8 mb-5">
-            <div className="w-14 h-14 bg-blue-500/8 border border-blue-500/15 rounded-2xl flex items-center justify-center mb-6">
-              <Lock className="w-6 h-6 text-blue-400/70" />
+            <div className="w-14 h-14 bg-violet-500/8 border border-violet-500/15 rounded-2xl flex items-center justify-center mb-6">
+              <Lock className="w-6 h-6 text-violet-400/70" />
             </div>
             <h2 className="text-xl font-black text-white mb-2 tracking-tight">
               Upgrade to Pro
@@ -116,7 +116,7 @@ export default function AIPage() {
                 'Detailed entry/exit feedback',
               ].map((f) => (
                 <div key={f} className="flex items-center gap-3">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-400/70 flex-shrink-0" />
+                  <Sparkles className="w-3.5 h-3.5 text-violet-400/70 flex-shrink-0" />
                   <span className="text-sm text-[#666] font-light">{f}</span>
                 </div>
               ))}
@@ -215,10 +215,10 @@ export default function AIPage() {
             )}
 
             {analysis.patterns && (
-              <div className="bg-[#0f0f0f] border border-blue-500/10 rounded-3xl p-5 md:p-6">
+              <div className="bg-[#0f0f0f] border border-violet-500/10 rounded-3xl p-5 md:p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 bg-blue-500/8 border border-blue-500/15 rounded-xl flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-blue-400/70" />
+                  <div className="w-8 h-8 bg-violet-500/8 border border-violet-500/15 rounded-xl flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 text-violet-400/70" />
                   </div>
                   <h3 className="text-sm font-bold text-white tracking-tight">Pattern Detection</h3>
                 </div>

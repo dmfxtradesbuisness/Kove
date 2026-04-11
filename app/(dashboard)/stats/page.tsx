@@ -624,7 +624,7 @@ export default function StatsPage() {
       {tab === 'leaderboard' && (
         <div className="max-w-lg">
           {userRank && (
-            <div className="flex items-center gap-3 bg-blue-500/8 border border-blue-500/15 rounded-2xl px-5 py-4 mb-4 text-blue-400 text-sm font-light">
+            <div className="flex items-center gap-3 bg-violet-500/8 border border-violet-500/15 rounded-2xl px-5 py-4 mb-4 text-violet-400 text-sm font-light">
               <Trophy className="w-4 h-4 flex-shrink-0" />
               You are ranked <span className="font-bold text-white ml-1 mr-1">#{userRank}</span> on the leaderboard
             </div>
@@ -648,7 +648,7 @@ export default function StatsPage() {
             ) : (
               <div className="divide-y divide-white/[0.04]">
                 {leaderboard.map((entry) => (
-                  <div key={entry.rank} className={`px-6 py-4 flex items-center justify-between ${entry.isYou ? 'bg-blue-500/[0.04]' : ''}`}>
+                  <div key={entry.rank} className={`px-6 py-4 flex items-center justify-between ${entry.isYou ? 'bg-violet-500/[0.04]' : ''}`}>
                     <div className="flex items-center gap-4">
                       <span className={`text-sm font-black w-6 text-center ${entry.rank <= 3 ? 'text-yellow-400' : 'text-[#444]'}`}>
                         {entry.rank <= 3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : `#${entry.rank}`}
@@ -656,7 +656,7 @@ export default function StatsPage() {
                       <div>
                         <p className="text-sm font-semibold text-white">
                           {entry.label}
-                          {entry.isYou && <span className="ml-2 text-[10px] text-blue-400 font-bold bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 rounded-full">YOU</span>}
+                          {entry.isYou && <span className="ml-2 text-[10px] text-violet-400 font-bold bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 rounded-full">YOU</span>}
                         </p>
                         <p className="text-xs text-[#444] font-light mt-0.5">{entry.totalTrades} trades</p>
                       </div>

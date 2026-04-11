@@ -99,8 +99,8 @@ export default function Sidebar() {
                       className="group flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] font-medium transition-all duration-100"
                       style={{
                         fontFamily: 'var(--font-display)',
-                        background: active ? 'rgba(37,99,235,0.1)' : 'transparent',
-                        color: active ? '#60A5FA' : 'var(--text-3)',
+                        background: active ? 'rgba(108,93,211,0.1)' : 'transparent',
+                        color: active ? '#8B7CF8' : 'var(--text-3)',
                       }}
                       onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.color = 'var(--text-2)' }}
                       onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.color = 'var(--text-3)' }}
@@ -112,10 +112,10 @@ export default function Sidebar() {
                           className="text-[9px] font-semibold px-1.5 py-0.5 rounded"
                           style={{
                             fontFamily: 'var(--font-display)',
-                            background: 'rgba(37,99,235,0.12)',
-                            color: '#60A5FA',
+                            background: 'rgba(108,93,211,0.12)',
+                            color: '#8B7CF8',
                             letterSpacing: '0.06em',
-                            border: '1px solid rgba(37,99,235,0.2)',
+                            border: '1px solid rgba(108,93,211,0.25)',
                           }}
                         >
                           PRO
@@ -222,7 +222,7 @@ export default function Sidebar() {
               >
                 <Icon
                   className="w-[18px] h-[18px]"
-                  style={{ color: active ? '#60A5FA' : 'var(--text-4)' }}
+                  style={{ color: active ? '#8B7CF8' : 'var(--text-4)' }}
                 />
                 <span
                   className="text-[9px] font-medium"

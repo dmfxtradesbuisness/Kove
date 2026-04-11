@@ -15,7 +15,7 @@ interface Trade {
   created_at: string
 }
 
-function ProgressBar({ value, max, color = 'bg-blue-500' }: { value: number; max: number; color?: string }) {
+function ProgressBar({ value, max, color = 'bg-violet-500' }: { value: number; max: number; color?: string }) {
   const pct = Math.min(100, max > 0 ? (value / max) * 100 : 0)
   const done = pct >= 100
   return (
@@ -114,8 +114,8 @@ export default function GoalsPage() {
           <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Goals</h1>
         </div>
         <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-12 text-center max-w-md">
-          <div className="w-14 h-14 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
-            <Lock className="w-6 h-6 text-blue-400/70" />
+          <div className="w-14 h-14 bg-violet-500/10 border border-violet-500/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
+            <Lock className="w-6 h-6 text-violet-400/70" />
           </div>
           <h2 className="text-lg font-bold text-white mb-2 tracking-tight">Pro Feature</h2>
           <p className="text-[#444] text-sm font-light leading-relaxed mb-6">
@@ -177,8 +177,8 @@ export default function GoalsPage() {
               <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center">
-                      <Target className="w-3.5 h-3.5 text-blue-400/70" />
+                    <div className="w-8 h-8 bg-violet-500/10 border border-violet-500/20 rounded-xl flex items-center justify-center">
+                      <Target className="w-3.5 h-3.5 text-violet-400/70" />
                     </div>
                     <div>
                       <p className="text-xs font-medium text-white">Win Rate Target</p>
@@ -191,7 +191,7 @@ export default function GoalsPage() {
                     {Math.min(100, Math.round((monthWinRate / goals.win_rate_target) * 100))}%
                   </span>
                 </div>
-                <ProgressBar value={monthWinRate} max={goals.win_rate_target} color="bg-blue-500" />
+                <ProgressBar value={monthWinRate} max={goals.win_rate_target} color="bg-violet-500" />
                 {monthWinRate >= goals.win_rate_target && (
                   <p className="text-emerald-400 text-xs mt-2 font-medium">🎯 Target reached!</p>
                 )}

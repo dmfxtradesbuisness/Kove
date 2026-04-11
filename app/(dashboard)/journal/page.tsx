@@ -140,10 +140,10 @@ function PnlCalendar({ trades }: { trades: Trade[] }) {
                                 ? 'bg-emerald-500/10 border border-emerald-500/20'
                                 : 'bg-red-500/10 border border-red-500/20'
                               : 'bg-white/[0.02] border border-transparent'
-                          } ${isToday ? 'ring-1 ring-blue-500/40' : ''}`}
+                          } ${isToday ? 'ring-1 ring-violet-500/40' : ''}`}
                         >
                           <span className={`text-[11px] font-medium leading-none mb-0.5 ${
-                            isToday ? 'text-blue-400' : hasData ? 'text-white' : 'text-[#2a2a2a]'
+                            isToday ? 'text-violet-400' : hasData ? 'text-white' : 'text-[#2a2a2a]'
                           }`}>
                             {day}
                           </span>

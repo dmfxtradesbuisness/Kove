@@ -380,9 +380,9 @@ function AccountContent() {
         {/* ── Subscription ── */}
         <SectionCard
           icon={CreditCard}
-          iconBg="bg-blue-500/8"
-          iconBorder="border-blue-500/15"
-          iconColor="text-blue-400/70"
+          iconBg="bg-violet-500/8"
+          iconBorder="border-violet-500/15"
+          iconColor="text-violet-400/70"
           title="Subscription"
         >
           {subscription?.active ? (
@@ -426,7 +426,7 @@ function AccountContent() {
                 </span>
               </div>
 
-              <div className="p-5 bg-blue-600/4 border border-blue-500/12 rounded-2xl">
+              <div className="p-5 bg-violet-600/4 border border-violet-500/12 rounded-2xl">
                 <p className="text-sm font-bold text-white mb-1">Upgrade to Pro</p>
                 <p className="text-xs text-[#444] mb-5 leading-relaxed font-light">
                   AI trade analysis, mistake identification, and pattern detection.

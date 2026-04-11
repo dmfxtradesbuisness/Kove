@@ -40,7 +40,7 @@ const mockPosts = [
 
 const TAG_COLORS: Record<string, string> = {
   emerald: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  blue: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  blue: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
   orange: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
   red: 'bg-red-500/10 text-red-400 border-red-500/20',
 }
@@ -65,8 +65,8 @@ export default function CommunityPage() {
       <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-8 mb-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-violet-500/5 pointer-events-none" />
         <div className="relative">
-          <div className="w-12 h-12 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mb-4">
-            <Sparkles className="w-5 h-5 text-blue-400" />
+          <div className="w-12 h-12 bg-violet-500/10 border border-violet-500/20 rounded-2xl flex items-center justify-center mb-4">
+            <Sparkles className="w-5 h-5 text-violet-400" />
           </div>
           <h2 className="text-lg font-bold text-white mb-2 tracking-tight">Community is launching soon</h2>
           <p className="text-[#555] text-sm font-light leading-relaxed max-w-lg">
