@@ -328,11 +328,22 @@ function AccountContent() {
     setPortalLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/stripe/portal', { method: 'POST' })
+      const res  = await fetch('/api/stripe/portal', { method: 'POST' })
       const data = await res.json()
-      if (data.url) window.location.href = data.url
+
+      // Manual/grandfathered grant — no Stripe billing to manage
+      if (data.error === 'manual') {
+        setError('Your Pro access was granted directly — there is no billing to manage here.')
+        return
+      }
+
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        setError(data.error ?? 'Failed to open billing portal. Try again.')
+      }
     } catch {
-      setError('Failed to open billing portal.')
+      setError('Network error — check your connection and try again.')
     } finally {
       setPortalLoading(false)
     }
