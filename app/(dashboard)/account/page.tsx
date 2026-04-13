@@ -358,7 +358,7 @@ function AccountContent() {
                     <Sparkles className="w-3.5 h-3.5 text-emerald-400/70" />
                     <p className="text-sm font-bold text-white">Pro Plan</p>
                   </div>
-                  <p className="text-xs text-[#555] font-light">$12/month · AI insights active</p>
+                  <p className="text-xs text-[#555] font-light">$19/month · AI insights active</p>
                 </div>
                 <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/15 px-2.5 py-1 rounded-full tracking-wide">
                   ACTIVE
@@ -394,12 +394,12 @@ function AccountContent() {
               <div className="p-5 bg-violet-600/4 border border-violet-500/12 rounded-2xl">
                 <p className="text-sm font-bold text-white mb-1">Upgrade to Pro</p>
                 <p className="text-xs text-[#444] mb-5 leading-relaxed font-light">
-                  AI trade analysis, mistake identification, and pattern detection.
+                  Behavioral pattern recognition, emotional trading detection, time-of-day analysis, and weekly AI reports.
                 </p>
                 <button onClick={handleUpgrade} disabled={checkoutLoading} className="btn-blue gap-2 w-full">
                   {checkoutLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <Sparkles className="w-3.5 h-3.5" />
-                  Upgrade — $12/month
+                  Upgrade — $19/month
                 </button>
               </div>
             </div>

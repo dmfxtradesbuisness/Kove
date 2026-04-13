@@ -6,6 +6,7 @@ import {
   BarChart2, Zap, Flame, Trophy, Calendar,
 } from 'lucide-react'
 import type { Trade } from '@/lib/types'
+import { ProGate } from '@/components/ProGate'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Period = '1D' | '1W' | '1M' | '3M' | '1Y' | 'ALL'
@@ -251,6 +252,7 @@ function EquityCurve({ trades }: { trades: Trade[] }) {
 export default function StatsPage() {
   const [allTrades, setAllTrades] = useState<Trade[]>([])
   const [loading, setLoading] = useState(true)
+  const [subscribed, setSubscribed] = useState<boolean | null>(null)
   const [period, setPeriod] = useState<Period>('ALL')
   const [tab, setTab] = useState<'overview' | 'discipline' | 'streaks' | 'wrap' | 'leaderboard'>('overview')
   const [leaderboard, setLeaderboard] = useState<{ rank: number; label: string; winRate: number; totalPnl: number; totalTrades: number; isYou: boolean }[]>([])
@@ -258,10 +260,13 @@ export default function StatsPage() {
   const [userRank, setUserRank] = useState<number | null>(null)
 
   useEffect(() => {
-    fetch('/api/trades')
-      .then((r) => r.json())
-      .then((d) => { if (d.trades) setAllTrades(d.trades) })
-      .finally(() => setLoading(false))
+    Promise.all([
+      fetch('/api/trades').then((r) => r.json()),
+      fetch('/api/stripe/subscription-status').then((r) => r.json()),
+    ]).then(([tradesData, subData]) => {
+      if (tradesData.trades) setAllTrades(tradesData.trades)
+      setSubscribed(subData.active === true)
+    }).finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {
@@ -443,7 +448,14 @@ export default function StatsPage() {
       )}
 
       {/* ── DISCIPLINE ── */}
-      {tab === 'discipline' && (
+      {tab === 'discipline' && subscribed === false && (
+        <ProGate
+          title="Behavioral Analysis"
+          description="Your discipline score, revenge trading detection, overtrading alerts, and pattern breakdown — all Pro intelligence."
+          compact={false}
+        />
+      )}
+      {tab === 'discipline' && subscribed === true && (
         <div className="flex flex-col gap-4 max-w-2xl">
           {/* Score card */}
           <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-7">

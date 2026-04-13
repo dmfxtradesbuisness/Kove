@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef } from 'react'
 import {
   Loader2, Plus, Globe, ArrowLeftRight, RefreshCw,
-  Mic, BarChart2, ChevronDown, Lock, Sparkles,
+  Mic, BarChart2, ChevronDown,
 } from 'lucide-react'
 import type { Trade } from '@/lib/types'
+import { ProGate } from '@/components/ProGate'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Message {
@@ -120,7 +121,6 @@ export default function AIPage() {
   const [sending, setSending]             = useState(false)
   const [selectedTradeId, setSelectedTradeId] = useState('')
   const [showTradeBar, setShowTradeBar]   = useState(false)
-  const [upgrading, setUpgrading]         = useState(false)
 
   const bottomRef  = useRef<HTMLDivElement>(null)
   const inputRef   = useRef<HTMLTextAreaElement>(null)
@@ -198,17 +198,6 @@ export default function AIPage() {
     }
   }
 
-  async function handleUpgrade() {
-    setUpgrading(true)
-    try {
-      const res  = await fetch('/api/stripe/checkout', { method: 'POST' })
-      const data = await res.json()
-      if (data.url) window.location.href = data.url
-    } finally {
-      setUpgrading(false)
-    }
-  }
-
   // ── Loading ──────────────────────────────────────────────────────────────
   if (checking) {
     return (
@@ -221,62 +210,10 @@ export default function AIPage() {
   // ── Upgrade wall ─────────────────────────────────────────────────────────
   if (!subscribed) {
     return (
-      <div
-        className="relative flex items-center justify-center overflow-hidden"
-        style={{ minHeight: '80vh' }}
-      >
-        <Orb style={{ width: 500, height: 500, top: -120, left: '50%', transform: 'translateX(-50%)', background: 'radial-gradient(circle,rgba(60,40,140,0.7) 0%,rgba(20,10,60,0.3) 60%,transparent 100%)' }} />
-        <Orb style={{ width: 300, height: 300, bottom: 0, left: -80, background: 'radial-gradient(circle,rgba(40,30,100,0.5) 0%,transparent 70%)' }} />
-        <Orb style={{ width: 250, height: 250, top: 60, right: -60, background: 'radial-gradient(circle,rgba(50,35,120,0.45) 0%,transparent 70%)' }} />
-
-        <div className="relative z-10 text-center px-6" style={{ maxWidth: 400 }}>
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
-            style={{ background: 'rgba(108,93,211,0.15)', border: '1px solid rgba(108,93,211,0.25)', backdropFilter: 'blur(8px)' }}
-          >
-            <Lock className="w-7 h-7" style={{ color: '#8B7CF8' }} />
-          </div>
-          <h2
-            className="text-2xl font-black mb-3"
-            style={{ fontFamily: 'var(--font-display)', color: '#fff', letterSpacing: '-0.02em' }}
-          >
-            Unlock KoveAI
-          </h2>
-          <p className="text-sm leading-relaxed mb-8" style={{ color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-body)' }}>
-            GPT-4 powered trade analysis. Identify mistakes, detect patterns, and get personalized coaching — all from a natural conversation.
-          </p>
-          <div className="flex flex-col gap-2.5 mb-8 text-left">
-            {[
-              'Mistake identification per trade',
-              'Pattern detection across your journal',
-              'Personalized entry/exit feedback',
-              'Natural chat interface',
-            ].map((f) => (
-              <div key={f} className="flex items-center gap-2.5">
-                <Sparkles className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#7B6CF5' }} />
-                <span className="text-sm" style={{ color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-body)' }}>{f}</span>
-              </div>
-            ))}
-          </div>
-          <button
-            onClick={handleUpgrade}
-            disabled={upgrading}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm"
-            style={{
-              background: 'linear-gradient(135deg,#7B6CF5,#5C4ED4)',
-              color: '#fff',
-              fontFamily: 'var(--font-display)',
-              boxShadow: '0 0 32px rgba(108,93,211,0.4)',
-              border: 'none',
-              cursor: upgrading ? 'not-allowed' : 'pointer',
-              opacity: upgrading ? 0.6 : 1,
-            }}
-          >
-            {upgrading && <Loader2 className="w-4 h-4 animate-spin" />}
-            Upgrade — $12/month
-          </button>
-        </div>
-      </div>
+      <ProGate
+        title="Unlock KoveAI"
+        description="GPT-4 powered trade analysis. Identify your mistakes, detect hidden patterns, and get personalized coaching — all from a natural conversation."
+      />
     )
   }
 

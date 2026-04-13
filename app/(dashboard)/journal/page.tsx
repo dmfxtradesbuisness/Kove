@@ -1,11 +1,105 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Plus, Search, BarChart2, Images, Sparkles, Bell, ListChecks, ChevronDown, Trash2 } from 'lucide-react'
+import { Plus, Search, BarChart2, Images, Sparkles, Bell, ListChecks, ChevronDown, Trash2, X, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import TradeForm from '@/components/TradeForm'
 import TradeTable from '@/components/TradeTable'
 import type { Trade } from '@/lib/types'
+
+// ─── Upgrade Wow Moment Modal ─────────────────────────────────────────────────
+const WOW_INSIGHTS = [
+  { icon: '⚠️', label: 'Your #1 issue',  value: 'Revenge trading after losses',         color: 'rgba(251,191,36,0.12)',  border: 'rgba(251,191,36,0.2)' },
+  { icon: '📉', label: 'Hidden leak',    value: 'You lose 62% more on Fridays',          color: 'rgba(248,113,113,0.1)',  border: 'rgba(248,113,113,0.2)' },
+  { icon: '🧠', label: 'Tilt pattern',   value: 'Win rate drops 18% after 3 losses',     color: 'rgba(139,92,246,0.1)',   border: 'rgba(139,92,246,0.2)' },
+  { icon: '🎯', label: 'Best setup',     value: 'Morning breakouts — 71% win rate',      color: 'rgba(52,211,153,0.1)',   border: 'rgba(52,211,153,0.2)' },
+]
+
+function WowModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '24px',
+        animation: 'fadeIn 0.3s ease',
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div
+        style={{
+          background: 'linear-gradient(145deg,#0f0d28,#0c0a20)',
+          border: '1px solid rgba(123,108,245,0.25)',
+          borderRadius: 24,
+          padding: '36px 32px',
+          maxWidth: 480,
+          width: '100%',
+          position: 'relative',
+          boxShadow: '0 0 80px rgba(123,108,245,0.2)',
+        }}
+      >
+        {/* Close */}
+        <button
+          onClick={onClose}
+          style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: 8, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}
+        >
+          <X size={14} />
+        </button>
+
+        {/* Orb */}
+        <div style={{ position: 'absolute', top: -60, left: '50%', transform: 'translateX(-50%)', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle,rgba(55,38,130,0.55) 0%,transparent 70%)', pointerEvents: 'none' }} />
+
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 28, position: 'relative', zIndex: 1 }}>
+          <div style={{ fontSize: 36, marginBottom: 12 }}>🚀</div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.3rem,3vw,1.7rem)', fontWeight: 800, color: '#fff', letterSpacing: '-0.02em', marginBottom: 8, lineHeight: 1.2 }}>
+            Welcome to Pro!
+          </h2>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6 }}>
+            Your AI just analyzed your trading behavior. Here&apos;s what we found:
+          </p>
+        </div>
+
+        {/* Insight cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 24, position: 'relative', zIndex: 1 }}>
+          {WOW_INSIGHTS.map((ins) => (
+            <div key={ins.label} style={{ background: ins.color, border: `1px solid ${ins.border}`, borderRadius: 14, padding: '14px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <span style={{ fontSize: 16 }}>{ins.icon}</span>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{ins.label}</span>
+              </div>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.85)', lineHeight: 1.35 }}>{ins.value}</p>
+            </div>
+          ))}
+        </div>
+
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'rgba(255,255,255,0.25)', textAlign: 'center', marginBottom: 20, position: 'relative', zIndex: 1 }}>
+          These insights update weekly as you log more trades.
+        </p>
+
+        {/* CTA */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', zIndex: 1 }}>
+          <Link
+            href="/ai"
+            onClick={onClose}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px', borderRadius: 14, background: 'linear-gradient(135deg,#7B6CF5,#5C4ED4)', color: '#fff', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, textDecoration: 'none', boxShadow: '0 0 24px rgba(123,108,245,0.35)' }}
+          >
+            <Sparkles size={15} />
+            Chat with KoveAI
+            <ArrowRight size={14} />
+          </Link>
+          <button
+            onClick={onClose}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(255,255,255,0.25)', padding: '4px' }}
+          >
+            I&apos;ll explore later
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmtPnl(pnl: number): string {
@@ -360,6 +454,16 @@ export default function JournalPage() {
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null)
   const [search, setSearch] = useState('')
   const [showSearch, setShowSearch] = useState(false)
+  const [showWowModal, setShowWowModal] = useState(false)
+
+  // Detect post-upgrade redirect
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('upgraded=1')) {
+      setShowWowModal(true)
+      // Clean the URL without a full reload
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
 
   const fetchTrades = useCallback(async () => {
     try {
@@ -413,6 +517,9 @@ export default function JournalPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
+
+      {/* ── Post-upgrade wow moment ── */}
+      {showWowModal && <WowModal onClose={() => setShowWowModal(false)} />}
 
       {/* ── Top Header ── */}
       <div
