@@ -6,15 +6,10 @@ import Stripe from 'stripe'
 // Extract period end from subscription — handles Stripe API version differences
 function getPeriodEnd(sub: Stripe.Subscription): string | null {
   try {
-    // Try items first (newer API versions)
-    const itemPeriodEnd = sub.items?.data?.[0]?.current_period_end
-    if (typeof itemPeriodEnd === 'number') {
-      return new Date(itemPeriodEnd * 1000).toISOString()
-    }
-    // Try top-level (older API versions)
-    const topLevel = (sub as unknown as { current_period_end?: number }).current_period_end
-    if (typeof topLevel === 'number') {
-      return new Date(topLevel * 1000).toISOString()
+    // current_period_end lives at the top level in most Stripe API versions
+    const raw = sub as unknown as { current_period_end?: number }
+    if (typeof raw.current_period_end === 'number') {
+      return new Date(raw.current_period_end * 1000).toISOString()
     }
     return null
   } catch {
