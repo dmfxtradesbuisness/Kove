@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { RealtimeChannel } from '@supabase/supabase-js'
-import { Users2, Heart, Plus, Loader2, Send, X, Wifi, WifiOff } from 'lucide-react'
+import { Heart, Loader2, Send, MessageCircle, Share2, MoreHorizontal, Smile, Mic, Wifi, WifiOff } from 'lucide-react'
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────
 type PostType = 'general' | 'setup' | 'win' | 'loss' | 'news_reaction'
 
 interface Post {
@@ -21,18 +21,29 @@ interface Post {
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 const TYPE_CFG: Record<PostType, { label: string; text: string; bg: string; border: string }> = {
-  general:       { label: 'General',   text: '#888888',   bg: 'rgba(255,255,255,0.04)',   border: 'rgba(255,255,255,0.10)' },
-  setup:         { label: 'Setup',     text: '#a78bfa',   bg: 'rgba(139,92,246,0.12)',    border: 'rgba(139,92,246,0.25)' },
-  win:           { label: 'Win',       text: '#34d399',   bg: 'rgba(52,211,153,0.12)',    border: 'rgba(52,211,153,0.25)' },
-  loss:          { label: 'Loss',      text: '#f87171',   bg: 'rgba(248,113,113,0.12)',   border: 'rgba(248,113,113,0.25)' },
-  news_reaction: { label: 'News',      text: '#fbbf24',   bg: 'rgba(251,191,36,0.12)',    border: 'rgba(251,191,36,0.25)' },
+  general:       { label: 'Trader',         text: '#888',      bg: 'rgba(255,255,255,0.04)',   border: 'rgba(255,255,255,0.08)' },
+  setup:         { label: 'Setup',          text: '#a78bfa',   bg: 'rgba(139,92,246,0.12)',    border: 'rgba(139,92,246,0.22)' },
+  win:           { label: 'Win 🎯',         text: '#34d399',   bg: 'rgba(52,211,153,0.12)',    border: 'rgba(52,211,153,0.22)' },
+  loss:          { label: 'Loss 📉',        text: '#f87171',   bg: 'rgba(248,113,113,0.12)',   border: 'rgba(248,113,113,0.22)' },
+  news_reaction: { label: 'News Reaction',  text: '#fbbf24',   bg: 'rgba(251,191,36,0.12)',    border: 'rgba(251,191,36,0.22)' },
 }
 
-const FILTER_TABS: Array<{ key: string; label: string }> = [
-  { key: 'all',           label: 'All' },
-  { key: 'setup',         label: 'Setup' },
-  { key: 'win',           label: 'Win' },
-  { key: 'loss',          label: 'Loss' },
+const AVATAR_GRADIENTS = [
+  'linear-gradient(135deg,#7B6CF5,#5C4ED4)',
+  'linear-gradient(135deg,#34d399,#059669)',
+  'linear-gradient(135deg,#f59e0b,#d97706)',
+  'linear-gradient(135deg,#ef4444,#dc2626)',
+  'linear-gradient(135deg,#8b5cf6,#7c3aed)',
+  'linear-gradient(135deg,#06b6d4,#0284c7)',
+  'linear-gradient(135deg,#ec4899,#db2777)',
+  'linear-gradient(135deg,#f97316,#ea580c)',
+]
+
+const MAIN_TABS = [
+  { key: 'all',           label: 'For You' },
+  { key: 'setup',         label: 'Setups' },
+  { key: 'win',           label: 'Wins' },
+  { key: 'loss',          label: 'Losses' },
   { key: 'news_reaction', label: 'News' },
 ]
 
@@ -42,7 +53,11 @@ function hashId(id: string): number {
   for (let i = 0; i < id.length; i++) h = (Math.imul(31, h) + id.charCodeAt(i)) | 0
   return Math.abs(h) % 9000 + 1000
 }
-
+function avatarGradient(id: string): string {
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = (Math.imul(31, h) + id.charCodeAt(i)) | 0
+  return AVATAR_GRADIENTS[Math.abs(h) % AVATAR_GRADIENTS.length]
+}
 function timeAgo(dateStr: string): string {
   const secs = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
   if (secs < 60) return 'just now'
@@ -51,32 +66,43 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(secs / 86400)}d ago`
 }
 
+/** Wrap $TICKER and #hashtag patterns with a violet highlight span */
+function renderContent(text: string): React.ReactNode[] {
+  const parts = text.split(/(\$[A-Z]{2,10})/g)
+  return parts.map((part, i) =>
+    /^\$[A-Z]{2,10}$/.test(part) ? (
+      <span key={i} style={{ color: '#8B7CF8', fontWeight: 600 }}>{part}</span>
+    ) : (
+      part
+    )
+  )
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function CommunityPage() {
   const supabase = createClient()
 
-  const [posts, setPosts]           = useState<Post[]>([])
-  const [loading, setLoading]       = useState(true)
-  const [filter, setFilter]         = useState('all')
-  const [composing, setComposing]   = useState(false)
-  const [content, setContent]       = useState('')
-  const [postType, setPostType]     = useState<PostType>('general')
-  const [submitting, setSubmitting] = useState(false)
-  const [myId, setMyId]             = useState<string | null>(null)
-  const [live, setLive]             = useState(false)
-  const channelRef = useRef<RealtimeChannel | null>(null)
+  const [posts, setPosts]             = useState<Post[]>([])
+  const [loading, setLoading]         = useState(true)
+  const [filter, setFilter]           = useState('all')
+  const [content, setContent]         = useState('')
+  const [postType, setPostType]       = useState<PostType>('general')
+  const [submitting, setSubmitting]   = useState(false)
+  const [myId, setMyId]               = useState<string | null>(null)
+  const [live, setLive]               = useState(false)
+  const [composeOpen, setComposeOpen] = useState(false)
+  const channelRef                    = useRef<RealtimeChannel | null>(null)
+  const textareaRef                   = useRef<HTMLTextAreaElement>(null)
 
-  // Get current user ID
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setMyId(data.user?.id ?? null))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch posts
   const fetchPosts = useCallback(async (activeFilter: string) => {
     setLoading(true)
     try {
       const params = activeFilter !== 'all' ? `?post_type=${activeFilter}` : ''
-      const res = await fetch(`/api/community/posts${params}`)
+      const res  = await fetch(`/api/community/posts${params}`)
       const json = await res.json()
       setPosts(json.posts ?? [])
     } catch {
@@ -88,43 +114,26 @@ export default function CommunityPage() {
 
   useEffect(() => { fetchPosts(filter) }, [filter, fetchPosts])
 
-  // Realtime subscription
+  // Realtime
   useEffect(() => {
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current)
-      channelRef.current = null
-    }
-
+    if (channelRef.current) { supabase.removeChannel(channelRef.current); channelRef.current = null }
     const ch = supabase
-      .channel('community_feed_v2')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'community_posts' },
-        (payload) => {
-          const newPost = payload.new as Post
-          if (filter !== 'all' && newPost.post_type !== filter) return
-          setPosts((prev) => {
-            if (prev.some((p) => p.id === newPost.id)) return prev
-            return [{ ...newPost, liked_by_me: false }, ...prev]
-          })
-        }
-      )
-      .subscribe((status) => {
-        setLive(status === 'SUBSCRIBED')
+      .channel('community_feed_v3')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'community_posts' }, (payload) => {
+        const p = payload.new as Post
+        if (filter !== 'all' && p.post_type !== filter) return
+        setPosts((prev) => prev.some((x) => x.id === p.id) ? prev : [{ ...p, liked_by_me: false }, ...prev])
       })
-
+      .subscribe((status) => setLive(status === 'SUBSCRIBED'))
     channelRef.current = ch
-    return () => {
-      supabase.removeChannel(ch)
-    }
+    return () => { supabase.removeChannel(ch) }
   }, [filter]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Submit post
   const handleSubmit = async () => {
     if (!content.trim() || submitting) return
     setSubmitting(true)
     try {
-      const res = await fetch('/api/community/posts', {
+      const res  = await fetch('/api/community/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: content.trim(), post_type: postType }),
@@ -139,13 +148,12 @@ export default function CommunityPage() {
       }
       setContent('')
       setPostType('general')
-      setComposing(false)
+      setComposeOpen(false)
     } finally {
       setSubmitting(false)
     }
   }
 
-  // Toggle like
   const handleLike = async (postId: string, liked: boolean) => {
     setPosts((prev) =>
       prev.map((p) =>
@@ -154,324 +162,405 @@ export default function CommunityPage() {
           : p
       )
     )
-    await fetch(`/api/community/posts/${postId}/like`, {
-      method: liked ? 'DELETE' : 'POST',
-    })
+    await fetch(`/api/community/posts/${postId}/like`, { method: liked ? 'DELETE' : 'POST' })
   }
 
-  // ─── Render ─────────────────────────────────────────────────────────────────
+  // ─── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div
-      className="px-4 md:px-8 pt-6 md:pt-10 pb-12 animate-fade-in"
-      style={{ maxWidth: 720 }}
-    >
-      {/* Header */}
-      <div className="flex items-start justify-between mb-7">
+    <div className="animate-fade-in" style={{ maxWidth: 680, paddingBottom: 80 }}>
+
+      {/* ── Page header ───────────────────────────────────────────────────── */}
+      <div
+        className="flex items-center justify-between px-6 pt-7 pb-4"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+      >
         <div>
-          <p
-            className="text-xs uppercase tracking-widest mb-1.5 font-medium"
-            style={{ color: '#444', fontFamily: 'var(--font-display)' }}
-          >
-            Traders
-          </p>
           <h1
-            className="text-3xl font-black tracking-tight text-white"
+            className="text-2xl font-black text-white tracking-tight"
             style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}
           >
             Community
           </h1>
-          <p className="text-xs font-light mt-1" style={{ color: '#555', fontFamily: 'var(--font-body)' }}>
-            Share setups, lessons &amp; wins anonymously
+          <p className="text-xs mt-0.5" style={{ color: '#555', fontFamily: 'var(--font-body)' }}>
+            Anonymous trading feed
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Live indicator */}
-          <div
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg"
-            style={{ background: live ? 'rgba(52,211,153,0.08)' : 'rgba(255,255,255,0.04)', border: `1px solid ${live ? 'rgba(52,211,153,0.2)' : 'rgba(255,255,255,0.07)'}` }}
-          >
-            {live ? (
-              <>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#34d399' }} />
-                <Wifi className="w-3 h-3" style={{ color: '#34d399' }} />
-                <span className="text-[10px] font-semibold" style={{ color: '#34d399' }}>Live</span>
-              </>
-            ) : (
-              <>
-                <WifiOff className="w-3 h-3" style={{ color: '#555' }} />
-                <span className="text-[10px]" style={{ color: '#555' }}>Offline</span>
-              </>
-            )}
-          </div>
-
-          <button
-            onClick={() => setComposing(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold"
-            style={{
-              background: 'linear-gradient(135deg,#7B6CF5,#5C4ED4)',
-              color: '#fff',
-              fontFamily: 'var(--font-display)',
-              boxShadow: '0 0 20px rgba(108,93,211,0.35)',
-            }}
-          >
-            <Plus className="w-4 h-4" />
-            Post
-          </button>
+        {/* Live badge */}
+        <div
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
+          style={{
+            background: live ? 'rgba(52,211,153,0.08)' : 'rgba(255,255,255,0.04)',
+            border: `1px solid ${live ? 'rgba(52,211,153,0.18)' : 'rgba(255,255,255,0.07)'}`,
+          }}
+        >
+          {live ? (
+            <>
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: '#34d399', boxShadow: '0 0 6px #34d399' }}
+              />
+              <Wifi className="w-3 h-3" style={{ color: '#34d399' }} />
+              <span className="text-[10px] font-semibold" style={{ color: '#34d399', fontFamily: 'var(--font-display)' }}>
+                Live
+              </span>
+            </>
+          ) : (
+            <>
+              <WifiOff className="w-3 h-3" style={{ color: '#555' }} />
+              <span className="text-[10px]" style={{ color: '#555' }}>Connecting</span>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Filter tabs */}
+      {/* ── Tabs ──────────────────────────────────────────────────────────── */}
       <div
-        className="flex gap-1 mb-5 p-1 rounded-xl"
-        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+        className="flex px-6"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
       >
-        {FILTER_TABS.map((tab) => {
+        {MAIN_TABS.map((tab) => {
           const active = filter === tab.key
           return (
             <button
               key={tab.key}
               onClick={() => setFilter(tab.key)}
-              className="flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all"
+              className="relative py-3.5 px-4 text-sm font-semibold transition-colors"
               style={{
-                background: active ? '#1e1e1e' : 'transparent',
-                color: active ? '#fff' : 'rgba(255,255,255,0.3)',
+                color: active ? '#fff' : 'rgba(255,255,255,0.28)',
                 fontFamily: 'var(--font-display)',
-                border: active ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
               }}
             >
               {tab.label}
+              {active && (
+                <span
+                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                  style={{ background: 'linear-gradient(90deg,#7B6CF5,#5C4ED4)' }}
+                />
+              )}
             </button>
           )
         })}
       </div>
 
-      {/* Feed */}
-      {loading ? (
-        <div className="flex items-center justify-center py-24">
-          <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#6C5DD3' }} />
-        </div>
-      ) : posts.length === 0 ? (
-        <div className="text-center py-24">
+      {/* ── Inline compose bar ────────────────────────────────────────────── */}
+      <div
+        className="mx-6 mt-5 mb-2 rounded-2xl overflow-hidden"
+        style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.07)' }}
+      >
+        <div className="flex items-start gap-3 p-4">
+          {/* My avatar */}
           <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-            style={{ background: 'rgba(108,93,211,0.08)', border: '1px solid rgba(108,93,211,0.15)' }}
-          >
-            <Users2 className="w-6 h-6" style={{ color: 'rgba(108,93,211,0.6)' }} />
-          </div>
-          <p
-            className="text-sm font-semibold"
-            style={{ color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-display)' }}
-          >
-            No posts yet
-          </p>
-          <p
-            className="text-xs mt-1"
-            style={{ color: 'rgba(255,255,255,0.12)', fontFamily: 'var(--font-body)' }}
-          >
-            Be the first to share a trade or setup
-          </p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {posts.map((post) => {
-            const cfg = TYPE_CFG[post.post_type] ?? TYPE_CFG.general
-            const isOwn = post.user_id === myId
-            return (
-              <div
-                key={post.id}
-                className="rounded-2xl p-5 transition-all"
-                style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.06)' }}
-              >
-                {/* Author row */}
-                <div className="flex items-center gap-2 mb-3">
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-                    style={{ background: 'rgba(108,93,211,0.15)', color: '#8B7CF8' }}
-                  >
-                    T
-                  </div>
-                  <span
-                    className="text-xs font-semibold"
-                    style={{ color: 'rgba(255,255,255,0.7)', fontFamily: 'var(--font-display)' }}
-                  >
-                    Trader #{hashId(post.user_id)}
-                    {isOwn && (
-                      <span className="ml-1.5 text-[10px] font-normal" style={{ color: 'rgba(255,255,255,0.25)' }}>
-                        · you
-                      </span>
-                    )}
-                  </span>
-                  <span style={{ color: 'rgba(255,255,255,0.12)' }}>·</span>
-                  <span
-                    className="text-[10px]"
-                    style={{ color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-body)' }}
-                  >
-                    {timeAgo(post.created_at)}
-                  </span>
-
-                  {/* Type badge */}
-                  <span
-                    className="ml-auto text-[10px] font-semibold px-2.5 py-0.5 rounded-lg"
-                    style={{ color: cfg.text, background: cfg.bg, border: `1px solid ${cfg.border}` }}
-                  >
-                    {cfg.label}
-                  </span>
-                </div>
-
-                {/* Content */}
-                <p
-                  className="text-sm leading-relaxed mb-3"
-                  style={{ color: 'rgba(255,255,255,0.78)', fontFamily: 'var(--font-body)' }}
-                >
-                  {post.content}
-                </p>
-
-                {/* Tickers */}
-                {post.tickers && post.tickers.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    {post.tickers.map((ticker) => (
-                      <span
-                        key={ticker}
-                        className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
-                        style={{
-                          background: 'rgba(108,93,211,0.1)',
-                          color: '#8B7CF8',
-                          border: '1px solid rgba(108,93,211,0.2)',
-                        }}
-                      >
-                        ${ticker}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div
-                  className="flex items-center gap-4 pt-3"
-                  style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}
-                >
-                  <button
-                    onClick={() => handleLike(post.id, !!post.liked_by_me)}
-                    className="flex items-center gap-1.5 text-xs transition-all"
-                    style={{
-                      color: post.liked_by_me ? '#8B7CF8' : 'rgba(255,255,255,0.22)',
-                      fontFamily: 'var(--font-body)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Heart
-                      className="w-3.5 h-3.5 transition-all"
-                      style={{ fill: post.liked_by_me ? '#8B7CF8' : 'none' }}
-                    />
-                    {post.like_count}
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Compose modal */}
-      {composing && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
-          onClick={(e) => { if (e.target === e.currentTarget) setComposing(false) }}
-        >
-          <div
-            className="w-full rounded-2xl p-6 animate-scale-in"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5"
             style={{
-              maxWidth: 520,
-              background: '#111111',
-              border: '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
+              background: myId ? avatarGradient(myId) : 'linear-gradient(135deg,#7B6CF5,#5C4ED4)',
+              color: '#fff',
             }}
           >
-            <div className="flex items-center justify-between mb-5">
-              <h2
-                className="font-bold text-white text-base"
-                style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}
-              >
-                New Post
-              </h2>
-              <button
-                onClick={() => setComposing(false)}
-                style={{ color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+            {myId ? String(hashId(myId)).charAt(0) : 'T'}
+          </div>
 
-            {/* Type selector */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {(Object.keys(TYPE_CFG) as PostType[]).map((t) => {
-                const c = TYPE_CFG[t]
-                const active = postType === t
-                return (
+          <div className="flex-1 min-w-0">
+            <textarea
+              ref={textareaRef}
+              value={content}
+              onFocus={() => setComposeOpen(true)}
+              onChange={(e) => setContent(e.target.value.slice(0, 1000))}
+              placeholder="What's on your mind right now?"
+              rows={composeOpen ? 4 : 1}
+              className="w-full resize-none outline-none text-sm"
+              style={{
+                background: 'transparent',
+                color: '#fff',
+                fontFamily: 'var(--font-body)',
+                lineHeight: '1.6',
+                border: 'none',
+              }}
+            />
+
+            {/* Expanded: type selector */}
+            {composeOpen && (
+              <div className="flex flex-wrap gap-1.5 mt-3 mb-1">
+                {(Object.entries(TYPE_CFG) as [PostType, typeof TYPE_CFG[PostType]][]).map(([t, c]) => (
                   <button
                     key={t}
                     onClick={() => setPostType(t)}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+                    className="text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-all"
                     style={{
-                      background: active ? c.bg : 'rgba(255,255,255,0.04)',
-                      color: active ? c.text : 'rgba(255,255,255,0.3)',
-                      border: `1px solid ${active ? c.border : 'rgba(255,255,255,0.07)'}`,
+                      background: postType === t ? c.bg : 'rgba(255,255,255,0.04)',
+                      color: postType === t ? c.text : 'rgba(255,255,255,0.28)',
+                      border: `1px solid ${postType === t ? c.border : 'rgba(255,255,255,0.07)'}`,
                       fontFamily: 'var(--font-display)',
                       cursor: 'pointer',
                     }}
                   >
                     {c.label}
                   </button>
-                )
-              })}
-            </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
-            {/* Textarea */}
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value.slice(0, 1000))}
-              placeholder="Share your trade setup, win, loss, or reaction to market news…&#10;&#10;Use $EURUSD, $XAUUSD etc. to tag instruments automatically."
-              rows={6}
-              className="w-full resize-none rounded-xl p-4 text-sm outline-none"
-              style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                color: '#fff',
-                fontFamily: 'var(--font-body)',
-                lineHeight: '1.6',
-              }}
-              autoFocus
-            />
-
-            <div className="flex items-center justify-between mt-3">
+        {/* Bottom toolbar */}
+        <div
+          className="flex items-center justify-between px-4 pb-3"
+          style={{ borderTop: composeOpen ? '1px solid rgba(255,255,255,0.05)' : 'none', paddingTop: composeOpen ? 10 : 0 }}
+        >
+          <div className="flex items-center gap-1">
+            <button
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+              style={{ color: 'rgba(255,255,255,0.25)', background: 'none', border: 'none', cursor: 'pointer' }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = '#8B7CF8')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)')}
+            >
+              <Smile className="w-4 h-4" />
+            </button>
+            <button
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+              style={{ color: 'rgba(255,255,255,0.25)', background: 'none', border: 'none', cursor: 'pointer' }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = '#8B7CF8')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)')}
+            >
+              <Mic className="w-4 h-4" />
+            </button>
+            {composeOpen && content.length > 0 && (
               <span
-                className="text-[10px]"
-                style={{ color: content.length > 900 ? '#f87171' : 'rgba(255,255,255,0.18)', fontFamily: 'var(--font-body)' }}
+                className="text-[10px] ml-1"
+                style={{
+                  color: content.length > 900 ? '#f87171' : 'rgba(255,255,255,0.18)',
+                  fontFamily: 'var(--font-body)',
+                }}
               >
-                {content.length} / 1000
+                {content.length}/1000
               </span>
+            )}
+          </div>
+
+          {composeOpen && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { setComposeOpen(false); setContent('') }}
+                className="text-xs px-3 py-1.5 rounded-xl font-medium"
+                style={{
+                  color: 'rgba(255,255,255,0.3)',
+                  background: 'none',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-display)',
+                }}
+              >
+                Cancel
+              </button>
               <button
                 onClick={handleSubmit}
                 disabled={!content.trim() || submitting}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-40 transition-all"
+                className="flex items-center gap-2 px-4 py-1.5 rounded-xl text-sm font-semibold disabled:opacity-40"
                 style={{
                   background: 'linear-gradient(135deg,#7B6CF5,#5C4ED4)',
                   color: '#fff',
-                  fontFamily: 'var(--font-display)',
-                  boxShadow: '0 0 16px rgba(108,93,211,0.3)',
                   border: 'none',
                   cursor: !content.trim() || submitting ? 'not-allowed' : 'pointer',
+                  fontFamily: 'var(--font-display)',
+                  boxShadow: '0 0 16px rgba(108,93,211,0.3)',
                 }}
               >
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {submitting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Send className="w-3.5 h-3.5" />
+                )}
                 Post
               </button>
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Feed ──────────────────────────────────────────────────────────── */}
+      {loading ? (
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#6C5DD3' }} />
+        </div>
+      ) : posts.length === 0 ? (
+        <div className="text-center py-24 px-6">
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+            style={{ background: 'rgba(108,93,211,0.08)', border: '1px solid rgba(108,93,211,0.14)' }}
+          >
+            <MessageCircle className="w-6 h-6" style={{ color: 'rgba(108,93,211,0.5)' }} />
           </div>
+          <p className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.22)', fontFamily: 'var(--font-display)' }}>
+            No posts yet
+          </p>
+          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.1)', fontFamily: 'var(--font-body)' }}>
+            Be the first to share a setup or insight
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col mt-3">
+          {posts.map((post) => {
+            const cfg   = TYPE_CFG[post.post_type] ?? TYPE_CFG.general
+            const isOwn = post.user_id === myId
+            const num   = hashId(post.user_id)
+            const grad  = avatarGradient(post.user_id)
+
+            return (
+              <div
+                key={post.id}
+                className="px-6 py-5 transition-colors"
+                style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.015)')}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
+              >
+                <div className="flex gap-3">
+                  {/* Avatar */}
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                    style={{ background: grad, color: '#fff' }}
+                  >
+                    {String(num).charAt(0)}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    {/* Author row */}
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <div>
+                        <span
+                          className="text-sm font-bold"
+                          style={{ color: '#fff', fontFamily: 'var(--font-display)' }}
+                        >
+                          Trader #{num}
+                          {isOwn && (
+                            <span
+                              className="ml-1.5 text-[10px] font-normal"
+                              style={{ color: 'rgba(255,255,255,0.22)' }}
+                            >
+                              · you
+                            </span>
+                          )}
+                        </span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span
+                            className="text-[11px] font-semibold px-2 py-0.5 rounded-md"
+                            style={{ color: cfg.text, background: cfg.bg, border: `1px solid ${cfg.border}` }}
+                          >
+                            {cfg.label}
+                          </span>
+                          <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-body)' }}>
+                            · {timeAgo(post.created_at)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        style={{ color: 'rgba(255,255,255,0.2)', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}
+                        onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)')}
+                        onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)')}
+                      >
+                        <MoreHorizontal className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Content */}
+                    <p
+                      className="text-sm leading-relaxed mt-2"
+                      style={{ color: 'rgba(255,255,255,0.8)', fontFamily: 'var(--font-body)' }}
+                    >
+                      {renderContent(post.content)}
+                    </p>
+
+                    {/* Ticker chips */}
+                    {post.tickers && post.tickers.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2.5">
+                        {post.tickers.map((t) => (
+                          <span
+                            key={t}
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
+                            style={{
+                              background: 'rgba(108,93,211,0.1)',
+                              color: '#8B7CF8',
+                              border: '1px solid rgba(108,93,211,0.2)',
+                            }}
+                          >
+                            ${t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Action row */}
+                    <div className="flex items-center gap-1 mt-3">
+                      {/* Like */}
+                      <button
+                        onClick={() => handleLike(post.id, !!post.liked_by_me)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
+                        style={{
+                          background: post.liked_by_me ? 'rgba(108,93,211,0.12)' : 'transparent',
+                          color: post.liked_by_me ? '#8B7CF8' : 'rgba(255,255,255,0.28)',
+                          border: `1px solid ${post.liked_by_me ? 'rgba(108,93,211,0.22)' : 'transparent'}`,
+                          fontFamily: 'var(--font-display)',
+                          cursor: 'pointer',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!post.liked_by_me) {
+                            ;(e.currentTarget as HTMLElement).style.background = 'rgba(108,93,211,0.08)'
+                            ;(e.currentTarget as HTMLElement).style.color = '#8B7CF8'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!post.liked_by_me) {
+                            ;(e.currentTarget as HTMLElement).style.background = 'transparent'
+                            ;(e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.28)'
+                          }
+                        }}
+                      >
+                        <Heart
+                          className="w-3.5 h-3.5"
+                          style={{ fill: post.liked_by_me ? '#8B7CF8' : 'none', stroke: 'currentColor' }}
+                        />
+                        {post.like_count > 0 ? `${post.like_count} Like${post.like_count !== 1 ? 's' : ''}` : 'Like'}
+                      </button>
+
+                      {/* Comment (static UI) */}
+                      <button
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
+                        style={{
+                          background: 'transparent',
+                          color: 'rgba(255,255,255,0.28)',
+                          border: '1px solid transparent',
+                          fontFamily: 'var(--font-display)',
+                          cursor: 'default',
+                        }}
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        Comment
+                      </button>
+
+                      {/* Share (static UI) */}
+                      <button
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
+                        style={{
+                          background: 'transparent',
+                          color: 'rgba(255,255,255,0.28)',
+                          border: '1px solid transparent',
+                          fontFamily: 'var(--font-display)',
+                          cursor: 'default',
+                        }}
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                        Share
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
