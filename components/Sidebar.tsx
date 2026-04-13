@@ -2,9 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import {
   BookOpen, BarChart2, Sparkles, User, LogOut,
-  Target, Images, Users2, Newspaper,
+  Target, Images, Users2, Newspaper, Grid3X3,
+  ChevronRight, X,
 } from 'lucide-react'
 import KoveLogo from '@/components/KoveLogo'
 import { createClient } from '@/lib/supabase/client'
@@ -19,10 +21,54 @@ const NAV_ITEMS = [
   { href: '/news', label: 'News', icon: Newspaper },
 ]
 
+const BOTTOM_NAV = [
+  { href: '/journal', label: 'Journal', icon: BookOpen },
+  { href: '/stats', label: 'Stats', icon: BarChart2 },
+  { href: '/ai', label: 'AI', icon: Sparkles },
+  { href: '/community', label: 'Community', icon: Users2 },
+]
+
+const DRAWER_ITEMS = [
+  { href: '/goals', label: 'Goals', icon: Target },
+  { href: '/gallery', label: 'Gallery', icon: Images },
+  { href: '/news', label: 'News', icon: Newspaper },
+]
+
+interface Profile {
+  display_name: string | null
+  avatar_url: string | null
+}
+
 export default function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [userEmail, setUserEmail] = useState('')
+
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) setUserEmail(user.email ?? '')
+        const res = await fetch('/api/community/profile')
+        if (res.ok) {
+          const data = await res.json()
+          setProfile(data.profile ?? null)
+        }
+      } catch {
+        /* noop */
+      }
+    }
+    loadProfile()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Close drawer on route change
+  useEffect(() => {
+    setDrawerOpen(false)
+  }, [pathname])
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -31,6 +77,37 @@ export default function Sidebar() {
   }
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
+
+  // Avatar helpers
+  const initials = (profile?.display_name || userEmail).slice(0, 2).toUpperCase() || 'KV'
+  const avatarUrl = profile?.avatar_url
+
+  function AvatarCircle({ size = 32 }: { size?: number }) {
+    return (
+      <div
+        style={{
+          width: size,
+          height: size,
+          borderRadius: '50%',
+          background: avatarUrl ? 'transparent' : 'linear-gradient(135deg,#6C5DD3 0%,#8B7CF8 100%)',
+          border: '1px solid rgba(108,93,211,0.3)',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : (
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: size * 0.35, color: '#fff' }}>
+            {initials}
+          </span>
+        )}
+      </div>
+    )
+  }
 
   return (
     <>
@@ -42,7 +119,7 @@ export default function Sidebar() {
           borderRight: '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        {/* Logo — centered */}
+        {/* Logo */}
         <div
           className="flex flex-col items-center py-6"
           style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
@@ -122,7 +199,7 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* Bottom */}
+        {/* Bottom — Account with avatar */}
         <div
           className="px-3 py-4 flex flex-col gap-0.5"
           style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
@@ -148,8 +225,8 @@ export default function Sidebar() {
               }
             }}
           >
-            <User className="w-4 h-4 flex-shrink-0" />
-            Account
+            <AvatarCircle size={20} />
+            <span className="flex-1">Account</span>
           </Link>
 
           <button
@@ -211,17 +288,12 @@ export default function Sidebar() {
             KoveFX
           </span>
         </Link>
-        <button
-          onClick={handleSignOut}
-          className="w-8 h-8 flex items-center justify-center rounded-md transition-colors"
-          style={{ color: 'rgba(255,255,255,0.3)' }}
-          aria-label="Sign out"
-        >
-          <LogOut className="w-4 h-4" />
-        </button>
+        <Link href="/account" aria-label="Account">
+          <AvatarCircle size={32} />
+        </Link>
       </header>
 
-      {/* ─── Mobile Bottom Nav ─── */}
+      {/* ─── Mobile Bottom Nav (5 items) ─── */}
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 z-40 safe-bottom"
         style={{
@@ -231,20 +303,14 @@ export default function Sidebar() {
         }}
       >
         <div className="flex items-center justify-around px-1 h-[56px]">
-          {[
-            { href: '/journal', label: 'Journal', icon: BookOpen },
-            { href: '/stats', label: 'Stats', icon: BarChart2 },
-            { href: '/goals', label: 'Goals', icon: Target },
-            { href: '/gallery', label: 'Gallery', icon: Images },
-            { href: '/ai', label: 'AI', icon: Sparkles },
-            { href: '/account', label: 'Account', icon: User },
-          ].map(({ href, label, icon: Icon }) => {
-            const active = pathname === href
+          {BOTTOM_NAV.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href || pathname.startsWith(href + '/')
             return (
               <Link
                 key={href}
                 href={href}
                 className="flex flex-col items-center gap-1 py-2 px-2 flex-1 transition-all duration-150"
+                style={{ minWidth: 44, minHeight: 44, justifyContent: 'center' }}
               >
                 <Icon
                   className="w-[18px] h-[18px]"
@@ -263,8 +329,144 @@ export default function Sidebar() {
               </Link>
             )
           })}
+
+          {/* More button */}
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="flex flex-col items-center gap-1 py-2 px-2 flex-1 transition-all duration-150"
+            style={{ minWidth: 44, minHeight: 44, justifyContent: 'center' }}
+          >
+            <Grid3X3
+              className="w-[18px] h-[18px]"
+              style={{ color: drawerOpen ? '#8B7CF8' : 'rgba(255,255,255,0.22)' }}
+            />
+            <span
+              className="text-[9px] font-medium"
+              style={{
+                fontFamily: 'var(--font-display)',
+                color: drawerOpen ? '#8B7CF8' : 'rgba(255,255,255,0.22)',
+                letterSpacing: '0.04em',
+              }}
+            >
+              More
+            </span>
+          </button>
         </div>
       </nav>
+
+      {/* ─── Mobile More Drawer ─── */}
+      {/* Backdrop */}
+      {drawerOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-40"
+          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setDrawerOpen(false)}
+        />
+      )}
+
+      {/* Drawer panel */}
+      <div
+        className="md:hidden fixed left-0 right-0 z-50 flex flex-col"
+        style={{
+          bottom: 56,
+          background: 'rgba(10,10,10,0.98)',
+          backdropFilter: 'blur(20px)',
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '20px 20px 0 0',
+          transform: drawerOpen ? 'translateY(0)' : 'translateY(100%)',
+          transition: 'transform 0.25s cubic-bezier(0.32,0.72,0,1)',
+          willChange: 'transform',
+        }}
+      >
+        {/* Drawer header */}
+        <div
+          className="flex items-center justify-between px-5 py-4"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            More
+          </span>
+          <button
+            onClick={() => setDrawerOpen(false)}
+            className="w-8 h-8 rounded-xl flex items-center justify-center"
+            style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' }}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Drawer items */}
+        {DRAWER_ITEMS.map(({ href, label, icon: Icon }) => {
+          const active = pathname === href || pathname.startsWith(href + '/')
+          return (
+            <Link
+              key={href}
+              href={href}
+              className="flex items-center gap-4 px-5 transition-all"
+              style={{
+                height: 56,
+                color: active ? '#8B7CF8' : 'rgba(255,255,255,0.7)',
+                background: active ? 'rgba(108,93,211,0.08)' : 'transparent',
+                borderBottom: '1px solid rgba(255,255,255,0.04)',
+              }}
+            >
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ background: active ? 'rgba(108,93,211,0.15)' : 'rgba(255,255,255,0.05)' }}
+              >
+                <Icon className="w-4 h-4" />
+              </div>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14, flex: 1 }}>
+                {label}
+              </span>
+              <ChevronRight className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.2)' }} />
+            </Link>
+          )
+        })}
+
+        {/* Account row */}
+        <Link
+          href="/account"
+          className="flex items-center gap-4 px-5 transition-all"
+          style={{
+            height: 56,
+            color: isActive('/account') ? '#8B7CF8' : 'rgba(255,255,255,0.7)',
+            background: isActive('/account') ? 'rgba(108,93,211,0.08)' : 'transparent',
+            borderBottom: '1px solid rgba(255,255,255,0.04)',
+          }}
+        >
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: isActive('/account') ? 'rgba(108,93,211,0.15)' : 'rgba(255,255,255,0.05)' }}
+          >
+            <User className="w-4 h-4" />
+          </div>
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14, flex: 1 }}>
+            Account
+          </span>
+          <ChevronRight className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.2)' }} />
+        </Link>
+
+        {/* Sign out row */}
+        <button
+          onClick={handleSignOut}
+          className="flex items-center gap-4 px-5 w-full text-left transition-all"
+          style={{ height: 56, color: '#F87171' }}
+        >
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: 'rgba(239,68,68,0.08)' }}
+          >
+            <LogOut className="w-4 h-4" />
+          </div>
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14, flex: 1 }}>
+            Sign Out
+          </span>
+        </button>
+
+        {/* Bottom padding for safe area */}
+        <div className="h-4" />
+      </div>
     </>
   )
 }

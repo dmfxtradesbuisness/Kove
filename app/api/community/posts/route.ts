@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const postType = searchParams.get('post_type')
+    const mine     = searchParams.get('mine') === 'true'
     const limit    = Math.min(Number(searchParams.get('limit') ?? '30'), 50)
     const offset   = Number(searchParams.get('offset') ?? '0')
 
@@ -22,6 +23,7 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
+    if (mine) query = query.eq('user_id', user.id)
     if (postType && postType !== 'all') query = query.eq('post_type', postType)
 
     const { data: posts, error } = await query
