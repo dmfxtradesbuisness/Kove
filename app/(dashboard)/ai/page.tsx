@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Loader2, Plus, Globe, ArrowLeftRight, RefreshCw,
-  Mic, BarChart2, ChevronDown,
+  Mic, BarChart2, ChevronDown, AlertCircle,
 } from 'lucide-react'
 import type { Trade } from '@/lib/types'
 import { ProGate } from '@/components/ProGate'
@@ -11,21 +11,18 @@ import { ProGate } from '@/components/ProGate'
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Message {
   id: string
-  role: 'user' | 'ai'
+  role: 'user' | 'assistant'
   text: string
   loading?: boolean
+  error?: boolean
 }
 
-interface Analysis {
-  mistakes: string
-  patterns: string
-  feedback: string
-}
-
-// ─── Suggestions ─────────────────────────────────────────────────────────────
+// ─── Suggestion chips ─────────────────────────────────────────────────────────
 const SUGGESTIONS = [
-  'Analyze my last trade',
   'What patterns am I repeating?',
+  'Am I overtrading?',
+  'Analyze my risk management',
+  'What is my biggest weakness?',
   'How can I improve my entries?',
 ]
 
@@ -34,36 +31,36 @@ function uid() {
   return Math.random().toString(36).slice(2)
 }
 
-function formatAnalysis(a: Analysis): string {
-  const parts: string[] = []
-  if (a.mistakes) parts.push(`**Mistakes**\n${a.mistakes}`)
-  if (a.patterns) parts.push(`**Patterns**\n${a.patterns}`)
-  if (a.feedback) parts.push(`**Feedback**\n${a.feedback}`)
-  return parts.join('\n\n')
-}
-
-/** Render bold markdown (**text**) inline */
-function renderText(text: string) {
-  const segments = text.split(/(\*\*[^*]+\*\*)/g)
-  return segments.map((seg, i) =>
-    seg.startsWith('**') && seg.endsWith('**')
-      ? <strong key={i} style={{ color: '#fff', fontWeight: 700 }}>{seg.slice(2, -2)}</strong>
-      : <span key={i}>{seg}</span>
-  )
+/** Render markdown: **bold**, bullet lists */
+function renderMarkdown(text: string) {
+  const lines = text.split('\n')
+  return lines.map((line, li) => {
+    const isBullet = /^[-•*]\s/.test(line)
+    const parts = line.split(/(\*\*[^*]+\*\*)/g)
+    const rendered = parts.map((seg, si) =>
+      seg.startsWith('**') && seg.endsWith('**')
+        ? <strong key={si} style={{ color: '#fff', fontWeight: 700 }}>{seg.slice(2, -2)}</strong>
+        : <span key={si}>{isBullet && si === 0 ? seg.replace(/^[-•*]\s/, '') : seg}</span>
+    )
+    return (
+      <div key={li} style={{
+        marginBottom: li < lines.length - 1 ? (isBullet ? 3 : 6) : 0,
+        paddingLeft: isBullet ? 12 : 0,
+        position: 'relative',
+      }}>
+        {isBullet && (
+          <span style={{ position: 'absolute', left: 2, top: 0, color: 'rgba(139,124,248,0.8)', fontSize: 10 }}>•</span>
+        )}
+        {rendered}
+      </div>
+    )
+  })
 }
 
 // ─── Orb ─────────────────────────────────────────────────────────────────────
 function Orb({ style }: { style: React.CSSProperties }) {
   return (
-    <div
-      style={{
-        position: 'absolute',
-        borderRadius: '50%',
-        filter: 'blur(80px)',
-        pointerEvents: 'none',
-        ...style,
-      }}
-    />
+    <div style={{ position: 'absolute', borderRadius: '50%', filter: 'blur(80px)', pointerEvents: 'none', ...style }} />
   )
 }
 
@@ -75,36 +72,54 @@ function Bubble({ msg }: { msg: Message }) {
       className="flex animate-fade-in"
       style={{ justifyContent: isUser ? 'flex-start' : 'flex-end', marginBottom: 16 }}
     >
+      {!isUser && (
+        <div
+          style={{
+            width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+            background: 'linear-gradient(135deg,rgba(108,93,211,0.8),rgba(60,40,140,0.9))',
+            border: '1px solid rgba(108,93,211,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginRight: 10, marginTop: 4,
+          }}
+        >
+          <BarChart2 style={{ width: 13, height: 13, color: 'rgba(200,190,255,0.9)' }} />
+        </div>
+      )}
       <div
         style={{
-          maxWidth: '62%',
-          padding: '12px 18px',
-          borderRadius: isUser ? '20px 20px 20px 4px' : '20px 20px 4px 20px',
+          maxWidth: '68%',
+          padding: isUser ? '10px 16px' : '14px 18px',
+          borderRadius: isUser ? '20px 20px 20px 4px' : '4px 20px 20px 20px',
           background: isUser
             ? 'rgba(230,230,240,0.93)'
-            : 'rgba(42,36,110,0.85)',
-          color: isUser ? '#111' : 'rgba(220,215,255,0.92)',
-          fontSize: 14,
-          lineHeight: '1.65',
+            : 'rgba(18,14,48,0.92)',
+          color: isUser ? '#111' : 'rgba(215,210,255,0.9)',
+          fontSize: 13.5,
+          lineHeight: '1.7',
           fontFamily: 'var(--font-body)',
-          backdropFilter: 'blur(8px)',
+          backdropFilter: 'blur(12px)',
           border: isUser
-            ? '1px solid rgba(255,255,255,0.18)'
-            : '1px solid rgba(108,93,211,0.35)',
+            ? '1px solid rgba(255,255,255,0.15)'
+            : '1px solid rgba(108,93,211,0.2)',
           boxShadow: isUser
-            ? '0 4px 24px rgba(0,0,0,0.35)'
-            : '0 4px 24px rgba(60,40,140,0.35)',
+            ? '0 2px 16px rgba(0,0,0,0.3)'
+            : '0 4px 28px rgba(40,24,100,0.3)',
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
         }}
       >
         {msg.loading ? (
-          <span className="flex items-center gap-2" style={{ color: 'rgba(180,170,255,0.7)' }}>
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            Thinking…
+          <span className="flex items-center gap-2" style={{ color: 'rgba(180,170,255,0.5)' }}>
+            <Loader2 className="w-3 h-3 animate-spin" />
+            <span style={{ fontSize: 12 }}>Thinking…</span>
+          </span>
+        ) : msg.error ? (
+          <span className="flex items-start gap-2" style={{ color: '#F87171' }}>
+            <AlertCircle style={{ width: 14, height: 14, flexShrink: 0, marginTop: 2 }} />
+            <span>{msg.text}</span>
           </span>
         ) : (
-          renderText(msg.text)
+          renderMarkdown(msg.text)
         )}
       </div>
     </div>
@@ -113,17 +128,17 @@ function Bubble({ msg }: { msg: Message }) {
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function AIPage() {
-  const [subscribed, setSubscribed]       = useState<boolean | null>(null)
-  const [trades, setTrades]               = useState<Trade[]>([])
-  const [checking, setChecking]           = useState(true)
-  const [messages, setMessages]           = useState<Message[]>([])
-  const [input, setInput]                 = useState('')
-  const [sending, setSending]             = useState(false)
+  const [subscribed, setSubscribed]           = useState<boolean | null>(null)
+  const [trades, setTrades]                   = useState<Trade[]>([])
+  const [checking, setChecking]               = useState(true)
+  const [messages, setMessages]               = useState<Message[]>([])
+  const [input, setInput]                     = useState('')
+  const [sending, setSending]                 = useState(false)
   const [selectedTradeId, setSelectedTradeId] = useState('')
-  const [showTradeBar, setShowTradeBar]   = useState(false)
+  const [showTradeBar, setShowTradeBar]       = useState(false)
 
-  const bottomRef  = useRef<HTMLDivElement>(null)
-  const inputRef   = useRef<HTMLTextAreaElement>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const inputRef  = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     async function init() {
@@ -136,6 +151,8 @@ export default function AIPage() {
         const tradesData = await tradesRes.json()
         setSubscribed(subData.active === true)
         if (tradesData.trades) setTrades(tradesData.trades)
+      } catch {
+        setSubscribed(false)
       } finally {
         setChecking(false)
       }
@@ -147,49 +164,62 @@ export default function AIPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const send = async (text: string) => {
+  const send = useCallback(async (text: string) => {
     if (!text.trim() || sending) return
     setSending(true)
 
     const userMsg: Message = { id: uid(), role: 'user', text: text.trim() }
-    const loadingMsg: Message = { id: uid(), role: 'ai', text: '', loading: true }
+    const loadingMsg: Message = { id: uid(), role: 'assistant', text: '', loading: true }
+
     setMessages((prev) => [...prev, userMsg, loadingMsg])
     setInput('')
 
+    // Build conversation history for the API (user+assistant pairs, plain text)
+    const history = messages
+      .filter((m) => !m.loading && !m.error)
+      .map((m) => ({ role: m.role, content: m.text }))
+    history.push({ role: 'user', content: text.trim() })
+
+    // Attach selected trade context if any
+    const tradeContext = trades.find((t) => t.id === selectedTradeId) ?? null
+
     try {
-      const selectedTrade = trades.find((t) => t.id === selectedTradeId) || null
-      const res  = await fetch('/api/ai/analyze', {
-        method: 'POST',
+      const res  = await fetch('/api/ai/chat', {
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tradeData: selectedTrade,
-          notes: text.trim(),
+        body:    JSON.stringify({
+          messages:     history,
+          tradeContext: tradeContext ?? undefined,
         }),
       })
+
       const data = await res.json()
 
-      let aiText: string
       if (!res.ok) {
-        aiText = `⚠️ ${data.error || 'Analysis failed. Please try again.'}`
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.loading ? { ...m, text: data.error ?? 'Something went wrong. Please try again.', loading: false, error: true } : m
+          )
+        )
       } else {
-        aiText = formatAnalysis(data.analysis)
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.loading ? { ...m, text: data.reply, loading: false } : m
+          )
+        )
       }
-
-      setMessages((prev) =>
-        prev.map((m) => (m.loading ? { ...m, text: aiText, loading: false } : m))
-      )
     } catch {
       setMessages((prev) =>
         prev.map((m) =>
           m.loading
-            ? { ...m, text: '⚠️ Connection error. Please try again.', loading: false }
+            ? { ...m, text: 'Network error — check your connection and try again.', loading: false, error: true }
             : m
         )
       )
     } finally {
       setSending(false)
     }
-  }
+  }, [messages, sending, selectedTradeId, trades])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -202,7 +232,8 @@ export default function AIPage() {
   if (checking) {
     return (
       <div className="flex items-center justify-center" style={{ height: '100%', minHeight: '60vh' }}>
-        <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(255,255,255,0.1)', borderTopColor: 'rgba(255,255,255,0.4)' }} />
+        <div className="w-5 h-5 border-2 rounded-full animate-spin"
+          style={{ borderColor: 'rgba(255,255,255,0.08)', borderTopColor: 'rgba(139,124,248,0.5)' }} />
       </div>
     )
   }
@@ -212,7 +243,7 @@ export default function AIPage() {
     return (
       <ProGate
         title="Unlock KoveAI"
-        description="GPT-4 powered trade analysis. Identify your mistakes, detect hidden patterns, and get personalized coaching — all from a natural conversation."
+        description="GPT-4 powered trading coach. Identify your mistakes, detect hidden patterns, and get personalized coaching — all from a natural conversation."
       />
     )
   }
@@ -223,101 +254,105 @@ export default function AIPage() {
       className="relative flex flex-col overflow-hidden"
       style={{ height: 'calc(100vh - 0px)', maxHeight: '100vh', background: '#080808' }}
     >
-      {/* ── Orbs ── */}
+      {/* Orbs */}
       <Orb style={{ width: 560, height: 560, top: -160, left: '50%', transform: 'translateX(-50%)', background: 'radial-gradient(circle,rgba(55,38,130,0.75) 0%,rgba(25,15,70,0.35) 55%,transparent 100%)', zIndex: 0 }} />
       <Orb style={{ width: 320, height: 320, top: 20, left: -80, background: 'radial-gradient(circle,rgba(35,25,90,0.55) 0%,transparent 70%)', zIndex: 0 }} />
       <Orb style={{ width: 280, height: 280, top: 40, right: -60, background: 'radial-gradient(circle,rgba(45,30,100,0.5) 0%,transparent 70%)', zIndex: 0 }} />
       <Orb style={{ width: 340, height: 340, bottom: -100, left: -80, background: 'radial-gradient(circle,rgba(30,20,80,0.5) 0%,transparent 70%)', zIndex: 0 }} />
       <Orb style={{ width: 300, height: 300, bottom: -60, right: -60, background: 'radial-gradient(circle,rgba(40,28,100,0.5) 0%,transparent 70%)', zIndex: 0 }} />
 
-      {/* ── KoveAI brand (only when no messages) ── */}
+      {/* KoveAI brand — empty state */}
       {messages.length === 0 && (
-        <div
-          className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
-          style={{ zIndex: 1 }}
-        >
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ zIndex: 1 }}>
           <div
-            className="flex items-center gap-2.5 mb-3"
             style={{
-              background: 'radial-gradient(circle at center, rgba(90,70,200,0.18) 0%, transparent 80%)',
-              padding: '20px 36px',
+              background: 'radial-gradient(circle at center, rgba(90,70,200,0.14) 0%, transparent 80%)',
+              padding: '24px 40px',
               borderRadius: 24,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 10,
             }}
           >
-            <BarChart2 className="w-6 h-6" style={{ color: 'rgba(160,145,255,0.7)' }} />
+            <div style={{
+              width: 52, height: 52, borderRadius: 16,
+              background: 'rgba(108,93,211,0.12)',
+              border: '1px solid rgba(108,93,211,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: 4,
+            }}>
+              <BarChart2 style={{ width: 22, height: 22, color: 'rgba(160,145,255,0.7)' }} />
+            </div>
             <span
-              className="text-3xl font-black tracking-tight"
               style={{
                 fontFamily: 'var(--font-display)',
-                color: 'rgba(200,190,255,0.55)',
+                fontSize: 28,
+                fontWeight: 800,
+                color: 'rgba(200,190,255,0.5)',
                 letterSpacing: '-0.03em',
               }}
             >
               KoveAI
             </span>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>
+              Your personal trading coach
+            </span>
           </div>
         </div>
       )}
 
-      {/* ── Messages area ── */}
-      <div
-        className="flex-1 overflow-y-auto relative"
-        style={{ zIndex: 2, paddingTop: messages.length === 0 ? 0 : 24 }}
-      >
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto relative" style={{ zIndex: 2, paddingTop: messages.length === 0 ? 0 : 24 }}>
         {messages.length > 0 && (
-          <div style={{ maxWidth: 680, margin: '0 auto', padding: '0 24px 24px' }}>
-            {messages.map((msg) => (
-              <Bubble key={msg.id} msg={msg} />
-            ))}
+          <div style={{ maxWidth: 700, margin: '0 auto', padding: '0 20px 24px' }}>
+            {messages.map((msg) => <Bubble key={msg.id} msg={msg} />)}
             <div ref={bottomRef} />
           </div>
         )}
       </div>
 
-      {/* ── Bottom section ── */}
-      <div
-        className="relative flex-shrink-0"
-        style={{ zIndex: 3, paddingBottom: 24, paddingLeft: 24, paddingRight: 24 }}
-      >
-        <div style={{ maxWidth: 680, margin: '0 auto' }}>
+      {/* Bottom section */}
+      <div className="relative flex-shrink-0" style={{ zIndex: 3, padding: '0 20px 24px' }}>
+        <div style={{ maxWidth: 700, margin: '0 auto' }}>
 
-          {/* Trade selector bar (shown when + clicked) */}
+          {/* Trade selector bar */}
           {showTradeBar && trades.length > 0 && (
             <div
               className="mb-3 flex items-center gap-2 animate-fade-in"
               style={{
-                background: 'rgba(20,16,50,0.9)',
+                background: 'rgba(20,16,50,0.92)',
                 border: '1px solid rgba(108,93,211,0.25)',
                 borderRadius: 14,
-                padding: '8px 12px',
+                padding: '8px 14px',
                 backdropFilter: 'blur(12px)',
               }}
             >
-              <span className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-display)', whiteSpace: 'nowrap' }}>
-                Trade:
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Trade context:
               </span>
               <div className="relative flex-1">
                 <select
                   value={selectedTradeId}
                   onChange={(e) => setSelectedTradeId(e.target.value)}
                   className="w-full appearance-none text-xs outline-none pr-6"
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: selectedTradeId ? '#fff' : 'rgba(255,255,255,0.35)',
-                    fontFamily: 'var(--font-body)',
-                    cursor: 'pointer',
-                  }}
+                  style={{ background: 'transparent', border: 'none', color: selectedTradeId ? '#fff' : 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-body)', cursor: 'pointer' }}
                 >
-                  <option value="">None selected</option>
+                  <option value="">None — general chat</option>
                   {trades.map((t) => (
                     <option key={t.id} value={t.id} style={{ background: '#1a1438' }}>
-                      {t.pair} {t.type} · {new Date(t.created_at).toLocaleDateString()} · {t.pnl !== null ? `${t.pnl >= 0 ? '+' : ''}$${t.pnl.toFixed(2)}` : 'Open'}
+                      {t.pair} {t.type} · {new Date(t.created_at).toLocaleDateString()} · {t.pnl != null ? `${t.pnl >= 0 ? '+' : ''}$${t.pnl.toFixed(2)}` : 'Open'}
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: 'rgba(255,255,255,0.3)' }} />
+                <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: 'rgba(255,255,255,0.25)' }} />
               </div>
+            </div>
+          )}
+
+          {showTradeBar && trades.length === 0 && (
+            <div className="mb-3 animate-fade-in" style={{ textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-body)' }}>
+              No trades logged yet — chat without context or log a trade first.
             </div>
           )}
 
@@ -330,15 +365,15 @@ export default function AIPage() {
                   onClick={() => send(s)}
                   className="text-xs font-semibold px-4 py-2 rounded-full transition-all"
                   style={{
-                    background: 'rgba(80,62,185,0.55)',
-                    color: 'rgba(210,200,255,0.9)',
-                    border: '1px solid rgba(108,93,211,0.35)',
+                    background: 'rgba(70,55,165,0.45)',
+                    color: 'rgba(210,200,255,0.85)',
+                    border: '1px solid rgba(108,93,211,0.3)',
                     fontFamily: 'var(--font-display)',
                     cursor: 'pointer',
                     backdropFilter: 'blur(8px)',
                   }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'rgba(100,80,210,0.7)')}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'rgba(80,62,185,0.55)')}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'rgba(95,78,200,0.65)')}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'rgba(70,55,165,0.45)')}
                 >
                   {s}
                 </button>
@@ -349,127 +384,118 @@ export default function AIPage() {
           {/* Input pill */}
           <div
             style={{
-              background: 'rgba(28,26,36,0.92)',
-              border: '1px solid rgba(255,255,255,0.09)',
+              background: 'rgba(22,20,36,0.94)',
+              border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: 20,
-              backdropFilter: 'blur(20px)',
-              boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
+              backdropFilter: 'blur(24px)',
+              boxShadow: '0 8px 40px rgba(0,0,0,0.55)',
               overflow: 'hidden',
             }}
           >
-            {/* Textarea row */}
-            <div className="flex items-center px-4 pt-3 pb-1">
+            {/* Textarea */}
+            <div className="flex items-center px-4 pt-3.5 pb-1">
               <textarea
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask anything"
+                placeholder="Ask anything about your trading…"
                 rows={1}
                 className="flex-1 resize-none outline-none text-sm"
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: 'rgba(255,255,255,0.85)',
+                  color: 'rgba(255,255,255,0.88)',
                   fontFamily: 'var(--font-body)',
-                  lineHeight: '1.5',
-                  maxHeight: 120,
+                  lineHeight: '1.55',
+                  maxHeight: 130,
                   overflow: 'auto',
                   caretColor: '#8B7CF8',
+                  fontSize: 13.5,
                 }}
               />
             </div>
 
-            {/* Toolbar row */}
+            {/* Toolbar */}
             <div className="flex items-center justify-between px-3 pb-2.5 pt-1">
               <div className="flex items-center gap-0.5">
-                {/* + button */}
+                {/* Trade attach */}
                 <button
                   onClick={() => setShowTradeBar((v) => !v)}
-                  className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
+                  title="Attach a trade for analysis"
                   style={{
-                    color: showTradeBar ? '#8B7CF8' : 'rgba(255,255,255,0.35)',
+                    width: 32, height: 32, borderRadius: 10,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: showTradeBar ? '#8B7CF8' : 'rgba(255,255,255,0.32)',
                     background: showTradeBar ? 'rgba(108,93,211,0.15)' : 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                  title="Attach trade"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-
-                <button
-                  className="w-8 h-8 rounded-xl flex items-center justify-center"
-                  style={{ color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'default' }}
-                >
-                  <Globe className="w-4 h-4" />
-                </button>
-
-                <button
-                  className="w-8 h-8 rounded-xl flex items-center justify-center"
-                  style={{ color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'default' }}
-                >
-                  <ArrowLeftRight className="w-3.5 h-3.5" />
-                </button>
-
-                <button
-                  className="w-8 h-8 rounded-xl flex items-center justify-center"
-                  style={{ color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'default' }}
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                </button>
-
-                <span
-                  className="text-[11px] font-bold ml-1 px-2 py-0.5 rounded-md"
-                  style={{
-                    color: 'rgba(255,255,255,0.3)',
-                    fontFamily: 'var(--font-display)',
-                    background: 'rgba(255,255,255,0.05)',
+                    border: 'none', cursor: 'pointer',
                   }}
                 >
-                  GPT-4o
+                  <Plus style={{ width: 15, height: 15 }} />
+                </button>
+
+                <button style={{ width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.22)', background: 'none', border: 'none', cursor: 'default' }}>
+                  <Globe style={{ width: 14, height: 14 }} />
+                </button>
+                <button style={{ width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.22)', background: 'none', border: 'none', cursor: 'default' }}>
+                  <ArrowLeftRight style={{ width: 13, height: 13 }} />
+                </button>
+                <button style={{ width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.22)', background: 'none', border: 'none', cursor: 'default' }}>
+                  <RefreshCw style={{ width: 13, height: 13 }} />
+                </button>
+
+                <span style={{
+                  fontSize: 10, fontWeight: 700, marginLeft: 4,
+                  padding: '2px 8px', borderRadius: 6,
+                  color: 'rgba(255,255,255,0.25)',
+                  fontFamily: 'var(--font-display)',
+                  background: 'rgba(255,255,255,0.04)',
+                }}>
+                  GPT-4o mini
                 </span>
               </div>
 
               <div className="flex items-center gap-2">
-                <button
-                  className="w-8 h-8 rounded-full flex items-center justify-center"
-                  style={{ color: 'rgba(255,255,255,0.35)', background: 'none', border: 'none', cursor: 'default' }}
-                >
-                  <Mic className="w-4 h-4" />
+                <button style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.28)', background: 'none', border: 'none', cursor: 'default' }}>
+                  <Mic style={{ width: 14, height: 14 }} />
                 </button>
 
-                {/* Send / wave button */}
+                {/* Send button */}
                 <button
                   onClick={() => send(input)}
                   disabled={!input.trim() || sending}
-                  className="w-9 h-9 rounded-full flex items-center justify-center transition-all disabled:opacity-40"
                   style={{
+                    width: 36, height: 36, borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                     background: input.trim() && !sending
                       ? 'linear-gradient(135deg,#7B6CF5,#5C4ED4)'
-                      : 'rgba(108,93,211,0.4)',
+                      : 'rgba(108,93,211,0.3)',
                     border: 'none',
                     cursor: !input.trim() || sending ? 'not-allowed' : 'pointer',
-                    boxShadow: input.trim() && !sending ? '0 0 16px rgba(108,93,211,0.5)' : 'none',
-                    transition: 'all 0.2s',
+                    boxShadow: input.trim() && !sending ? '0 0 18px rgba(108,93,211,0.5)' : 'none',
+                    transition: 'all 0.18s',
+                    opacity: !input.trim() && !sending ? 0.5 : 1,
                   }}
                 >
                   {sending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#fff' }} />
+                    <Loader2 style={{ width: 14, height: 14, color: '#fff' }} className="animate-spin" />
                   ) : (
-                    /* Waveform bars */
-                    <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
-                      <rect x="0"  y="5" width="2.5" height="4"  rx="1.25" fill="white" opacity="0.7"/>
+                    <svg width="16" height="13" viewBox="0 0 18 14" fill="none">
+                      <rect x="0"  y="5" width="2.5" height="4"  rx="1.25" fill="white" opacity="0.65"/>
                       <rect x="4"  y="2" width="2.5" height="10" rx="1.25" fill="white"/>
                       <rect x="8"  y="0" width="2.5" height="14" rx="1.25" fill="white"/>
                       <rect x="12" y="2" width="2.5" height="10" rx="1.25" fill="white"/>
-                      <rect x="16" y="5" width="2"   height="4"  rx="1"    fill="white" opacity="0.7"/>
+                      <rect x="16" y="5" width="2"   height="4"  rx="1"   fill="white" opacity="0.65"/>
                     </svg>
                   )}
                 </button>
               </div>
             </div>
           </div>
+
+          <p style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.12)', fontFamily: 'var(--font-body)', marginTop: 10 }}>
+            KoveAI can make mistakes. Verify important decisions independently.
+          </p>
         </div>
       </div>
     </div>
