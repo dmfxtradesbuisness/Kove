@@ -5,8 +5,9 @@ import { createClient } from '@/lib/supabase/client'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import {
   Heart, Loader2, Send, Bookmark, User, TrendingUp, Trophy,
-  X, Wifi, WifiOff, ImageIcon, MessageCircle, ChevronDown,
-  ChevronUp, Camera, Pencil, Check, Search, MoreHorizontal,
+  X, Wifi, WifiOff, ImageIcon, MessageCircle,
+  Camera, Pencil, Check, Search, MoreHorizontal,
+  Trash2, Flag, ShieldAlert, ShieldCheck, AlertTriangle,
 } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -18,6 +19,20 @@ interface CommunityProfile {
   avatar_url: string | null
   bio?: string | null
   is_public?: boolean
+}
+
+interface AdminPost {
+  id: string
+  user_id: string
+  content: string
+  post_type: PostType
+  image_url: string | null
+  like_count: number
+  comment_count: number
+  is_removed: boolean
+  created_at: string
+  profile: CommunityProfile | null
+  reports?: { count: number; reasons: string[] }
 }
 
 interface EnrichedPost {
@@ -136,15 +151,18 @@ function Swooshes() {
 
 // ─── Post card component ──────────────────────────────────────────────────────
 function PostCard({
-  post, myId,
+  post, myId, isAdmin,
   onLike, onBookmark, onReact,
+  onDelete, onReport,
   commentsOpen, onToggleComments,
   comments, commentInput, onCommentInput, onCommentSubmit, submittingComment,
 }: {
-  post: EnrichedPost; myId: string | null
+  post: EnrichedPost; myId: string | null; isAdmin: boolean
   onLike: (id: string, liked: boolean) => void
   onBookmark: (id: string, bookmarked: boolean) => void
   onReact: (id: string, emoji: string, current: string | null) => void
+  onDelete: (id: string) => void
+  onReport: (id: string) => void
   commentsOpen: boolean; onToggleComments: () => void
   comments: Comment[]; commentInput: string
   onCommentInput: (v: string) => void
@@ -152,8 +170,10 @@ function PostCard({
   submittingComment: boolean
 }) {
   const [showReactions, setShowReactions] = useState(false)
-  const cfg  = TYPE_CFG[post.post_type] ?? TYPE_CFG.general
-  const name = displayName(post.profile, post.user_id)
+  const [showMenu, setShowMenu]           = useState(false)
+  const cfg     = TYPE_CFG[post.post_type] ?? TYPE_CFG.general
+  const name    = displayName(post.profile, post.user_id)
+  const isOwn   = post.user_id === myId
 
   return (
     <div style={{ background:'#07060e', border:'1px solid rgba(255,255,255,0.07)', borderRadius:18, marginBottom:14, overflow:'hidden' }}>
@@ -178,9 +198,46 @@ function PostCard({
               <span style={{ fontSize:11, color:'rgba(255,255,255,0.28)', fontFamily:'var(--font-body)' }}>
                 {timeAgo(post.created_at)}
               </span>
-              <button style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.22)', padding:2 }}>
-                <MoreHorizontal className="w-4 h-4" />
-              </button>
+              {/* ⋯ menu */}
+              <div style={{ position:'relative' }}>
+                <button
+                  onClick={() => setShowMenu(v => !v)}
+                  style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.3)', padding:4, borderRadius:6 }}
+                >
+                  <MoreHorizontal className="w-4 h-4" />
+                </button>
+                {showMenu && (
+                  <div
+                    style={{ position:'absolute', top:'calc(100% + 4px)', right:0, zIndex:60, background:'#1a1638', border:'1px solid rgba(108,93,211,0.25)', borderRadius:12, padding:'6px', minWidth:140, boxShadow:'0 8px 32px rgba(0,0,0,0.55)' }}
+                    onMouseLeave={() => setShowMenu(false)}
+                  >
+                    {(isOwn || isAdmin) && (
+                      <button
+                        onClick={() => { setShowMenu(false); onDelete(post.id) }}
+                        className="flex items-center gap-2 w-full"
+                        style={{ background:'none', border:'none', cursor:'pointer', color:'#f87171', fontSize:12, fontFamily:'var(--font-display)', fontWeight:600, padding:'8px 10px', borderRadius:8, textAlign:'left' }}
+                        onMouseEnter={e => (e.currentTarget.style.background='rgba(248,113,113,0.12)')}
+                        onMouseLeave={e => (e.currentTarget.style.background='none')}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        {isAdmin && !isOwn ? 'Admin Delete' : 'Delete Post'}
+                      </button>
+                    )}
+                    {!isOwn && (
+                      <button
+                        onClick={() => { setShowMenu(false); onReport(post.id) }}
+                        className="flex items-center gap-2 w-full"
+                        style={{ background:'none', border:'none', cursor:'pointer', color:'#fbbf24', fontSize:12, fontFamily:'var(--font-display)', fontWeight:600, padding:'8px 10px', borderRadius:8, textAlign:'left' }}
+                        onMouseEnter={e => (e.currentTarget.style.background='rgba(251,191,36,0.1)')}
+                        onMouseLeave={e => (e.currentTarget.style.background='none')}
+                      >
+                        <Flag className="w-3.5 h-3.5" />
+                        Report Post
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -435,6 +492,21 @@ export default function CommunityPage() {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({})
   const [submittingComment, setSubmittingComment] = useState<string | null>(null)
 
+  // Admin
+  const [isAdmin, setIsAdmin]         = useState(false)
+  const [showAdminPanel, setShowAdminPanel] = useState(false)
+  const [adminPosts, setAdminPosts]   = useState<AdminPost[]>([])
+  const [adminLoading, setAdminLoading] = useState(false)
+  const [adminView, setAdminView]     = useState<'reported' | 'all' | 'removed'>('reported')
+
+  // Report modal
+  const [reportingPostId, setReportingPostId] = useState<string | null>(null)
+  const [reportReason, setReportReason] = useState('spam')
+  const [reportDetails, setReportDetails] = useState('')
+  const [submittingReport, setSubmittingReport] = useState(false)
+  const [reportSuccess, setReportSuccess] = useState(false)
+  const [postError, setPostError]     = useState<string | null>(null)
+
   // ── Init ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -447,6 +519,14 @@ export default function CommunityPage() {
     })
     fetch('/api/community/trending').then(r => r.json()).then(j => setTrending(j.trending ?? []))
     fetch('/api/community/leaderboard').then(r => r.json()).then(j => setLeaderboard(j.leaderboard ?? []))
+
+    // Check admin
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return
+      const res = await fetch('/api/stripe/subscription-status') // reuse auth check — we'll check admin via dedicated endpoint
+      const adminCheck = await fetch('/api/community/admin/posts?view=reported')
+      if (adminCheck.status === 200) setIsAdmin(true)
+    })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Posts ─────────────────────────────────────────────────────────────────
@@ -477,6 +557,51 @@ export default function CommunityPage() {
   }, [filter]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Interactions ──────────────────────────────────────────────────────────
+  // ── Delete post ───────────────────────────────────────────────────────────
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this post? This cannot be undone.')) return
+    const res = await fetch(`/api/community/posts/${id}`, { method: 'DELETE' })
+    if (res.ok) {
+      setPosts(prev => prev.filter(p => p.id !== id))
+      setAdminPosts(prev => prev.filter(p => p.id !== id))
+    }
+  }
+
+  // ── Report post ───────────────────────────────────────────────────────────
+  const openReport = (id: string) => {
+    setReportingPostId(id); setReportReason('spam'); setReportDetails(''); setReportSuccess(false)
+  }
+
+  const submitReport = async () => {
+    if (!reportingPostId || submittingReport) return
+    setSubmittingReport(true)
+    try {
+      const res = await fetch(`/api/community/posts/${reportingPostId}/report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: reportReason, details: reportDetails }),
+      })
+      if (res.ok) { setReportSuccess(true); setTimeout(() => setReportingPostId(null), 1800) }
+    } finally { setSubmittingReport(false) }
+  }
+
+  // ── Admin panel ───────────────────────────────────────────────────────────
+  const loadAdminPosts = async (view: 'reported' | 'all' | 'removed') => {
+    setAdminLoading(true)
+    const json = await fetch(`/api/community/admin/posts?view=${view}`).then(r => r.json())
+    setAdminPosts(json.posts ?? [])
+    setAdminLoading(false)
+  }
+
+  const openAdminPanel = () => {
+    setShowAdminPanel(true); setAdminView('reported'); loadAdminPosts('reported')
+  }
+
+  const resolveReports = async (postId: string) => {
+    await fetch('/api/community/admin/posts', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ post_id: postId }) })
+    setAdminPosts(prev => prev.filter(p => p.id !== postId))
+  }
+
   const handleLike = async (id: string, liked: boolean) => {
     setPosts(prev => prev.map(p => p.id === id ? { ...p, liked_by_me: !liked, like_count: liked ? p.like_count - 1 : p.like_count + 1 } : p))
     await fetch(`/api/community/posts/${id}/like`, { method: liked ? 'DELETE' : 'POST' })
@@ -542,10 +667,15 @@ export default function CommunityPage() {
       }
       const res  = await fetch('/api/community/posts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: composeContent.trim(), post_type: composeType, image_url: imageUrl }) })
       const json = await res.json()
+      if (!res.ok) {
+        setPostError(json.error ?? 'Post rejected')
+        return
+      }
       if (json.post) {
         setPosts(prev => prev.some(p => p.id === json.post.id) ? prev : [json.post, ...prev])
         setMyPostCount(c => c + 1)
       }
+      setPostError(null)
       setComposeContent(''); setComposeType('general'); setComposeImage(null); setComposePreview(null); setComposing(false)
     } finally { setSubmitting(false) }
   }
@@ -675,6 +805,17 @@ export default function CommunityPage() {
           </h1>
           <div style={{ height:1, background:'rgba(255,255,255,0.12)', marginBottom:20 }}/>
 
+          {/* Admin bar */}
+          {isAdmin && (
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16, padding:'10px 14px', background:'rgba(248,113,113,0.08)', border:'1px solid rgba(248,113,113,0.2)', borderRadius:14 }}>
+              <ShieldAlert className="w-4 h-4" style={{ color:'#f87171', flexShrink:0 }}/>
+              <span style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:12, color:'#f87171' }}>Admin Mode</span>
+              <button onClick={openAdminPanel} style={{ marginLeft:'auto', background:'rgba(248,113,113,0.15)', border:'1px solid rgba(248,113,113,0.3)', borderRadius:8, padding:'5px 12px', color:'#f87171', fontFamily:'var(--font-display)', fontWeight:700, fontSize:11, cursor:'pointer' }}>
+                Moderation Queue
+              </button>
+            </div>
+          )}
+
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-5 h-5 animate-spin" style={{ color:'#7B6CF5' }}/>
@@ -689,9 +830,12 @@ export default function CommunityPage() {
                 key={post.id}
                 post={post}
                 myId={myId}
+                isAdmin={isAdmin}
                 onLike={handleLike}
                 onBookmark={handleBookmark}
                 onReact={handleReact}
+                onDelete={handleDelete}
+                onReport={openReport}
                 commentsOpen={expandedComments.has(post.id)}
                 onToggleComments={() => toggleComments(post.id)}
                 comments={postComments[post.id] ?? []}
@@ -770,6 +914,129 @@ export default function CommunityPage() {
         </div>
       </div>
 
+      {/* ── Report modal ──────────────────────────────────────────────────────── */}
+      {reportingPostId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(0,0,0,0.72)', backdropFilter:'blur(6px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setReportingPostId(null) }}>
+          <div style={{ width:'100%', maxWidth:420, background:'#0d0b28', border:'1px solid rgba(248,113,113,0.25)', borderRadius:20, padding:24, boxShadow:'0 24px 80px rgba(0,0,0,0.7)' }}>
+            <div className="flex items-center gap-2 mb-4">
+              <Flag className="w-4 h-4" style={{ color:'#f87171' }}/>
+              <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:16, color:'#fff' }}>Report Post</h2>
+              <button onClick={() => setReportingPostId(null)} style={{ marginLeft:'auto', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.3)' }}><X className="w-4 h-4"/></button>
+            </div>
+
+            {reportSuccess ? (
+              <div className="flex flex-col items-center gap-3 py-4">
+                <ShieldCheck className="w-8 h-8" style={{ color:'#34d399' }}/>
+                <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'#34d399' }}>Report submitted</p>
+                <p style={{ fontFamily:'var(--font-body)', fontSize:12, color:'rgba(255,255,255,0.4)', textAlign:'center' }}>Our moderation team will review this post.</p>
+              </div>
+            ) : (
+              <>
+                <p style={{ fontSize:12, color:'rgba(255,255,255,0.4)', fontFamily:'var(--font-body)', marginBottom:14 }}>Why are you reporting this post?</p>
+                <div className="flex flex-col gap-2 mb-4">
+                  {[
+                    { value:'spam',           label:'Spam or self-promotion' },
+                    { value:'hate_speech',    label:'Hate speech or slurs' },
+                    { value:'nudity',         label:'Nudity or sexual content' },
+                    { value:'violence',       label:'Graphic violence' },
+                    { value:'misinformation', label:'False or misleading information' },
+                    { value:'other',          label:'Other' },
+                  ].map(opt => (
+                    <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer">
+                      <input type="radio" name="reason" value={opt.value} checked={reportReason === opt.value} onChange={() => setReportReason(opt.value)}
+                        style={{ accentColor:'#7B6CF5' }}/>
+                      <span style={{ fontSize:13, color: reportReason===opt.value ? '#fff' : 'rgba(255,255,255,0.5)', fontFamily:'var(--font-body)' }}>{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+                <textarea value={reportDetails} onChange={e => setReportDetails(e.target.value.slice(0,500))} placeholder="Additional context (optional)…" rows={2}
+                  style={{ width:'100%', resize:'none', outline:'none', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, padding:'10px 12px', color:'rgba(255,255,255,0.7)', fontFamily:'var(--font-body)', fontSize:12, marginBottom:14 }}/>
+                <button onClick={submitReport} disabled={submittingReport}
+                  className="w-full flex items-center justify-center gap-2"
+                  style={{ background:'linear-gradient(135deg,#ef4444,#dc2626)', border:'none', borderRadius:12, padding:'11px', color:'#fff', fontFamily:'var(--font-display)', fontWeight:700, fontSize:13, cursor:submittingReport?'not-allowed':'pointer', opacity:submittingReport?0.6:1 }}>
+                  {submittingReport ? <Loader2 className="w-4 h-4 animate-spin"/> : <Flag className="w-4 h-4"/>}
+                  Submit Report
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Admin panel modal ─────────────────────────────────────────────────── */}
+      {showAdminPanel && isAdmin && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 md:items-center" style={{ background:'rgba(0,0,0,0.8)', backdropFilter:'blur(8px)' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowAdminPanel(false) }}>
+          <div style={{ width:'100%', maxWidth:700, maxHeight:'85vh', background:'#0a0818', border:'1px solid rgba(248,113,113,0.25)', borderRadius:22, display:'flex', flexDirection:'column', boxShadow:'0 24px 80px rgba(0,0,0,0.8)', overflow:'hidden' }}>
+            {/* Header */}
+            <div className="flex items-center gap-3 p-5" style={{ borderBottom:'1px solid rgba(255,255,255,0.07)' }}>
+              <ShieldAlert className="w-5 h-5" style={{ color:'#f87171' }}/>
+              <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:17, color:'#fff' }}>Moderation Panel</h2>
+              <button onClick={() => setShowAdminPanel(false)} style={{ marginLeft:'auto', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.35)' }}><X className="w-4 h-4"/></button>
+            </div>
+
+            {/* View tabs */}
+            <div className="flex gap-1 p-4 pb-0">
+              {(['reported','all','removed'] as const).map(v => (
+                <button key={v} onClick={() => { setAdminView(v); loadAdminPosts(v) }}
+                  style={{ background: adminView===v ? 'rgba(248,113,113,0.15)' : 'rgba(255,255,255,0.05)', border:`1px solid ${adminView===v ? 'rgba(248,113,113,0.3)' : 'rgba(255,255,255,0.08)'}`, borderRadius:10, padding:'6px 14px', color: adminView===v ? '#f87171' : 'rgba(255,255,255,0.4)', fontFamily:'var(--font-display)', fontWeight:600, fontSize:12, cursor:'pointer', textTransform:'capitalize' }}>
+                  {v === 'reported' ? '🚨 Reported' : v === 'all' ? '📋 All Posts' : '🗑 Removed'}
+                </button>
+              ))}
+            </div>
+
+            {/* Posts list */}
+            <div style={{ flex:1, overflowY:'auto', padding:16 }}>
+              {adminLoading ? (
+                <div className="flex items-center justify-center py-16"><Loader2 className="w-5 h-5 animate-spin" style={{ color:'#f87171' }}/></div>
+              ) : adminPosts.length === 0 ? (
+                <div className="text-center py-16">
+                  <ShieldCheck className="w-8 h-8 mx-auto mb-3" style={{ color:'#34d399' }}/>
+                  <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'#34d399' }}>All clear</p>
+                  <p style={{ fontFamily:'var(--font-body)', fontSize:12, color:'rgba(255,255,255,0.3)', marginTop:4 }}>No {adminView} posts</p>
+                </div>
+              ) : adminPosts.map(p => (
+                <div key={p.id} style={{ background: p.is_removed ? 'rgba(248,113,113,0.05)' : '#111122', border:`1px solid ${p.is_removed ? 'rgba(248,113,113,0.15)' : 'rgba(255,255,255,0.07)'}`, borderRadius:14, padding:16, marginBottom:10 }}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:12, color:'rgba(255,255,255,0.7)' }}>
+                          {p.profile?.display_name ?? `Trader #${hashId(p.user_id)}`}
+                        </span>
+                        {p.reports && (
+                          <span style={{ fontSize:10, fontWeight:700, color:'#f87171', background:'rgba(248,113,113,0.12)', border:'1px solid rgba(248,113,113,0.25)', borderRadius:6, padding:'1px 6px', fontFamily:'var(--font-display)' }}>
+                            🚨 {p.reports.count} report{p.reports.count !== 1 ? 's' : ''}: {p.reports.reasons.join(', ')}
+                          </span>
+                        )}
+                        {p.is_removed && <span style={{ fontSize:10, color:'#f87171', fontFamily:'var(--font-display)', fontWeight:700 }}>REMOVED</span>}
+                      </div>
+                      <p style={{ fontSize:13, color:'rgba(255,255,255,0.6)', fontFamily:'var(--font-body)', lineHeight:'1.5', marginBottom:p.image_url ? 8 : 0 }}>{p.content}</p>
+                      {p.image_url && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.image_url} alt="Post img" style={{ height:60, borderRadius:8, objectFit:'cover', border:'1px solid rgba(255,255,255,0.08)' }}/>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1.5 flex-shrink-0">
+                      {!p.is_removed && (
+                        <button onClick={() => handleDelete(p.id)} style={{ background:'rgba(248,113,113,0.12)', border:'1px solid rgba(248,113,113,0.25)', borderRadius:8, padding:'6px 10px', color:'#f87171', fontFamily:'var(--font-display)', fontWeight:700, fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
+                          <Trash2 className="w-3 h-3"/> Delete
+                        </button>
+                      )}
+                      {adminView === 'reported' && (
+                        <button onClick={() => resolveReports(p.id)} style={{ background:'rgba(52,211,153,0.1)', border:'1px solid rgba(52,211,153,0.2)', borderRadius:8, padding:'6px 10px', color:'#34d399', fontFamily:'var(--font-display)', fontWeight:700, fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
+                          <ShieldCheck className="w-3 h-3"/> Dismiss
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Compose modal ─────────────────────────────────────────────────────── */}
       {composing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(0,0,0,0.72)', backdropFilter:'blur(6px)' }}
@@ -799,6 +1066,14 @@ export default function CommunityPage() {
               style={{ width:'100%', resize:'none', outline:'none', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'13px 15px', color:'#fff', fontFamily:'var(--font-body)', fontSize:14, lineHeight:'1.6' }}
               autoFocus
             />
+
+            {/* Moderation error */}
+            {postError && (
+              <div className="flex items-start gap-2 mt-3 p-3 rounded-xl" style={{ background:'rgba(248,113,113,0.1)', border:'1px solid rgba(248,113,113,0.25)' }}>
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color:'#f87171' }}/>
+                <p style={{ fontSize:12, color:'#f87171', fontFamily:'var(--font-body)', lineHeight:'1.5' }}>{postError}</p>
+              </div>
+            )}
 
             {/* Image preview */}
             {composePreview && (

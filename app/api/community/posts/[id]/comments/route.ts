@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { moderateText } from '@/lib/content-moderation'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
@@ -59,6 +60,10 @@ export async function POST(
     const content = body?.content?.toString().trim()
     if (!content || content.length > 500) {
       return NextResponse.json({ error: 'Invalid content' }, { status: 400 })
+    }
+    const textCheck = moderateText(content)
+    if (!textCheck.ok) {
+      return NextResponse.json({ error: textCheck.reason }, { status: 422 })
     }
 
     const admin = createAdminClient()

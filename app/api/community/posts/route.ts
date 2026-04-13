@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { extractTickers } from '@/lib/ticker-extract'
+import { moderateText } from '@/lib/content-moderation'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
@@ -17,6 +18,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('community_posts')
       .select('id, user_id, content, post_type, tickers, like_count, bookmark_count, comment_count, image_url, created_at')
+      .eq('is_removed', false)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -95,7 +97,14 @@ export async function POST(request: NextRequest) {
     if (content.trim().length > 1000) return NextResponse.json({ error: 'Content max 1000 chars' }, { status: 400 })
 
     const resolvedType = VALID_TYPES.includes(post_type ?? '') ? post_type! : 'general'
-    const tickers      = extractTickers(content)
+
+    // ── Content moderation ──────────────────────────────────────────────────
+    const textCheck = moderateText(content)
+    if (!textCheck.ok) {
+      return NextResponse.json({ error: textCheck.reason }, { status: 422 })
+    }
+
+    const tickers = extractTickers(content)
 
     const admin = createAdminClient()
     const { data: post, error } = await admin
