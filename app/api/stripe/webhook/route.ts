@@ -3,31 +3,42 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
-// Helper: get period end from subscription (handles API version differences)
+// Extract period end from subscription — handles Stripe API version differences
 function getPeriodEnd(sub: Stripe.Subscription): string | null {
   try {
-    // current_period_end is on items in newer API versions
-    const end =
-      (sub as unknown as { current_period_end?: number }).current_period_end ??
-      sub.items?.data?.[0]?.plan?.billing_scheme !== undefined
-        ? undefined
-        : undefined
-
-    if (typeof end === 'number') {
-      return new Date(end * 1000).toISOString()
+    // Try items first (newer API versions)
+    const itemPeriodEnd = sub.items?.data?.[0]?.current_period_end
+    if (typeof itemPeriodEnd === 'number') {
+      return new Date(itemPeriodEnd * 1000).toISOString()
     }
-
-    // Fallback: look at billing_cycle_anchor if available
-    const anchor = (sub as unknown as { billing_cycle_anchor?: number }).billing_cycle_anchor
-    if (typeof anchor === 'number') {
-      // Approximate next period end (anchor + 30 days)
-      return new Date((anchor + 30 * 24 * 60 * 60) * 1000).toISOString()
+    // Try top-level (older API versions)
+    const topLevel = (sub as unknown as { current_period_end?: number }).current_period_end
+    if (typeof topLevel === 'number') {
+      return new Date(topLevel * 1000).toISOString()
     }
-
     return null
   } catch {
     return null
   }
+}
+
+// Grant premium access in subscriptions table
+async function grantPremium(
+  supabase: ReturnType<typeof createAdminClient>,
+  userId: string,
+  customerId: string,
+  sub: Stripe.Subscription
+) {
+  await supabase.from('subscriptions').upsert(
+    {
+      user_id: userId,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: sub.id,
+      subscription_status: sub.status,
+      current_period_end: getPeriodEnd(sub),
+    },
+    { onConflict: 'user_id' }
+  )
 }
 
 export async function POST(request: NextRequest) {
@@ -46,11 +57,7 @@ export async function POST(request: NextRequest) {
   let event: Stripe.Event
 
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET
-    )
+    event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET)
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Invalid signature'
     console.error('Webhook signature verification failed:', msg)
@@ -61,63 +68,122 @@ export async function POST(request: NextRequest) {
 
   try {
     switch (event.type) {
+
+      // ── Payment completed → grant access immediately ──
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
         const userId = session.metadata?.user_id
 
-        if (userId && session.subscription) {
-          const sub = await stripe.subscriptions.retrieve(
-            session.subscription as string
-          )
+        if (!userId) {
+          console.error('checkout.session.completed: no user_id in metadata')
+          break
+        }
 
-          await supabase.from('subscriptions').upsert({
-            user_id: userId,
-            stripe_customer_id: session.customer as string,
-            stripe_subscription_id: sub.id,
-            subscription_status: sub.status,
-            current_period_end: getPeriodEnd(sub),
-          })
+        if (session.subscription) {
+          const sub = await stripe.subscriptions.retrieve(session.subscription as string)
+          await grantPremium(supabase, userId, session.customer as string, sub)
+          console.log(`✓ Premium granted: user=${userId} sub=${sub.id} status=${sub.status}`)
+        } else if (session.payment_status === 'paid') {
+          // One-time payment fallback
+          await supabase.from('subscriptions').upsert(
+            {
+              user_id: userId,
+              stripe_customer_id: session.customer as string,
+              stripe_subscription_id: null,
+              subscription_status: 'active',
+              current_period_end: null,
+            },
+            { onConflict: 'user_id' }
+          )
         }
         break
       }
 
+      // ── Recurring invoice paid → renew/reactivate ──
+      case 'invoice.paid': {
+        const invoice = event.data.object as Stripe.Invoice
+        const subscriptionId = (invoice as unknown as { subscription?: string }).subscription
+
+        if (!subscriptionId) break
+
+        const sub = await stripe.subscriptions.retrieve(subscriptionId)
+        const userId = sub.metadata?.user_id
+
+        const updateData = {
+          subscription_status: sub.status,
+          current_period_end: getPeriodEnd(sub),
+          stripe_subscription_id: sub.id,
+        }
+
+        if (userId) {
+          // Update by user_id (most reliable)
+          const { error } = await supabase
+            .from('subscriptions')
+            .update(updateData)
+            .eq('user_id', userId)
+          if (error) {
+            // If row doesn't exist yet, upsert with customer info
+            await supabase.from('subscriptions').upsert(
+              {
+                user_id: userId,
+                stripe_customer_id: typeof invoice.customer === 'string' ? invoice.customer : '',
+                ...updateData,
+              },
+              { onConflict: 'user_id' }
+            )
+          }
+        } else {
+          // Fallback: update by subscription ID
+          await supabase
+            .from('subscriptions')
+            .update(updateData)
+            .eq('stripe_subscription_id', sub.id)
+        }
+
+        console.log(`✓ Invoice paid: sub=${subscriptionId} status=${sub.status}`)
+        break
+      }
+
+      // ── Subscription updated (plan change, trial end, etc.) ──
       case 'customer.subscription.updated': {
         const sub = event.data.object as Stripe.Subscription
         const userId = sub.metadata?.user_id
 
-        const updateData: Record<string, unknown> = {
+        const updateData = {
           stripe_subscription_id: sub.id,
           subscription_status: sub.status,
           current_period_end: getPeriodEnd(sub),
         }
 
         if (userId) {
-          await supabase
-            .from('subscriptions')
-            .update(updateData)
-            .eq('user_id', userId)
+          await supabase.from('subscriptions').update(updateData).eq('user_id', userId)
         } else {
-          await supabase
-            .from('subscriptions')
-            .update(updateData)
-            .eq('stripe_subscription_id', sub.id)
+          await supabase.from('subscriptions').update(updateData).eq('stripe_subscription_id', sub.id)
         }
         break
       }
 
+      // ── Subscription canceled ──
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription
+        const userId = sub.metadata?.user_id
 
-        await supabase
-          .from('subscriptions')
-          .update({
-            subscription_status: 'canceled',
-            stripe_subscription_id: null,
-          })
-          .eq('stripe_subscription_id', sub.id)
+        if (userId) {
+          await supabase
+            .from('subscriptions')
+            .update({ subscription_status: 'canceled', stripe_subscription_id: null })
+            .eq('user_id', userId)
+        } else {
+          await supabase
+            .from('subscriptions')
+            .update({ subscription_status: 'canceled', stripe_subscription_id: null })
+            .eq('stripe_subscription_id', sub.id)
+        }
+        console.log(`✓ Subscription canceled: sub=${sub.id}`)
         break
       }
 
+      // ── Payment failed ──
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice
         const subscriptionId = (invoice as unknown as { subscription?: string }).subscription
@@ -127,31 +193,18 @@ export async function POST(request: NextRequest) {
             .from('subscriptions')
             .update({ subscription_status: 'past_due' })
             .eq('stripe_subscription_id', subscriptionId)
+          console.log(`⚠ Payment failed: sub=${subscriptionId}`)
         }
         break
       }
 
-      case 'invoice.paid': {
-        // Reactivate subscription if it was past_due
-        const invoice = event.data.object as Stripe.Invoice
-        const subscriptionId = (invoice as unknown as { subscription?: string }).subscription
-
-        if (subscriptionId) {
-          const sub = await stripe.subscriptions.retrieve(subscriptionId)
-          await supabase
-            .from('subscriptions')
-            .update({
-              subscription_status: sub.status,
-              current_period_end: getPeriodEnd(sub),
-            })
-            .eq('stripe_subscription_id', subscriptionId)
-        }
+      default:
+        // Unhandled event type — return 200 so Stripe doesn't retry
         break
-      }
     }
   } catch (err) {
     console.error('Webhook handler error:', err)
-    // Return 200 to prevent Stripe from retrying for non-critical errors
+    // Still return 200 to prevent infinite Stripe retries
   }
 
   return NextResponse.json({ received: true })

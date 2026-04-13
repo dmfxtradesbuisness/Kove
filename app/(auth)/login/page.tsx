@@ -32,23 +32,31 @@ export default function LoginPage() {
       <div className="px-8 pt-8 pb-0 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div
-            className="w-7 h-7 rounded-md flex items-center justify-center"
-            style={{ background: 'var(--accent)', boxShadow: '0 2px 8px rgba(37,99,235,0.35)' }}
+            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{
+              background: 'linear-gradient(135deg, #7B6CF5 0%, #5C4ED4 100%)',
+              boxShadow: '0 0 16px rgba(108,93,211,0.4)',
+            }}
           >
             <KoveLogo size={20} />
           </div>
-          <span className="font-semibold text-sm tracking-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-1)' }}>
+          <span
+            className="font-bold text-sm tracking-tight"
+            style={{ fontFamily: 'var(--font-display)', color: 'rgba(255,255,255,0.9)' }}
+          >
             KoveFX
           </span>
         </div>
         <Link
           href="/signup"
-          className="text-xs font-medium px-3 py-1.5 rounded-md transition-all"
+          className="text-xs font-medium px-3 py-1.5 rounded-lg transition-all"
           style={{
             fontFamily: 'var(--font-display)',
-            color: 'var(--text-3)',
-            border: '1px solid rgba(255,255,255,0.07)',
+            color: 'rgba(255,255,255,0.4)',
+            border: '1px solid rgba(255,255,255,0.08)',
           }}
+          onMouseEnter={(e) => { ;(e.currentTarget as HTMLElement).style.color = '#fff'; ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.16)' }}
+          onMouseLeave={(e) => { ;(e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)' }}
         >
           Create account
         </Link>
@@ -56,10 +64,13 @@ export default function LoginPage() {
 
       {/* Title */}
       <div className="px-8 pt-7 pb-1">
-        <h1 className="text-xl font-semibold mb-0.5" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-1)', letterSpacing: '-0.02em' }}>
+        <h1
+          className="text-xl font-bold mb-1"
+          style={{ fontFamily: 'var(--font-display)', color: '#fff', letterSpacing: '-0.02em' }}
+        >
           Sign in
         </h1>
-        <p className="text-sm" style={{ color: 'var(--text-3)' }}>
+        <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-body)' }}>
           Welcome back to your trading journal.
         </p>
       </div>
@@ -86,7 +97,9 @@ export default function LoginPage() {
             <Link
               href="/forgot-password"
               className="text-[11px] transition-colors"
-              style={{ fontFamily: 'var(--font-display)', color: 'var(--text-3)' }}
+              style={{ fontFamily: 'var(--font-display)', color: 'rgba(255,255,255,0.3)' }}
+              onMouseEnter={(e) => { ;(e.currentTarget as HTMLElement).style.color = '#8B7CF8' }}
+              onMouseLeave={(e) => { ;(e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)' }}
             >
               Forgot password?
             </Link>
@@ -105,7 +118,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors"
-              style={{ color: 'var(--text-3)' }}
+              style={{ color: 'rgba(255,255,255,0.28)', background: 'none', border: 'none', cursor: 'pointer' }}
               tabIndex={-1}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -118,8 +131,8 @@ export default function LoginPage() {
             className="text-sm px-4 py-3 rounded-lg"
             style={{
               color: '#F87171',
-              background: 'rgba(239,68,68,0.08)',
-              border: '1px solid rgba(239,68,68,0.18)',
+              background: 'rgba(239,68,68,0.07)',
+              border: '1px solid rgba(239,68,68,0.16)',
               fontFamily: 'var(--font-body)',
             }}
           >
@@ -134,10 +147,16 @@ export default function LoginPage() {
 
         <div
           className="text-center text-xs pt-1"
-          style={{ fontFamily: 'var(--font-body)', color: 'var(--text-3)' }}
+          style={{ fontFamily: 'var(--font-body)', color: 'rgba(255,255,255,0.25)' }}
         >
           No account?{' '}
-          <Link href="/signup" className="transition-colors" style={{ color: '#60A5FA' }}>
+          <Link
+            href="/signup"
+            className="transition-colors"
+            style={{ color: '#8B7CF8' }}
+            onMouseEnter={(e) => { ;(e.currentTarget as HTMLElement).style.color = '#a89bff' }}
+            onMouseLeave={(e) => { ;(e.currentTarget as HTMLElement).style.color = '#8B7CF8' }}
+          >
             Create one free
           </Link>
         </div>

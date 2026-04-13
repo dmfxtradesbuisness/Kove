@@ -4,7 +4,6 @@ import { Suspense, useState, useEffect } from 'react'
 import {
   User, CreditCard, CheckCircle, XCircle, Loader2, Sparkles,
   Lock, Mail, Receipt, ExternalLink, ChevronDown, ChevronUp,
-  ListChecks, Plus, Trash2,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
@@ -82,13 +81,6 @@ function AccountContent() {
   // Billing history toggle
   const [showInvoices, setShowInvoices] = useState(false)
   const [invoicesLoading, setInvoicesLoading] = useState(false)
-
-  // Checklist state
-  const [checklistName, setChecklistName] = useState('Pre-Trade Checklist')
-  const [checklistItems, setChecklistItems] = useState<string[]>([''])
-  const [checklistLoading, setChecklistLoading] = useState(false)
-  const [checklistSaved, setChecklistSaved] = useState(false)
-  const [checklistLoaded, setChecklistLoaded] = useState(false)
 
   const subscriptionMessage = searchParams.get('subscription')
 
@@ -216,33 +208,6 @@ function AccountContent() {
     }
   }
 
-  async function loadChecklist() {
-    if (checklistLoaded) return
-    const res = await fetch('/api/checklist')
-    const data = await res.json()
-    if (data.checklist) {
-      setChecklistName(data.checklist.name || 'Pre-Trade Checklist')
-      setChecklistItems(data.items?.length > 0 ? data.items.map((i: { label: string }) => i.label) : [''])
-    }
-    setChecklistLoaded(true)
-  }
-
-  async function handleChecklistSave(e: React.FormEvent) {
-    e.preventDefault()
-    setChecklistLoading(true)
-    const res = await fetch('/api/checklist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: checklistName, items: checklistItems.filter((i) => i.trim()) }),
-    })
-    const data = await res.json()
-    if (data.checklist) {
-      setChecklistItems(data.items?.length > 0 ? data.items.map((i: { label: string }) => i.label) : [''])
-    }
-    setChecklistLoading(false)
-    setChecklistSaved(true)
-    setTimeout(() => setChecklistSaved(false), 3000)
-  }
 
   if (loading) {
     return (
@@ -504,78 +469,6 @@ function AccountContent() {
                 </div>
               )}
             </div>
-          )}
-        </SectionCard>
-
-        {/* ── Pre-Trade Checklist ── */}
-        <SectionCard icon={ListChecks} title="Pre-Trade Checklist">
-          {!checklistLoaded ? (
-            <button
-              onClick={loadChecklist}
-              className="text-sm text-[#555] hover:text-white transition-colors flex items-center gap-2"
-            >
-              <ChevronDown className="w-4 h-4" />
-              Load my checklist
-            </button>
-          ) : (
-            <form onSubmit={handleChecklistSave} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <label className="label">Checklist name</label>
-                <input
-                  type="text"
-                  value={checklistName}
-                  onChange={(e) => setChecklistName(e.target.value)}
-                  placeholder="Pre-Trade Checklist"
-                  className="input"
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label className="label">Checklist items</label>
-                <div className="flex flex-col gap-2">
-                  {checklistItems.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <span className="text-[#333] text-xs w-5 text-right shrink-0">{idx + 1}.</span>
-                      <input
-                        type="text"
-                        value={item}
-                        onChange={(e) => {
-                          const updated = [...checklistItems]
-                          updated[idx] = e.target.value
-                          setChecklistItems(updated)
-                        }}
-                        placeholder={`e.g. Trend confirmed on H4`}
-                        className="input flex-1 !min-h-0 h-10 !py-2.5 !text-xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setChecklistItems(checklistItems.filter((_, i) => i !== idx))}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg text-[#333] hover:text-red-400 hover:bg-red-500/10 transition-all flex-shrink-0"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => setChecklistItems([...checklistItems, ''])}
-                    className="flex items-center gap-2 text-xs text-[#444] hover:text-white transition-colors mt-1 self-start"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    Add item
-                  </button>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <button type="submit" disabled={checklistLoading} className="btn-blue gap-2 self-start">
-                  {checklistLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  {checklistLoading ? 'Saving…' : 'Save Checklist'}
-                </button>
-                {checklistSaved && <span className="text-emerald-400 text-xs font-medium">✓ Saved</span>}
-              </div>
-              <p className="text-[10px] text-[#333] font-light">
-                This checklist will appear when logging trades. Check off each item before entering.
-              </p>
-            </form>
           )}
         </SectionCard>
 
