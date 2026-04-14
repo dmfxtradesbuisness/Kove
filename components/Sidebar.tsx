@@ -8,7 +8,7 @@ import {
   Target, Images, Users2, Newspaper, Menu, X,
   ChevronRight, User,
 } from 'lucide-react'
-import KoveLogo from '@/components/KoveLogo'
+import KoveLogo, { KoveWordmark } from '@/components/KoveLogo'
 import { createClient } from '@/lib/supabase/client'
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
@@ -103,18 +103,10 @@ export default function Sidebar() {
         className="hidden md:flex fixed left-0 top-0 h-screen w-[220px] flex-col z-40"
         style={{ background: '#0c0c0c', borderRight: '1px solid rgba(255,255,255,0.06)' }}
       >
-        {/* Logo */}
-        <div className="flex flex-col items-center py-6" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <Link href="/journal" className="flex flex-col items-center gap-2 group">
-            <div
-              className="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:scale-105"
-              style={{ background: 'linear-gradient(135deg,#7B6CF5,#5C4ED4)', boxShadow: '0 0 24px rgba(108,93,211,0.4),0 4px 12px rgba(0,0,0,0.4)' }}
-            >
-              <KoveLogo size={22} />
-            </div>
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.85)', letterSpacing: '-0.01em' }}>
-              KoveFX
-            </span>
+        {/* Logo — wordmark */}
+        <div className="flex items-center justify-center px-4 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          <Link href="/journal" className="flex items-center transition-opacity hover:opacity-80">
+            <KoveWordmark height={32} />
           </Link>
         </div>
 
@@ -188,17 +180,9 @@ export default function Sidebar() {
           WebkitBackdropFilter: 'blur(20px)',
         }}
       >
-        {/* Logo */}
-        <Link href="/journal" className="flex items-center gap-2.5" style={{ textDecoration: 'none' }}>
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg,#7B6CF5,#5C4ED4)', boxShadow: '0 0 14px rgba(108,93,211,0.4)' }}
-          >
-            <KoveLogo size={16} />
-          </div>
-          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: '#fff', letterSpacing: '-0.02em' }}>
-            KoveFX
-          </span>
+        {/* Logo — wordmark */}
+        <Link href="/journal" className="flex items-center transition-opacity hover:opacity-80" style={{ textDecoration: 'none' }}>
+          <KoveWordmark height={28} />
         </Link>
 
         {/* Right controls */}

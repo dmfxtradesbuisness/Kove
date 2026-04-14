@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { BarChart2, BookOpen, Sparkles, Brain, TrendingUp, Clock, Target, Zap, ArrowRight, Check } from 'lucide-react'
-import KoveLogo from '@/components/KoveLogo'
+import KoveLogo, { KoveWordmark } from '@/components/KoveLogo'
 
 function useReveal() {
   useEffect(() => {
@@ -124,9 +124,9 @@ export default function LandingPage() {
         }}
       >
         <div className="max-w-[1400px] mx-auto px-6 h-[60px] flex items-center justify-between">
-          <div className="text-xs leading-tight font-semibold" style={{ fontFamily: 'var(--font-display)', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.01em' }}>
-            A DMFX<br />Product
-          </div>
+          <Link href="/" className="flex items-center transition-opacity hover:opacity-80">
+            <KoveWordmark height={30} />
+          </Link>
           <div className="hidden md:flex items-center gap-10">
             {NAV_LINKS.map((link) => (
               <a key={link} href={`#${link.toLowerCase()}`}
@@ -400,11 +400,9 @@ export default function LandingPage() {
 
       {/* ── FOOTER ── */}
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: 'var(--accent)' }}>
-            <KoveLogo size={13} />
-          </div>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: '13px', color: 'rgba(255,255,255,0.35)' }}>KoveFX by DMFX · {new Date().getFullYear()}</span>
+        <div className="flex items-center gap-3">
+          <KoveWordmark height={22} />
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: '12px', color: 'rgba(255,255,255,0.25)' }}>by DMFX · {new Date().getFullYear()}</span>
         </div>
         <div className="flex items-center gap-6">
           {[['Features', '#features'], ['Pricing', '#pricing'], ['Sign up', '/signup'], ['Log in', '/login']].map(([l, h]) => (
