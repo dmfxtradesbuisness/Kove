@@ -185,7 +185,7 @@ export default function GalleryPage() {
             )
           })}
         </div>
-      )}
+      ) : null}
 
       {/* Modal */}
       {currentTrade && (
