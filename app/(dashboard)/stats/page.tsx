@@ -282,115 +282,129 @@ function PnlCalendar({ trades }: { trades: Trade[] }) {
     dayMap[day].count++
   })
 
-  const firstDow   = new Date(year, month, 1).getDay() // 0=Sun
+  const firstDow    = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const today       = new Date()
   const isCurrentMonth = today.getMonth() === month && today.getFullYear() === year
 
-  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
-  const monthLabel = viewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  // Mon-first: S M T W T F S → M T W T F S S
+  const DOW_LABELS = ['M','T','W','T','F','S','S']
+  // Shift firstDow: Sun=0 → col 6, Mon=1 → col 0
+  const startCol = (firstDow + 6) % 7
 
-  // Color helper
-  function dayColor(pnl: number): { bg: string; text: string; border: string } {
-    if (pnl > 500)  return { bg: 'rgba(52,211,153,0.35)', text: '#34d399', border: 'rgba(52,211,153,0.5)'  }
-    if (pnl > 100)  return { bg: 'rgba(52,211,153,0.18)', text: '#6ee7b7', border: 'rgba(52,211,153,0.3)'  }
-    if (pnl > 0)    return { bg: 'rgba(52,211,153,0.09)', text: '#a7f3d0', border: 'rgba(52,211,153,0.2)'  }
-    if (pnl < -500) return { bg: 'rgba(239,68,68,0.35)',  text: '#f87171', border: 'rgba(239,68,68,0.5)'   }
-    if (pnl < -100) return { bg: 'rgba(239,68,68,0.18)',  text: '#fca5a5', border: 'rgba(239,68,68,0.3)'   }
-    return            { bg: 'rgba(239,68,68,0.09)',  text: '#fecaca', border: 'rgba(239,68,68,0.2)'   }
+  const monthLabel = viewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const monthPnl   = Object.values(dayMap).reduce((s, d) => s + d.pnl, 0)
+  const tradeDays  = Object.keys(dayMap).length
+
+  // Intensity-based coloring (no text inside cells)
+  function cellStyle(pnl: number, isToday: boolean, isFuture: boolean, hasData: boolean): React.CSSProperties {
+    if (isToday && !hasData) return { background: 'rgba(108,93,211,0.12)', border: '1.5px solid rgba(108,93,211,0.5)' }
+    if (!hasData) return { background: isFuture ? 'transparent' : 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.04)' }
+    if (pnl > 0) {
+      const i = pnl > 500 ? 0.55 : pnl > 200 ? 0.38 : pnl > 50 ? 0.22 : 0.12
+      return { background: `rgba(52,211,153,${i})`, border: `1px solid rgba(52,211,153,${i + 0.15})`, boxShadow: pnl > 200 ? '0 0 8px rgba(52,211,153,0.12)' : 'none' }
+    }
+    const i = pnl < -500 ? 0.55 : pnl < -200 ? 0.38 : pnl < -50 ? 0.22 : 0.12
+    return { background: `rgba(239,68,68,${i})`, border: `1px solid rgba(239,68,68,${i + 0.15})`, boxShadow: pnl < -200 ? '0 0 8px rgba(239,68,68,0.12)' : 'none' }
   }
 
   const prevMonth = () => setViewDate(new Date(year, month - 1, 1))
   const nextMonth = () => setViewDate(new Date(year, month + 1, 1))
 
-  // Total P&L for this month
-  const monthPnl = Object.values(dayMap).reduce((s, d) => s + d.pnl, 0)
-  const tradeDays = Object.keys(dayMap).length
-
   return (
-    <div className="dash-card p-5">
+    <div className="dash-card" style={{ padding: '16px 18px', maxWidth: 420 }}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <p className="stat-tile-label mb-0.5">P&L Calendar</p>
-          <div className="flex items-center gap-3">
-            <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--text-1)' }}>{monthLabel}</p>
-            {tradeDays > 0 && (
-              <span style={{ fontSize: 12, fontWeight: 700, color: monthPnl >= 0 ? '#34d399' : '#f87171', fontFamily: 'var(--font-display)' }}>
-                {monthPnl >= 0 ? '+' : ''}${Math.abs(monthPnl).toFixed(0)}
-              </span>
-            )}
-          </div>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, color: 'var(--text-1)', letterSpacing: '-0.01em' }}>
+            {monthLabel}
+          </p>
+          {tradeDays > 0 && (
+            <span style={{
+              fontSize: 11, fontWeight: 700,
+              color: monthPnl >= 0 ? '#34d399' : '#f87171',
+              background: monthPnl >= 0 ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)',
+              border: `1px solid ${monthPnl >= 0 ? 'rgba(52,211,153,0.25)' : 'rgba(239,68,68,0.25)'}`,
+              borderRadius: 6, padding: '1px 7px',
+              fontFamily: 'var(--font-display)',
+            }}>
+              {monthPnl >= 0 ? '+' : ''}${Math.abs(monthPnl) >= 1000 ? (monthPnl / 1000).toFixed(1) + 'k' : Math.abs(monthPnl).toFixed(0)}
+            </span>
+          )}
         </div>
-        <div className="flex items-center gap-1.5">
-          <button onClick={prevMonth} style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>‹</button>
-          <button onClick={nextMonth} disabled={isCurrentMonth} style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', cursor: isCurrentMonth ? 'not-allowed' : 'pointer', color: isCurrentMonth ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>›</button>
+        <div className="flex items-center gap-1">
+          <button onClick={prevMonth} style={{ width: 26, height: 26, borderRadius: 7, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontFamily: 'var(--font-display)' }}>‹</button>
+          <button onClick={nextMonth} disabled={isCurrentMonth} style={{ width: 26, height: 26, borderRadius: 7, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', cursor: isCurrentMonth ? 'not-allowed' : 'pointer', color: isCurrentMonth ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontFamily: 'var(--font-display)' }}>›</button>
         </div>
       </div>
 
-      {/* Day headers */}
+      {/* DOW labels */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3, marginBottom: 3 }}>
-        {DAYS.map(d => (
-          <div key={d} style={{ textAlign: 'center', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '2px 0' }}>{d}</div>
+        {DOW_LABELS.map((d, i) => (
+          <div key={i} style={{ textAlign: 'center', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.18)', fontFamily: 'var(--font-display)', letterSpacing: '0.04em' }}>{d}</div>
         ))}
       </div>
 
       {/* Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
-        {/* Empty cells before first day */}
-        {Array.from({ length: firstDow }).map((_, i) => <div key={`e${i}`} />)}
+        {Array.from({ length: startCol }).map((_, i) => <div key={`e${i}`} />)}
 
-        {/* Day cells */}
         {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
-          const data = dayMap[day]
+          const data    = dayMap[day]
           const isToday = isCurrentMonth && today.getDate() === day
           const isFuture = isCurrentMonth && day > today.getDate()
-          const colors = data ? dayColor(data.pnl) : null
+          const s = cellStyle(data?.pnl ?? 0, isToday, isFuture, !!data)
+          const tooltip = data
+            ? `${new Date(year, month, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: ${data.pnl >= 0 ? '+' : ''}$${data.pnl.toFixed(2)} · ${data.count} trade${data.count !== 1 ? 's' : ''}`
+            : undefined
 
           return (
             <div
               key={day}
-              title={data ? `${day} ${new Date(year, month, day).toLocaleDateString('en-US',{month:'short'})}: ${data.pnl >= 0 ? '+' : ''}$${data.pnl.toFixed(2)} (${data.count} trade${data.count !== 1 ? 's' : ''})` : undefined}
+              title={tooltip}
               style={{
                 aspectRatio: '1',
-                borderRadius: 7,
+                borderRadius: 5,
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 1,
-                background: colors ? colors.bg : isFuture ? 'transparent' : 'rgba(255,255,255,0.02)',
-                border: isToday ? '1.5px solid rgba(108,93,211,0.6)' : colors ? `1px solid ${colors.border}` : '1px solid rgba(255,255,255,0.04)',
+                transition: 'transform 0.1s, opacity 0.1s',
                 cursor: data ? 'default' : 'default',
-                transition: 'transform 0.1s',
-                position: 'relative',
+                ...s,
               }}
+              onMouseEnter={(e) => { if (data) (e.currentTarget as HTMLElement).style.transform = 'scale(1.12)' }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)' }}
             >
-              <span style={{ fontSize: 11, fontWeight: isToday ? 700 : 500, color: colors ? colors.text : isFuture ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-display)', lineHeight: 1 }}>
+              <span style={{
+                fontSize: 9,
+                fontWeight: isToday ? 800 : 500,
+                lineHeight: 1,
+                color: data
+                  ? (data.pnl >= 0 ? 'rgba(52,211,153,0.9)' : 'rgba(239,68,68,0.9)')
+                  : isToday
+                    ? 'rgba(139,124,248,0.8)'
+                    : isFuture ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.22)',
+                fontFamily: 'var(--font-display)',
+              }}>
                 {day}
               </span>
-              {data && (
-                <span style={{ fontSize: 8, fontWeight: 700, color: colors!.text, fontFamily: 'var(--font-display)', lineHeight: 1, opacity: 0.85 }}>
-                  {data.pnl >= 0 ? '+' : ''}{Math.abs(data.pnl) >= 1000 ? (data.pnl/1000).toFixed(1)+'k' : data.pnl.toFixed(0)}
-                </span>
-              )}
             </div>
           )
         })}
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 mt-4 flex-wrap">
-        {[
-          { label: 'Profit', bg: 'rgba(52,211,153,0.2)', border: 'rgba(52,211,153,0.35)' },
-          { label: 'Loss',   bg: 'rgba(239,68,68,0.2)',  border: 'rgba(239,68,68,0.35)'  },
-          { label: 'No trades', bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.08)' },
-        ].map(item => (
-          <div key={item.label} className="flex items-center gap-1.5">
-            <div style={{ width: 12, height: 12, borderRadius: 3, background: item.bg, border: `1px solid ${item.border}` }} />
-            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-body)' }}>{item.label}</span>
-          </div>
+      <div className="flex items-center gap-3 mt-3">
+        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-body)' }}>Less</span>
+        {[0.1, 0.22, 0.38, 0.55].map((o, i) => (
+          <div key={i} style={{ width: 10, height: 10, borderRadius: 3, background: `rgba(52,211,153,${o})`, border: `1px solid rgba(52,211,153,${o + 0.1})` }} />
         ))}
+        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-body)' }}>More profit</span>
+        <div style={{ width: 1, height: 10, background: 'rgba(255,255,255,0.08)', margin: '0 2px' }} />
+        {[0.1, 0.22, 0.38, 0.55].map((o, i) => (
+          <div key={i} style={{ width: 10, height: 10, borderRadius: 3, background: `rgba(239,68,68,${o})`, border: `1px solid rgba(239,68,68,${o + 0.1})` }} />
+        ))}
+        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-body)' }}>Loss</span>
       </div>
     </div>
   )
