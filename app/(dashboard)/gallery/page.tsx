@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Images, X, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Search } from 'lucide-react'
 
 interface GalleryTrade {
@@ -21,6 +21,7 @@ function formatPnl(pnl: number) {
 export default function GalleryPage() {
   const [trades, setTrades] = useState<GalleryTrade[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [modalIdx, setModalIdx] = useState<number | null>(null)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'win' | 'loss' | 'open'>('all')
@@ -29,6 +30,7 @@ export default function GalleryPage() {
     fetch('/api/gallery')
       .then((r) => r.json())
       .then((d) => { if (d.trades) setTrades(d.trades) })
+      .catch(() => setError('Failed to load gallery. Please refresh.'))
       .finally(() => setLoading(false))
   }, [])
 
@@ -47,21 +49,22 @@ export default function GalleryPage() {
     })
   }, [trades, search, filter])
 
-  function openModal(idx: number) { setModalIdx(idx) }
-  function closeModal() { setModalIdx(null) }
-  function prevImage() { setModalIdx((i) => (i !== null && i > 0 ? i - 1 : i)) }
-  function nextImage() { setModalIdx((i) => (i !== null && i < filtered.length - 1 ? i + 1 : i)) }
+  const openModal  = useCallback((idx: number) => setModalIdx(idx), [])
+  const closeModal = useCallback(() => setModalIdx(null), [])
+  const prevImage  = useCallback(() => setModalIdx((i) => (i !== null && i > 0 ? i - 1 : i)), [])
+  const nextImage  = useCallback((len: number) => setModalIdx((i) => (i !== null && i < len - 1 ? i + 1 : i)), [])
 
   useEffect(() => {
+    const len = filtered.length
     function handleKey(e: KeyboardEvent) {
       if (modalIdx === null) return
-      if (e.key === 'ArrowLeft') prevImage()
-      if (e.key === 'ArrowRight') nextImage()
-      if (e.key === 'Escape') closeModal()
+      if (e.key === 'ArrowLeft')  prevImage()
+      if (e.key === 'ArrowRight') nextImage(len)
+      if (e.key === 'Escape')     closeModal()
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [modalIdx, filtered.length])
+  }, [modalIdx, filtered.length, prevImage, nextImage, closeModal])
 
   const currentTrade = modalIdx !== null ? filtered[modalIdx] : null
 
@@ -107,12 +110,19 @@ export default function GalleryPage() {
         </div>
       </div>
 
+      {/* Error state */}
+      {error && (
+        <div className="flex flex-col items-center justify-center min-h-[40vh] text-center">
+          <p style={{ color: '#f87171', fontSize: 13, fontFamily: 'var(--font-body)' }}>{error}</p>
+        </div>
+      )}
+
       {/* Grid */}
-      {loading ? (
+      {!error && loading ? (
         <div className="flex items-center justify-center min-h-[40vh]">
           <div className="w-5 h-5 border-2 border-white/10 border-t-white/40 rounded-full animate-spin" />
         </div>
-      ) : filtered.length === 0 ? (
+      ) : !error && filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-[40vh] text-center">
           <div className="w-14 h-14 bg-white/[0.03] border border-white/[0.05] rounded-2xl flex items-center justify-center mb-4">
             <Images className="w-6 h-6 text-[#333]" />
@@ -128,7 +138,7 @@ export default function GalleryPage() {
               : 'Try adjusting your search or filter'}
           </p>
         </div>
-      ) : (
+      ) : !error ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {filtered.map((trade, idx) => {
             const isWin = trade.pnl !== null && trade.pnl > 0
@@ -143,6 +153,7 @@ export default function GalleryPage() {
                 <img
                   src={trade.screenshot_url}
                   alt={`${trade.pair} trade screenshot`}
+                  loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 {/* Overlay */}
@@ -242,7 +253,7 @@ export default function GalleryPage() {
               )}
               {modalIdx !== null && modalIdx < filtered.length - 1 && (
                 <button
-                  onClick={nextImage}
+                  onClick={() => nextImage(filtered.length)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/60 hover:bg-black/80 border border-white/10 rounded-full flex items-center justify-center text-white transition-all"
                 >
                   <ChevronRight className="w-5 h-5" />

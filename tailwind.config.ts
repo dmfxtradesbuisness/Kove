@@ -9,14 +9,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: '#060611',
-        surface: '#0c0d1d',
-        card: '#111228',
-        muted: '#6b7280',
+        // Aligned with CSS custom properties in globals.css
+        background: '#080808',   // --base
+        surface: '#0f0f0f',      // --surface-1
+        'surface-2': '#141414',  // --surface-2
+        'surface-3': '#1a1a1a',  // --surface-3
+        muted: '#888888',        // --text-2
         accent: {
-          DEFAULT: '#6C5DD3',
-          hover: '#7B6CF5',
-          subtle: '#1e1550',
+          DEFAULT: '#6C5DD3',    // --accent
+          hover: '#8B7CF8',      // --accent-hi
+          subtle: 'rgba(108,93,211,0.12)',
         },
       },
       fontFamily: {

@@ -140,8 +140,8 @@ function calcPerformanceWrap(trades: Trade[]) {
     const wins = closed.filter((t) => (t.pnl ?? 0) > 0)
     const pnl = closed.reduce((s, t) => s + (t.pnl ?? 0), 0)
     const wr = closed.length > 0 ? Math.round((wins.length / closed.length) * 100) : 0
-    const best = closed.length > 0 ? Math.max(...closed.map((t) => t.pnl ?? 0)) : 0
-    const worst = closed.length > 0 ? Math.min(...closed.map((t) => t.pnl ?? 0)) : 0
+    const best  = closed.length > 0 ? closed.reduce((m, t) => Math.max(m, t.pnl ?? 0), -Infinity) : 0
+    const worst = closed.length > 0 ? closed.reduce((m, t) => Math.min(m, t.pnl ?? 0),  Infinity) : 0
     return { trades: ts.length, closed: closed.length, pnl, wr, best, worst }
   }
 
@@ -198,18 +198,34 @@ function calcWeeklyWrap(trades: Trade[]): WeeklyWrap[] {
 function StatCard({ label, value, sub, icon: Icon, positive, neutral }: {
   label: string; value: string; sub?: string; icon: React.ElementType; positive?: boolean; neutral?: boolean
 }) {
-  const color = neutral ? 'text-white' : positive === true ? 'text-emerald-400' : positive === false ? 'text-red-400' : 'text-white'
+  const valueColor = neutral
+    ? 'var(--text-1)'
+    : positive === true
+    ? '#34d399'
+    : positive === false
+    ? '#f87171'
+    : 'var(--text-1)'
   return (
-    <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-6 flex flex-col gap-4 hover:border-white/[0.08] transition-colors">
+    <div
+      className="dash-card p-5 flex flex-col gap-4 transition-colors"
+      style={{ cursor: 'default' }}
+      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)')}
+      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)')}
+    >
       <div className="flex items-start justify-between">
-        <p className="text-[10px] font-medium text-[#444] uppercase tracking-widest">{label}</p>
-        <div className="w-8 h-8 rounded-xl bg-white/[0.03] border border-white/[0.05] flex items-center justify-center">
-          <Icon className="w-3.5 h-3.5 text-[#444]" />
+        <p className="stat-tile-label">{label}</p>
+        <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon style={{ width: 13, height: 13, color: 'var(--text-3)' }} />
         </div>
       </div>
       <div>
-        <p className={`text-4xl md:text-5xl font-black tracking-tight ${color}`}>{value}</p>
-        {sub && <p className="text-xs text-[#444] mt-1.5 font-light">{sub}</p>}
+        <p
+          className="stat-tile-value"
+          style={{ fontSize: 'clamp(1.6rem, 4vw, 2.4rem)', color: valueColor }}
+        >
+          {value}
+        </p>
+        {sub && <p style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4, fontFamily: 'var(--font-body)' }}>{sub}</p>}
       </div>
     </div>
   )
@@ -223,7 +239,8 @@ function EquityCurve({ trades }: { trades: Trade[] }) {
   )
   let cum = 0
   const points = [0, ...closed.map((t) => { cum += t.pnl ?? 0; return cum })]
-  const minV = Math.min(...points), maxV = Math.max(...points)
+  const minV = points.reduce((m, v) => Math.min(m, v),  Infinity)
+  const maxV = points.reduce((m, v) => Math.max(m, v), -Infinity)
   const range = maxV - minV || 1
   const W = 400, H = 110, PAD = 8
   const toX = (i: number) => (i / (points.length - 1)) * W
@@ -313,7 +330,7 @@ export default function StatsPage() {
         <p className="page-label">Statistics</p>
         <h1 className="page-title">Statistics</h1>
       </div>
-      <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-16 text-center">
+      <div className="dash-card p-16 text-center">
         <BarChart2 className="w-10 h-10 text-[#222] mx-auto mb-4" />
         <p className="text-[#444] text-sm font-light">Log your first trade to see stats.</p>
       </div>
@@ -371,7 +388,7 @@ export default function StatsPage() {
 
           {/* Equity curve */}
           {closedTrades.length >= 2 && (
-            <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-6 mb-4">
+            <div className="dash-card p-6 mb-4">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-[10px] font-medium text-[#444] uppercase tracking-widest mb-1">Equity Curve</p>
@@ -399,7 +416,7 @@ export default function StatsPage() {
 
           {/* Top pairs + recent */}
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl overflow-hidden">
+            <div className="dash-card overflow-hidden">
               <div className="px-6 py-5 border-b border-white/[0.05]">
                 <h2 className="text-sm font-bold text-white">Top Instruments</h2>
               </div>
@@ -419,7 +436,7 @@ export default function StatsPage() {
               </div>
             </div>
 
-            <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl overflow-hidden">
+            <div className="dash-card overflow-hidden">
               <div className="px-6 py-5 border-b border-white/[0.05]">
                 <h2 className="text-sm font-bold text-white">Recent Trades</h2>
               </div>
@@ -458,7 +475,7 @@ export default function StatsPage() {
       {tab === 'discipline' && subscribed === true && (
         <div className="flex flex-col gap-4 max-w-2xl">
           {/* Score card */}
-          <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-7">
+          <div className="dash-card p-7">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="text-[10px] font-medium text-[#444] uppercase tracking-widest mb-1">Overall Score</p>
@@ -501,7 +518,7 @@ export default function StatsPage() {
           </div>
 
           {/* Tips */}
-          <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-6">
+          <div className="dash-card p-6">
             <p className="text-[10px] font-medium text-[#444] uppercase tracking-widest mb-4">How to improve</p>
             <div className="flex flex-col gap-3">
               {breakdown[0]?.pts < 20 && <p className="text-sm text-[#888] font-light">📍 Set a stop loss on every trade — it&apos;s the single biggest risk management habit.</p>}
@@ -517,7 +534,7 @@ export default function StatsPage() {
       {/* ── STREAKS ── */}
       {tab === 'streaks' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl">
-          <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-7 flex flex-col gap-4">
+          <div className="dash-card p-7 flex flex-col gap-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-orange-500/10 border border-orange-500/20 rounded-2xl flex items-center justify-center">
                 <Flame className="w-4 h-4 text-orange-400/70" />
@@ -528,7 +545,7 @@ export default function StatsPage() {
             <p className="text-xs text-[#444] font-light">Consecutive wins right now</p>
           </div>
 
-          <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-7 flex flex-col gap-4">
+          <div className="dash-card p-7 flex flex-col gap-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-yellow-500/10 border border-yellow-500/20 rounded-2xl flex items-center justify-center">
                 <Trophy className="w-4 h-4 text-yellow-400/70" />
@@ -539,7 +556,7 @@ export default function StatsPage() {
             <p className="text-xs text-[#444] font-light">Longest win streak all time</p>
           </div>
 
-          <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-7 flex flex-col gap-4">
+          <div className="dash-card p-7 flex flex-col gap-4">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center">
                 <TrendingUp className="w-4 h-4 text-emerald-400/70" />
@@ -555,7 +572,7 @@ export default function StatsPage() {
       {/* ── WRAP ── */}
       {tab === 'wrap' && (
         <div className="flex flex-col gap-4 max-w-2xl">
-          <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl overflow-hidden">
+          <div className="dash-card overflow-hidden">
             <div className="px-6 py-5 border-b border-white/[0.05] flex items-center justify-between">
               <h2 className="text-sm font-bold text-white">Monthly Wrap</h2>
               <span className="text-[10px] text-[#444] uppercase tracking-widest">
@@ -597,7 +614,7 @@ export default function StatsPage() {
 
           {/* Weekly Breakdown */}
           {weeklyWrap.length > 0 && (
-            <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl overflow-hidden">
+            <div className="dash-card overflow-hidden">
               <div className="px-6 py-5 border-b border-white/[0.05]">
                 <h2 className="text-sm font-bold text-white">Weekly Breakdown</h2>
                 <p className="text-[10px] text-[#444] font-light mt-0.5">Last 12 weeks · exact P&L per week</p>
@@ -642,7 +659,7 @@ export default function StatsPage() {
             </div>
           )}
 
-          <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl overflow-hidden">
+          <div className="dash-card overflow-hidden">
             <div className="px-6 py-5 border-b border-white/[0.05]">
               <h2 className="text-sm font-bold text-white">Global Leaderboard</h2>
               <p className="text-[10px] text-[#444] font-light mt-0.5">Ranked by win rate · min 5 closed trades · anonymous</p>
@@ -687,7 +704,7 @@ export default function StatsPage() {
         </div>
       )}
 
-      <p className="text-center text-[#2a2a2a] text-[11px] font-light mt-10">KoveFX by DMFX</p>
+      <p className="text-center text-[11px] font-light mt-10" style={{ color: 'var(--text-4)', fontFamily: 'var(--font-display)', letterSpacing: '0.04em' }}>KoveFX</p>
     </div>
   )
 }

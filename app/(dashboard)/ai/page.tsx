@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import {
-  Loader2, Plus, Globe, ArrowLeftRight, RefreshCw,
-  Mic, BarChart2, ChevronDown, AlertCircle,
+  Loader2, Plus,
+  BarChart2, ChevronDown, AlertCircle,
 } from 'lucide-react'
 import type { Trade } from '@/lib/types'
 import { ProGate } from '@/components/ProGate'
@@ -70,7 +70,7 @@ function Bubble({ msg }: { msg: Message }) {
   return (
     <div
       className="flex animate-fade-in"
-      style={{ justifyContent: isUser ? 'flex-start' : 'flex-end', marginBottom: 16 }}
+      style={{ justifyContent: isUser ? 'flex-end' : 'flex-start', marginBottom: 16 }}
     >
       {!isUser && (
         <div
@@ -87,9 +87,9 @@ function Bubble({ msg }: { msg: Message }) {
       )}
       <div
         style={{
-          maxWidth: '68%',
+          maxWidth: '72%',
           padding: isUser ? '10px 16px' : '14px 18px',
-          borderRadius: isUser ? '20px 20px 20px 4px' : '4px 20px 20px 20px',
+          borderRadius: isUser ? '20px 4px 20px 20px' : '4px 20px 20px 20px',
           background: isUser
             ? 'rgba(230,230,240,0.93)'
             : 'rgba(18,14,48,0.92)',
@@ -251,8 +251,8 @@ export default function AIPage() {
   // ── Main chat UI ─────────────────────────────────────────────────────────
   return (
     <div
-      className="relative flex flex-col overflow-hidden"
-      style={{ height: 'calc(100vh - 0px)', maxHeight: '100vh', background: '#080808' }}
+      className="relative flex flex-col overflow-hidden h-[calc(100dvh-56px)] md:h-screen"
+      style={{ background: '#080808' }}
     >
       {/* Orbs */}
       <Orb style={{ width: 560, height: 560, top: -160, left: '50%', transform: 'translateX(-50%)', background: 'radial-gradient(circle,rgba(55,38,130,0.75) 0%,rgba(25,15,70,0.35) 55%,transparent 100%)', zIndex: 0 }} />
@@ -397,7 +397,12 @@ export default function AIPage() {
               <textarea
                 ref={inputRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value)
+                  // Auto-resize
+                  e.target.style.height = 'auto'
+                  e.target.style.height = Math.min(e.target.scrollHeight, 130) + 'px'
+                }}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask anything about your trading…"
                 rows={1}
@@ -418,7 +423,7 @@ export default function AIPage() {
 
             {/* Toolbar */}
             <div className="flex items-center justify-between px-3 pb-2.5 pt-1">
-              <div className="flex items-center gap-0.5">
+              <div className="flex items-center gap-1">
                 {/* Trade attach */}
                 <button
                   onClick={() => setShowTradeBar((v) => !v)}
@@ -429,37 +434,25 @@ export default function AIPage() {
                     color: showTradeBar ? '#8B7CF8' : 'rgba(255,255,255,0.32)',
                     background: showTradeBar ? 'rgba(108,93,211,0.15)' : 'none',
                     border: 'none', cursor: 'pointer',
+                    transition: 'all 0.15s',
                   }}
                 >
                   <Plus style={{ width: 15, height: 15 }} />
                 </button>
 
-                <button style={{ width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.22)', background: 'none', border: 'none', cursor: 'default' }}>
-                  <Globe style={{ width: 14, height: 14 }} />
-                </button>
-                <button style={{ width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.22)', background: 'none', border: 'none', cursor: 'default' }}>
-                  <ArrowLeftRight style={{ width: 13, height: 13 }} />
-                </button>
-                <button style={{ width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.22)', background: 'none', border: 'none', cursor: 'default' }}>
-                  <RefreshCw style={{ width: 13, height: 13 }} />
-                </button>
-
                 <span style={{
-                  fontSize: 10, fontWeight: 700, marginLeft: 4,
+                  fontSize: 10, fontWeight: 700, marginLeft: 2,
                   padding: '2px 8px', borderRadius: 6,
-                  color: 'rgba(255,255,255,0.25)',
+                  color: 'rgba(255,255,255,0.22)',
                   fontFamily: 'var(--font-display)',
                   background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.06)',
                 }}>
                   GPT-4o mini
                 </span>
               </div>
 
               <div className="flex items-center gap-2">
-                <button style={{ width: 32, height: 32, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.28)', background: 'none', border: 'none', cursor: 'default' }}>
-                  <Mic style={{ width: 14, height: 14 }} />
-                </button>
-
                 {/* Send button */}
                 <button
                   onClick={() => send(input)}

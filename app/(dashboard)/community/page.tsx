@@ -266,6 +266,7 @@ function PostCard({
           <img
             src={post.image_url}
             alt="Post image"
+            loading="lazy"
             style={{ width:'100%', borderRadius:12, maxHeight:360, objectFit:'cover', border:'1px solid rgba(255,255,255,0.06)' }}
           />
         </div>

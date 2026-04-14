@@ -161,7 +161,7 @@ export default function Sidebar() {
 
           <div className="mt-3 px-3">
             <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.16)', fontFamily: 'var(--font-display)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              DMFX · {new Date().getFullYear()}
+              KoveFX · {new Date().getFullYear()}
             </p>
           </div>
         </div>

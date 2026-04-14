@@ -75,7 +75,8 @@
     background: #fff;
     font-family: var(--font-display);
   }
-  .btn-primary:hover { background: #f0f0ff; }
+  .btn-primary:hover:not(:disabled) { background: #f0f0ff; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .btn-blue {
     @apply active:scale-[0.985] text-white font-semibold px-5 py-2.5 rounded-lg transition-all duration-150 text-sm min-h-[44px] flex items-center justify-center select-none;
@@ -83,7 +84,8 @@
     font-family: var(--font-display);
     box-shadow: 0 0 20px rgba(108,93,211,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
   }
-  .btn-blue:hover { background: var(--accent-hi); box-shadow: 0 0 28px rgba(108,93,211,0.5); }
+  .btn-blue:hover:not(:disabled) { background: var(--accent-hi); box-shadow: 0 0 28px rgba(108,93,211,0.5); }
+  .btn-blue:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .btn-secondary {
     @apply active:scale-[0.985] font-medium px-5 py-2.5 rounded-lg transition-all duration-150 text-sm min-h-[44px] flex items-center justify-center select-none;
@@ -92,18 +94,20 @@
     color: var(--text-2);
     font-family: var(--font-display);
   }
-  .btn-secondary:hover {
+  .btn-secondary:hover:not(:disabled) {
     border-color: rgba(255,255,255,0.18);
     background: rgba(255,255,255,0.04);
     color: var(--text-1);
   }
+  .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .btn-ghost {
     @apply active:scale-[0.985] font-medium px-4 py-2 rounded-lg transition-all duration-150 text-sm flex items-center justify-center select-none;
     color: var(--text-3);
     font-family: var(--font-display);
   }
-  .btn-ghost:hover { color: var(--text-2); background: rgba(255,255,255,0.04); }
+  .btn-ghost:hover:not(:disabled) { color: var(--text-2); background: rgba(255,255,255,0.04); }
+  .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .btn-danger {
     @apply active:scale-[0.985] font-medium px-5 py-2.5 rounded-lg transition-all duration-150 text-sm min-h-[44px] flex items-center justify-center select-none;
@@ -112,7 +116,8 @@
     color: #F87171;
     font-family: var(--font-display);
   }
-  .btn-danger:hover { border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.06); }
+  .btn-danger:hover:not(:disabled) { border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.06); }
+  .btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
 
   /* ── Cards ── */
   .card {

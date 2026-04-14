@@ -3,7 +3,12 @@
     "allow": [
       "Bash(export PATH=\"$PATH:/c/Program Files/nodejs:/c/Users/dmfxt/AppData/Roaming/npm\")",
       "Bash(npm run:*)",
-      "mcp__cd462603-6fdd-489f-814f-80f959734bf1__stripe_api_search"
+      "mcp__cd462603-6fdd-489f-814f-80f959734bf1__stripe_api_search",
+      "Bash(npm --version)",
+      "Bash(curl --version)",
+      "Read(//c/Users/dmfxt/AppData/Local/com.vercel.cli/**)",
+      "Read(//c/Users/dmfxt/OneDrive/Desktop/kove/$HOME/.local/share/com.vercel.cli/**)",
+      "Read(//c/Users/dmfxt/OneDrive/Desktop/kove/$HOME/.vercel/**)"
     ]
   }
 }

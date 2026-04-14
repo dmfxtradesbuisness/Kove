@@ -15,15 +15,80 @@ interface Trade {
   created_at: string
 }
 
-function ProgressBar({ value, max, color = 'bg-violet-500' }: { value: number; max: number; color?: string }) {
+function ProgressBar({ value, max, color = '#6C5DD3' }: { value: number; max: number; color?: string }) {
   const pct = Math.min(100, max > 0 ? (value / max) * 100 : 0)
   const done = pct >= 100
   return (
-    <div className="w-full h-2 bg-white/[0.05] rounded-full overflow-hidden">
+    <div style={{ width: '100%', height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden' }}>
       <div
-        className={`h-full rounded-full transition-all duration-700 ${done ? 'bg-emerald-500' : color}`}
-        style={{ width: `${pct}%` }}
+        style={{
+          height: '100%',
+          borderRadius: 999,
+          width: `${pct}%`,
+          background: done ? '#34d399' : color,
+          transition: 'width 0.7s cubic-bezier(0.22,1,0.36,1)',
+        }}
       />
+    </div>
+  )
+}
+
+function GoalCard({
+  icon: Icon,
+  iconColor,
+  iconBg,
+  title,
+  subtitle,
+  pct,
+  barColor,
+  reached,
+  reachedText,
+  isWarning,
+}: {
+  icon: React.ElementType
+  iconColor: string
+  iconBg: string
+  title: string
+  subtitle: string
+  pct: number
+  barColor: string
+  reached: boolean
+  reachedText: string
+  isWarning?: boolean
+}) {
+  return (
+    <div className="dash-card p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: iconBg, border: `1px solid ${iconColor}30` }}
+          >
+            <Icon className="w-3.5 h-3.5" style={{ color: iconColor }} />
+          </div>
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-1)', fontFamily: 'var(--font-display)' }}>{title}</p>
+            <p style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--font-body)', marginTop: 1 }}>{subtitle}</p>
+          </div>
+        </div>
+        <span
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: 18,
+            color: reached ? '#34d399' : isWarning && pct >= 80 ? '#f87171' : 'var(--text-1)',
+            letterSpacing: '-0.02em',
+          }}
+        >
+          {pct}%
+        </span>
+      </div>
+      <ProgressBar value={pct} max={100} color={barColor} />
+      {reached && (
+        <p style={{ color: '#34d399', fontSize: 11, marginTop: 8, fontFamily: 'var(--font-body)', fontWeight: 500 }}>
+          {reachedText}
+        </p>
+      )}
     </div>
   )
 }
@@ -35,30 +100,36 @@ export default function GoalsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [loadError, setLoadError] = useState('')
   const [form, setForm] = useState({ monthly_pnl_target: '', win_rate_target: '', max_drawdown_target: '', notes: '' })
 
   useEffect(() => {
     async function load() {
-      const [goalsRes, tradesRes, subRes] = await Promise.all([
-        fetch('/api/goals'),
-        fetch('/api/trades'),
-        fetch('/api/stripe/subscription-status'),
-      ])
-      const [goalsData, tradesData, subData] = await Promise.all([
-        goalsRes.json(), tradesRes.json(), subRes.json(),
-      ])
-      if (goalsData.goals) {
-        setGoals(goalsData.goals)
-        setForm({
-          monthly_pnl_target: goalsData.goals.monthly_pnl_target ?? '',
-          win_rate_target: goalsData.goals.win_rate_target ?? '',
-          max_drawdown_target: goalsData.goals.max_drawdown_target ?? '',
-          notes: goalsData.goals.notes ?? '',
-        })
+      try {
+        const [goalsRes, tradesRes, subRes] = await Promise.all([
+          fetch('/api/goals'),
+          fetch('/api/trades'),
+          fetch('/api/stripe/subscription-status'),
+        ])
+        const [goalsData, tradesData, subData] = await Promise.all([
+          goalsRes.json(), tradesRes.json(), subRes.json(),
+        ])
+        if (goalsData.goals) {
+          setGoals(goalsData.goals)
+          setForm({
+            monthly_pnl_target: goalsData.goals.monthly_pnl_target ?? '',
+            win_rate_target: goalsData.goals.win_rate_target ?? '',
+            max_drawdown_target: goalsData.goals.max_drawdown_target ?? '',
+            notes: goalsData.goals.notes ?? '',
+          })
+        }
+        if (tradesData.trades) setTrades(tradesData.trades)
+        setSubscription(subData)
+      } catch {
+        setLoadError('Failed to load data. Please refresh.')
+      } finally {
+        setLoading(false)
       }
-      if (tradesData.trades) setTrades(tradesData.trades)
-      setSubscription(subData)
-      setLoading(false)
     }
     load()
   }, [])
@@ -66,16 +137,21 @@ export default function GoalsPage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    const res = await fetch('/api/goals', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    })
-    const data = await res.json()
-    if (data.goals) setGoals(data.goals)
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+    try {
+      const res = await fetch('/api/goals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const data = await res.json()
+      if (data.goals) setGoals(data.goals)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch {
+      // silently fail — rare
+    } finally {
+      setSaving(false)
+    }
   }
 
   // Current month stats
@@ -101,25 +177,44 @@ export default function GoalsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-5 h-5 border-2 border-white/10 border-t-white/40 rounded-full animate-spin" />
+        <div className="w-5 h-5 rounded-full animate-spin" style={{ border: '2px solid rgba(255,255,255,0.08)', borderTopColor: 'rgba(139,124,248,0.6)' }} />
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <p style={{ color: '#f87171', fontFamily: 'var(--font-body)', fontSize: 13 }}>{loadError}</p>
       </div>
     )
   }
 
   if (!subscription?.active) {
     return (
-      <div className="px-4 md:px-8 pt-6 md:pt-10 pb-8">
+      <div className="px-5 md:px-8 pt-6 md:pt-10 pb-8">
+        {/* Page header */}
         <div className="mb-8">
-          <p className="text-[#444] text-xs uppercase tracking-widest mb-2 font-medium">Pro Feature</p>
-          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Goals</h1>
+          <p className="page-label">Pro Feature</p>
+          <h1 className="page-title mt-1">Goals</h1>
         </div>
-        <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-12 text-center max-w-md">
-          <div className="w-14 h-14 bg-violet-500/10 border border-violet-500/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
-            <Lock className="w-6 h-6 text-violet-400/70" />
+
+        {/* Upgrade gate */}
+        <div
+          className="card p-8 text-center"
+          style={{ maxWidth: 400, background: 'var(--surface-1)' }}
+        >
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-5"
+            style={{ background: 'rgba(108,93,211,0.1)', border: '1px solid rgba(108,93,211,0.2)' }}
+          >
+            <Lock className="w-5 h-5" style={{ color: '#8B7CF8' }} />
           </div>
-          <h2 className="text-lg font-bold text-white mb-2 tracking-tight">Pro Feature</h2>
-          <p className="text-[#444] text-sm font-light leading-relaxed mb-6">
-            Set monthly P&L targets, win rate goals, and max drawdown limits. Track your progress visually every day.
+          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color: 'var(--text-1)', marginBottom: 8 }}>
+            Pro Feature
+          </h2>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-3)', lineHeight: 1.6, marginBottom: 24 }}>
+            Set monthly P&amp;L targets, win rate goals, and max drawdown limits. Track your progress visually every day.
           </p>
           <a href="/account" className="btn-blue inline-flex items-center gap-2">
             <Sparkles className="w-3.5 h-3.5" />
@@ -130,109 +225,83 @@ export default function GoalsPage() {
     )
   }
 
+  const pnlPct = goals?.monthly_pnl_target
+    ? Math.min(100, Math.round((monthPnl / goals.monthly_pnl_target) * 100))
+    : 0
+  const wrPct = goals?.win_rate_target
+    ? Math.min(100, Math.round((monthWinRate / goals.win_rate_target) * 100))
+    : 0
+  const ddPct = goals?.max_drawdown_target
+    ? Math.min(100, Math.round((maxDD / goals.max_drawdown_target) * 100))
+    : 0
+
   return (
-    <div className="px-4 md:px-8 pt-6 md:pt-10 pb-8 animate-fade-in">
+    <div className="px-5 md:px-8 pt-6 md:pt-10 pb-8 animate-fade-in">
+      {/* Page header */}
       <div className="mb-8">
-        <p className="text-[#444] text-xs uppercase tracking-widest mb-2 font-medium">Pro</p>
-        <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Goals & Milestones</h1>
-        <p className="text-[#444] text-xs font-light mt-1">
-          {now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} progress
-        </p>
+        <p className="page-label">Pro · {now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+        <h1 className="page-title mt-1">Goals &amp; Milestones</h1>
       </div>
 
-      <div className="max-w-2xl flex flex-col gap-5">
+      <div style={{ maxWidth: 680 }} className="flex flex-col gap-4">
 
         {/* Progress cards */}
         {goals && (goals.monthly_pnl_target || goals.win_rate_target || goals.max_drawdown_target) && (
           <div className="grid grid-cols-1 gap-3">
+            {goals.monthly_pnl_target ? (
+              <GoalCard
+                icon={TrendingUp}
+                iconColor="#34d399"
+                iconBg="rgba(52,211,153,0.1)"
+                title="Monthly P&L Target"
+                subtitle={`$${monthPnl.toFixed(0)} of $${Number(goals.monthly_pnl_target).toFixed(0)}`}
+                pct={pnlPct}
+                barColor="#34d399"
+                reached={monthPnl >= goals.monthly_pnl_target}
+                reachedText="🎯 Target reached!"
+              />
+            ) : null}
 
-            {/* P&L target */}
-            {goals.monthly_pnl_target && (
-              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center">
-                      <TrendingUp className="w-3.5 h-3.5 text-emerald-400/70" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-white">Monthly P&L Target</p>
-                      <p className="text-[10px] text-[#444] font-light">
-                        ${monthPnl.toFixed(0)} of ${Number(goals.monthly_pnl_target).toFixed(0)}
-                      </p>
-                    </div>
-                  </div>
-                  <span className={`text-sm font-black ${monthPnl >= goals.monthly_pnl_target ? 'text-emerald-400' : 'text-white'}`}>
-                    {Math.min(100, Math.round((monthPnl / goals.monthly_pnl_target) * 100))}%
-                  </span>
-                </div>
-                <ProgressBar value={monthPnl} max={goals.monthly_pnl_target} color="bg-emerald-500" />
-                {monthPnl >= goals.monthly_pnl_target && (
-                  <p className="text-emerald-400 text-xs mt-2 font-medium">🎯 Target reached!</p>
-                )}
-              </div>
-            )}
+            {goals.win_rate_target ? (
+              <GoalCard
+                icon={Target}
+                iconColor="#8B7CF8"
+                iconBg="rgba(108,93,211,0.1)"
+                title="Win Rate Target"
+                subtitle={`${monthWinRate}% of ${Number(goals.win_rate_target).toFixed(0)}%`}
+                pct={wrPct}
+                barColor="#8B7CF8"
+                reached={monthWinRate >= goals.win_rate_target}
+                reachedText="🎯 Target reached!"
+              />
+            ) : null}
 
-            {/* Win rate target */}
-            {goals.win_rate_target && (
-              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-violet-500/10 border border-violet-500/20 rounded-xl flex items-center justify-center">
-                      <Target className="w-3.5 h-3.5 text-violet-400/70" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-white">Win Rate Target</p>
-                      <p className="text-[10px] text-[#444] font-light">
-                        {monthWinRate}% of {Number(goals.win_rate_target).toFixed(0)}%
-                      </p>
-                    </div>
-                  </div>
-                  <span className={`text-sm font-black ${monthWinRate >= goals.win_rate_target ? 'text-emerald-400' : 'text-white'}`}>
-                    {Math.min(100, Math.round((monthWinRate / goals.win_rate_target) * 100))}%
-                  </span>
-                </div>
-                <ProgressBar value={monthWinRate} max={goals.win_rate_target} color="bg-violet-500" />
-                {monthWinRate >= goals.win_rate_target && (
-                  <p className="text-emerald-400 text-xs mt-2 font-medium">🎯 Target reached!</p>
-                )}
-              </div>
-            )}
-
-            {/* Max drawdown */}
-            {goals.max_drawdown_target && (
-              <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-center">
-                      <ShieldAlert className="w-3.5 h-3.5 text-red-400/70" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-white">Max Drawdown Limit</p>
-                      <p className="text-[10px] text-[#444] font-light">
-                        ${maxDD.toFixed(0)} drawn of ${Number(goals.max_drawdown_target).toFixed(0)} limit
-                      </p>
-                    </div>
-                  </div>
-                  <span className={`text-sm font-black ${maxDD >= goals.max_drawdown_target ? 'text-red-400' : 'text-white'}`}>
-                    {Math.min(100, Math.round((maxDD / goals.max_drawdown_target) * 100))}%
-                  </span>
-                </div>
-                <ProgressBar value={maxDD} max={goals.max_drawdown_target} color="bg-orange-500" />
-                {maxDD >= goals.max_drawdown_target && (
-                  <p className="text-red-400 text-xs mt-2 font-medium">⚠️ Drawdown limit hit — consider stopping trading today.</p>
-                )}
-              </div>
-            )}
+            {goals.max_drawdown_target ? (
+              <GoalCard
+                icon={ShieldAlert}
+                iconColor="#f87171"
+                iconBg="rgba(239,68,68,0.1)"
+                title="Max Drawdown Limit"
+                subtitle={`$${maxDD.toFixed(0)} of $${Number(goals.max_drawdown_target).toFixed(0)} limit`}
+                pct={ddPct}
+                barColor="#f97316"
+                reached={maxDD >= goals.max_drawdown_target}
+                reachedText="⚠️ Drawdown limit hit — consider stopping today."
+                isWarning
+              />
+            ) : null}
           </div>
         )}
 
         {/* Set goals form */}
-        <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-6 md:p-7">
-          <h2 className="text-sm font-bold text-white tracking-tight mb-6">Set Your Targets</h2>
-          <form onSubmit={handleSave} className="flex flex-col gap-4">
+        <div className="dash-card">
+          <div className="dash-card-header">
+            <span className="dash-card-title">Set Your Targets</span>
+          </div>
+          <form onSubmit={handleSave} className="p-5 flex flex-col gap-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex flex-col gap-2">
-                <label className="label">Monthly P&L Target ($)</label>
+              <div className="flex flex-col gap-1.5">
+                <label className="label">Monthly P&amp;L ($)</label>
                 <input
                   type="number"
                   step="any"
@@ -242,8 +311,8 @@ export default function GoalsPage() {
                   className="input"
                 />
               </div>
-              <div className="flex flex-col gap-2">
-                <label className="label">Win Rate Target (%)</label>
+              <div className="flex flex-col gap-1.5">
+                <label className="label">Win Rate (%)</label>
                 <input
                   type="number"
                   step="any"
@@ -255,8 +324,8 @@ export default function GoalsPage() {
                   className="input"
                 />
               </div>
-              <div className="flex flex-col gap-2">
-                <label className="label">Max Drawdown Limit ($)</label>
+              <div className="flex flex-col gap-1.5">
+                <label className="label">Max Drawdown ($)</label>
                 <input
                   type="number"
                   step="any"
@@ -267,8 +336,8 @@ export default function GoalsPage() {
                 />
               </div>
             </div>
-            <div className="flex flex-col gap-2">
-              <label className="label">Notes / Rules</label>
+            <div className="flex flex-col gap-1.5">
+              <label className="label">Notes / Trading Rules</label>
               <textarea
                 value={form.notes}
                 onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
@@ -282,16 +351,22 @@ export default function GoalsPage() {
                 {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 {saving ? 'Saving…' : 'Save Goals'}
               </button>
-              {saved && <span className="text-emerald-400 text-xs font-medium">✓ Saved</span>}
+              {saved && (
+                <span style={{ color: '#34d399', fontSize: 12, fontFamily: 'var(--font-body)', fontWeight: 500 }}>
+                  ✓ Saved
+                </span>
+              )}
             </div>
           </form>
         </div>
 
-        {/* Notes display */}
+        {/* Rules display */}
         {goals?.notes && (
-          <div className="bg-[#0f0f0f] border border-white/[0.05] rounded-3xl p-6">
-            <p className="text-[10px] font-medium text-[#444] uppercase tracking-widest mb-3">Your Trading Rules</p>
-            <p className="text-sm text-[#888] font-light leading-relaxed whitespace-pre-wrap">{goals.notes}</p>
+          <div className="dash-card p-5">
+            <p className="page-label mb-3">Your Trading Rules</p>
+            <p style={{ fontSize: 13, color: 'var(--text-2)', fontFamily: 'var(--font-body)', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>
+              {goals.notes}
+            </p>
           </div>
         )}
       </div>

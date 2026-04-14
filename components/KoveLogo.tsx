@@ -1,3 +1,7 @@
+'use client'
+
+import { useId } from 'react'
+
 /**
  * KoveFX brand mark — "K" lettermark only (used in icon contexts, sidebar square, favicon wrapper)
  * For the full wordmark use <KoveWordmark />
@@ -30,6 +34,13 @@ export default function KoveLogo({ size = 28, className = '' }: { size?: number;
  * Usage: <KoveWordmark height={36} />
  */
 export function KoveWordmark({ height = 36, className = '' }: { height?: number; className?: string }) {
+  // Unique IDs per instance to prevent SVG gradient collisions when
+  // multiple KoveWordmark instances are mounted simultaneously (e.g. desktop
+  // sidebar + mobile top bar both rendered in the DOM at once).
+  const uid = useId().replace(/:/g, '')
+  const gradId = `fxGrad-${uid}`
+  const glowId = `glow-${uid}`
+
   // Aspect ratio of the wordmark: ~3.6:1
   const width = Math.round(height * 3.6)
   return (
@@ -44,12 +55,12 @@ export function KoveWordmark({ height = 36, className = '' }: { height?: number;
     >
       <defs>
         {/* Violet gradient for FX */}
-        <linearGradient id="fxGrad" x1="118" y1="8" x2="216" y2="52" gradientUnits="userSpaceOnUse">
+        <linearGradient id={gradId} x1="118" y1="8" x2="216" y2="52" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#7B6CF5" />
           <stop offset="100%" stopColor="#5C4ED4" />
         </linearGradient>
         {/* Subtle white glow filter for Kove outline text */}
-        <filter id="glow" x="-5%" y="-5%" width="110%" height="110%">
+        <filter id={glowId} x="-5%" y="-5%" width="110%" height="110%">
           <feGaussianBlur stdDeviation="0.8" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
@@ -69,7 +80,7 @@ export function KoveWordmark({ height = 36, className = '' }: { height?: number;
         fill="none"
         stroke="rgba(255,255,255,0.18)"
         strokeWidth="1.2"
-        filter="url(#glow)"
+        filter={`url(#${glowId})`}
       >
         Kove
       </text>
@@ -82,7 +93,7 @@ export function KoveWordmark({ height = 36, className = '' }: { height?: number;
         fontWeight="800"
         fontSize="52"
         letterSpacing="-2"
-        fill="url(#fxGrad)"
+        fill={`url(#${gradId})`}
       >
         FX
       </text>
