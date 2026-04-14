@@ -69,18 +69,15 @@ export function KoveWordmark({ height = 36, className = '' }: { height?: number;
         </filter>
       </defs>
 
-      {/* ── "Kove" — outline/ghost style in white ── */}
+      {/* ── "Kove" — solid white ── */}
       <text
         x="2"
         y="50"
-        fontFamily="Space Grotesk, system-ui, sans-serif"
+        fontFamily="Inter, system-ui, sans-serif"
         fontWeight="800"
         fontSize="52"
         letterSpacing="-2"
-        fill="none"
-        stroke="rgba(255,255,255,0.18)"
-        strokeWidth="1.2"
-        filter={`url(#${glowId})`}
+        fill="rgba(255,255,255,0.95)"
       >
         Kove
       </text>
@@ -89,7 +86,7 @@ export function KoveWordmark({ height = 36, className = '' }: { height?: number;
       <text
         x="116"
         y="50"
-        fontFamily="Space Grotesk, system-ui, sans-serif"
+        fontFamily="Inter, system-ui, sans-serif"
         fontWeight="800"
         fontSize="52"
         letterSpacing="-2"

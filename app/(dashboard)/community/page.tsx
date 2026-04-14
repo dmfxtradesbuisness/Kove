@@ -4,14 +4,16 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import {
-  Heart, Loader2, Send, Bookmark, User, TrendingUp, Trophy,
-  X, Wifi, WifiOff, ImageIcon, MessageCircle,
+  Heart, Loader2, Send, Bookmark, TrendingUp, Trophy,
+  X, ImageIcon, MessageCircle,
   Camera, Pencil, Check, Search, MoreHorizontal,
   Trash2, Flag, ShieldAlert, ShieldCheck, AlertTriangle,
+  UserPlus, UserCheck, Users, Sparkles, Rss,
 } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type PostType = 'general' | 'setup' | 'win' | 'loss' | 'news_reaction'
+type FeedTab = 'foryou' | 'following'
 
 interface CommunityProfile {
   user_id?: string
@@ -19,20 +21,8 @@ interface CommunityProfile {
   avatar_url: string | null
   bio?: string | null
   is_public?: boolean
-}
-
-interface AdminPost {
-  id: string
-  user_id: string
-  content: string
-  post_type: PostType
-  image_url: string | null
-  like_count: number
-  comment_count: number
-  is_removed: boolean
-  created_at: string
-  profile: CommunityProfile | null
-  reports?: { count: number; reasons: string[] }
+  follower_count?: number
+  following_count?: number
 }
 
 interface EnrichedPost {
@@ -51,6 +41,8 @@ interface EnrichedPost {
   reactions: Record<string, number>
   my_reaction: string | null
   profile: CommunityProfile | null
+  i_follow_author: boolean
+  is_my_post: boolean
 }
 
 interface Comment {
@@ -77,1035 +69,870 @@ interface TrendingTag {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const TYPE_CFG: Record<PostType, { label: string; color: string; bg: string; border: string }> = {
-  general:       { label: 'General',  color: '#888',    bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' },
-  setup:         { label: 'Setup',    color: '#a78bfa', bg: 'rgba(139,92,246,0.12)',  border: 'rgba(139,92,246,0.25)' },
-  win:           { label: 'Win',      color: '#34d399', bg: 'rgba(52,211,153,0.12)',  border: 'rgba(52,211,153,0.25)' },
-  loss:          { label: 'Loss',     color: '#f87171', bg: 'rgba(248,113,113,0.12)', border: 'rgba(248,113,113,0.25)' },
-  news_reaction: { label: 'News',     color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',  border: 'rgba(251,191,36,0.25)' },
+  general:       { label: 'General',        color: '#9ca3af', bg: 'rgba(156,163,175,0.08)', border: 'rgba(156,163,175,0.15)' },
+  setup:         { label: 'Trade Setup',    color: '#60a5fa', bg: 'rgba(96,165,250,0.08)',  border: 'rgba(96,165,250,0.2)'  },
+  win:           { label: 'Win',            color: '#34d399', bg: 'rgba(52,211,153,0.08)',  border: 'rgba(52,211,153,0.2)'  },
+  loss:          { label: 'Loss',           color: '#f87171', bg: 'rgba(248,113,113,0.08)', border: 'rgba(248,113,113,0.2)' },
+  news_reaction: { label: 'News Reaction',  color: '#fbbf24', bg: 'rgba(251,191,36,0.08)',  border: 'rgba(251,191,36,0.2)'  },
 }
 
-const REACTIONS = ['❤️', '🔥', '💯', '📈', '📉']
+const EMOJIS = ['🔥', '💯', '👀', '💎', '📈', '📉']
 
-const TYPE_FILTERS = [
-  { key: 'all',           label: 'All' },
-  { key: 'setup',         label: 'Setup' },
-  { key: 'win',           label: 'Win' },
-  { key: 'loss',          label: 'Loss' },
-  { key: 'news_reaction', label: 'News' },
-]
-
-// ─── Utils ────────────────────────────────────────────────────────────────────
-function hashId(id: string): number {
-  let h = 0
-  for (let i = 0; i < id.length; i++) h = (Math.imul(31, h) + id.charCodeAt(i)) | 0
-  return Math.abs(h) % 9000 + 1000
+function timeAgo(s: string) {
+  const secs = Math.floor((Date.now() - new Date(s).getTime()) / 1000)
+  if (secs < 60) return 'now'
+  if (secs < 3600) return `${Math.floor(secs / 60)}m`
+  if (secs < 86400) return `${Math.floor(secs / 3600)}h`
+  if (secs < 604800) return `${Math.floor(secs / 86400)}d`
+  return new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function timeAgo(d: string): string {
-  const s = Math.floor((Date.now() - new Date(d).getTime()) / 1000)
-  if (s < 60) return `${s}s`
-  if (s < 3600) return `${Math.floor(s / 60)}m`
-  if (s < 86400) return `${Math.floor(s / 3600)}h`
-  return `${Math.floor(s / 86400)}d`
+function fmtCount(n: number) {
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k'
+  return String(n)
 }
 
-function displayName(profile: CommunityProfile | null, userId: string): string {
-  return profile?.display_name || `Trader #${hashId(userId)}`
-}
-
-function Avatar({ profile, userId, size = 40 }: { profile: CommunityProfile | null; userId: string; size?: number }) {
-  const letter = (profile?.display_name?.[0] ?? 'T').toUpperCase()
-  if (profile?.avatar_url) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={profile.avatar_url}
-        alt={displayName(profile, userId)}
-        style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-      />
-    )
-  }
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+function Avatar({ profile, size = 36 }: { profile: CommunityProfile | null; size?: number }) {
+  const initials = (profile?.display_name || '?').slice(0, 2).toUpperCase()
   return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%', flexShrink: 0,
-      background: 'linear-gradient(135deg,#3d38c0,#2a25a0)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.38, fontWeight: 700, color: 'rgba(255,255,255,0.8)',
-      fontFamily: 'var(--font-display)',
-    }}>
-      {letter}
+    <div
+      style={{
+        width: size, height: size, borderRadius: '50%', flexShrink: 0,
+        background: profile?.avatar_url ? 'transparent' : 'linear-gradient(135deg,#6C5DD3,#8B7CF8)',
+        overflow: 'hidden',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        border: '2px solid rgba(255,255,255,0.07)',
+      }}
+    >
+      {profile?.avatar_url
+        ? <img src={profile.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : <span style={{ fontSize: size * 0.33, fontWeight: 700, color: '#fff', fontFamily: 'var(--font-display)' }}>{initials}</span>
+      }
     </div>
   )
 }
 
-// ─── Decorative swooshes ──────────────────────────────────────────────────────
-function Swooshes() {
+// ─── Follow button ─────────────────────────────────────────────────────────────
+function FollowButton({ userId, isFollowing, onChange }: { userId: string; isFollowing: boolean; onChange: (f: boolean) => void }) {
+  const [loading, setLoading] = useState(false)
+  async function toggle() {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/community/follow/${userId}`, { method: 'POST' })
+      const d = await res.json()
+      onChange(d.following)
+    } finally {
+      setLoading(false)
+    }
+  }
   return (
-    <>
-      <div style={{ position:'absolute',top:-40,right:-30,width:420,height:320,background:'linear-gradient(135deg,rgba(80,60,200,0.45),rgba(50,30,160,0.2) 60%,transparent)',borderRadius:'0 0 0 80%',transform:'rotate(-12deg)',pointerEvents:'none' }}/>
-      <div style={{ position:'absolute',top:60,right:40,width:300,height:200,background:'linear-gradient(135deg,rgba(90,65,210,0.35),rgba(60,40,170,0.15) 60%,transparent)',borderRadius:'0 0 0 60%',transform:'rotate(-8deg)',pointerEvents:'none' }}/>
-      <div style={{ position:'absolute',bottom:-60,left:'30%',width:500,height:200,background:'linear-gradient(135deg,rgba(70,50,190,0.3),transparent 70%)',borderRadius:'60% 0 0 0',transform:'rotate(6deg)',pointerEvents:'none' }}/>
-    </>
+    <button
+      onClick={(e) => { e.stopPropagation(); toggle() }}
+      disabled={loading}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 5,
+        padding: '5px 14px',
+        borderRadius: 999,
+        fontSize: 12,
+        fontWeight: 600,
+        fontFamily: 'var(--font-display)',
+        cursor: loading ? 'not-allowed' : 'pointer',
+        transition: 'all 0.15s',
+        background: isFollowing ? 'rgba(255,255,255,0.06)' : 'rgba(108,93,211,0.85)',
+        border: isFollowing ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(108,93,211,0.5)',
+        color: isFollowing ? 'rgba(255,255,255,0.6)' : '#fff',
+        minWidth: 84,
+        justifyContent: 'center',
+      }}
+    >
+      {loading ? <Loader2 style={{ width: 11, height: 11 }} className="animate-spin" /> : isFollowing ? <UserCheck style={{ width: 12, height: 12 }} /> : <UserPlus style={{ width: 12, height: 12 }} />}
+      {isFollowing ? 'Following' : 'Follow'}
+    </button>
   )
 }
 
-// ─── Post card component ──────────────────────────────────────────────────────
+// ─── Post card ────────────────────────────────────────────────────────────────
 function PostCard({
-  post, myId, isAdmin,
-  onLike, onBookmark, onReact,
-  onDelete, onReport,
-  commentsOpen, onToggleComments,
-  comments, commentInput, onCommentInput, onCommentSubmit, submittingComment,
+  post,
+  myUserId,
+  onLike,
+  onBookmark,
+  onReaction,
+  onDelete,
+  onReport,
+  onFollow,
+  onOpenComments,
 }: {
-  post: EnrichedPost; myId: string | null; isAdmin: boolean
-  onLike: (id: string, liked: boolean) => void
-  onBookmark: (id: string, bookmarked: boolean) => void
-  onReact: (id: string, emoji: string, current: string | null) => void
+  post: EnrichedPost
+  myUserId: string
+  onLike: (id: string) => void
+  onBookmark: (id: string) => void
+  onReaction: (id: string, emoji: string) => void
   onDelete: (id: string) => void
   onReport: (id: string) => void
-  commentsOpen: boolean; onToggleComments: () => void
-  comments: Comment[]; commentInput: string
-  onCommentInput: (v: string) => void
-  onCommentSubmit: (postId: string) => void
-  submittingComment: boolean
+  onFollow: (userId: string, following: boolean) => void
+  onOpenComments: (post: EnrichedPost) => void
 }) {
-  const [showReactions, setShowReactions] = useState(false)
-  const [showMenu, setShowMenu]           = useState(false)
-  const cfg     = TYPE_CFG[post.post_type] ?? TYPE_CFG.general
-  const name    = displayName(post.profile, post.user_id)
-  const isOwn   = post.user_id === myId
+  const cfg = TYPE_CFG[post.post_type]
+  const [showMenu, setShowMenu] = useState(false)
+  const [showEmojis, setShowEmojis] = useState(false)
+  const [following, setFollowing] = useState(post.i_follow_author)
 
   return (
-    <div style={{ background:'#07060e', border:'1px solid rgba(255,255,255,0.07)', borderRadius:18, marginBottom:14, overflow:'hidden' }}>
-      {/* Header */}
-      <div className="flex items-start gap-3 p-5">
-        <Avatar profile={post.profile} userId={post.user_id} size={44} />
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
+    <div
+      style={{
+        background: '#111',
+        border: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: 16,
+        padding: '16px 18px 14px',
+        transition: 'border-color 0.15s',
+      }}
+      onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.12)')}
+      onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)')}
+    >
+      {/* Header row */}
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <Avatar profile={post.profile} size={40} />
+          <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'#fff' }}>
-                {name}
-                {post.user_id === myId && (
-                  <span style={{ fontSize:9, color:'rgba(255,255,255,0.25)', fontWeight:400, marginLeft:5 }}>you</span>
-                )}
+              <span style={{ fontWeight: 700, fontSize: 14, color: '#fff', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>
+                {post.profile?.display_name || 'Trader'}
               </span>
-              <span style={{ fontSize:10, fontWeight:700, color:cfg.color, background:cfg.bg, border:`1px solid ${cfg.border}`, borderRadius:6, padding:'2px 7px', fontFamily:'var(--font-display)' }}>
-                {cfg.label}
+              {post.profile?.follower_count !== undefined && post.profile.follower_count > 0 && (
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-body)' }}>
+                  {fmtCount(post.profile.follower_count)} followers
+                </span>
+              )}
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-body)' }}>
+                · {timeAgo(post.created_at)}
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <span style={{ fontSize:11, color:'rgba(255,255,255,0.28)', fontFamily:'var(--font-body)' }}>
-                {timeAgo(post.created_at)}
-              </span>
-              {/* ⋯ menu */}
-              <div style={{ position:'relative' }}>
-                <button
-                  onClick={() => setShowMenu(v => !v)}
-                  style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.3)', padding:4, borderRadius:6 }}
-                >
-                  <MoreHorizontal className="w-4 h-4" />
-                </button>
-                {showMenu && (
-                  <div
-                    style={{ position:'absolute', top:'calc(100% + 4px)', right:0, zIndex:60, background:'#1a1638', border:'1px solid rgba(108,93,211,0.25)', borderRadius:12, padding:'6px', minWidth:140, boxShadow:'0 8px 32px rgba(0,0,0,0.55)' }}
-                    onMouseLeave={() => setShowMenu(false)}
+            {/* Post type badge */}
+            <span style={{ fontSize: 10, fontWeight: 600, color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: 6, padding: '1px 7px', display: 'inline-block', marginTop: 2, fontFamily: 'var(--font-display)', letterSpacing: '0.03em' }}>
+              {cfg.label}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Follow button — only show if not my post */}
+          {!post.is_my_post && (
+            <FollowButton
+              userId={post.user_id}
+              isFollowing={following}
+              onChange={(f) => { setFollowing(f); onFollow(post.user_id, f) }}
+            />
+          )}
+          {/* Menu */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowMenu(v => !v)}
+              style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)' }}
+            >
+              <MoreHorizontal style={{ width: 16, height: 16 }} />
+            </button>
+            {showMenu && (
+              <div
+                style={{ position: 'absolute', right: 0, top: 36, background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '4px', zIndex: 50, minWidth: 150, boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {post.is_my_post ? (
+                  <button
+                    onClick={() => { onDelete(post.id); setShowMenu(false) }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', borderRadius: 8, background: 'none', border: 'none', color: '#f87171', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
                   >
-                    {(isOwn || isAdmin) && (
-                      <button
-                        onClick={() => { setShowMenu(false); onDelete(post.id) }}
-                        className="flex items-center gap-2 w-full"
-                        style={{ background:'none', border:'none', cursor:'pointer', color:'#f87171', fontSize:12, fontFamily:'var(--font-display)', fontWeight:600, padding:'8px 10px', borderRadius:8, textAlign:'left' }}
-                        onMouseEnter={e => (e.currentTarget.style.background='rgba(248,113,113,0.12)')}
-                        onMouseLeave={e => (e.currentTarget.style.background='none')}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        {isAdmin && !isOwn ? 'Admin Delete' : 'Delete Post'}
-                      </button>
-                    )}
-                    {!isOwn && (
-                      <button
-                        onClick={() => { setShowMenu(false); onReport(post.id) }}
-                        className="flex items-center gap-2 w-full"
-                        style={{ background:'none', border:'none', cursor:'pointer', color:'#fbbf24', fontSize:12, fontFamily:'var(--font-display)', fontWeight:600, padding:'8px 10px', borderRadius:8, textAlign:'left' }}
-                        onMouseEnter={e => (e.currentTarget.style.background='rgba(251,191,36,0.1)')}
-                        onMouseLeave={e => (e.currentTarget.style.background='none')}
-                      >
-                        <Flag className="w-3.5 h-3.5" />
-                        Report Post
-                      </button>
-                    )}
-                  </div>
+                    <Trash2 style={{ width: 13, height: 13 }} /> Delete post
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => { onReport(post.id); setShowMenu(false) }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', borderRadius: 8, background: 'none', border: 'none', color: '#fbbf24', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+                  >
+                    <Flag style={{ width: 13, height: 13 }} /> Report
+                  </button>
                 )}
               </div>
-            </div>
+            )}
           </div>
-
-          {/* Content */}
-          <p style={{ fontSize:14, lineHeight:'1.65', color:'rgba(255,255,255,0.78)', fontFamily:'var(--font-body)', marginTop:8 }}>
-            {post.content}
-          </p>
-
-          {/* Tickers */}
-          {post.tickers?.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {post.tickers.map(t => (
-                <span key={t} style={{ fontSize:10, fontWeight:700, color:'#8B7CF8', background:'rgba(108,93,211,0.12)', border:'1px solid rgba(108,93,211,0.22)', borderRadius:6, padding:'2px 7px', fontFamily:'var(--font-display)' }}>
-                  ${t}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Image */}
-      {post.image_url && (
-        <div style={{ paddingLeft:16, paddingRight:16, paddingBottom:12 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={post.image_url}
-            alt="Post image"
-            loading="lazy"
-            style={{ width:'100%', borderRadius:12, maxHeight:360, objectFit:'cover', border:'1px solid rgba(255,255,255,0.06)' }}
-          />
+      {/* Content */}
+      <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.82)', lineHeight: 1.65, fontFamily: 'var(--font-body)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', marginBottom: 10 }}>
+        {post.content}
+      </p>
+
+      {/* Tickers */}
+      {post.tickers?.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {post.tickers.map(t => (
+            <span key={t} style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: 'rgba(108,93,211,0.1)', color: '#8B7CF8', border: '1px solid rgba(108,93,211,0.2)', fontFamily: 'var(--font-display)' }}>{t}</span>
+          ))}
         </div>
       )}
 
-      {/* Reactions row (if any exist) */}
+      {/* Image */}
+      {post.image_url && (
+        <div style={{ borderRadius: 12, overflow: 'hidden', marginBottom: 12, maxHeight: 340, background: '#0a0a0a' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={post.image_url} alt="post" loading="lazy" style={{ width: '100%', maxHeight: 340, objectFit: 'cover', display: 'block' }} />
+        </div>
+      )}
+
+      {/* Reactions row */}
       {Object.keys(post.reactions).length > 0 && (
-        <div className="flex flex-wrap gap-1.5 px-5 pb-3">
+        <div className="flex flex-wrap gap-1.5 mb-3">
           {Object.entries(post.reactions).map(([emoji, count]) => (
             <button
               key={emoji}
-              onClick={() => onReact(post.id, emoji, post.my_reaction)}
+              onClick={() => onReaction(post.id, emoji)}
               style={{
-                display:'flex', alignItems:'center', gap:4,
-                fontSize:12, padding:'3px 8px', borderRadius:20,
-                background: post.my_reaction === emoji ? 'rgba(108,93,211,0.22)' : 'rgba(255,255,255,0.06)',
-                border: `1px solid ${post.my_reaction === emoji ? 'rgba(108,93,211,0.4)' : 'rgba(255,255,255,0.1)'}`,
-                color:'rgba(255,255,255,0.75)', cursor:'pointer', fontFamily:'var(--font-body)',
+                display: 'flex', alignItems: 'center', gap: 4,
+                padding: '3px 9px', borderRadius: 999, fontSize: 12,
+                background: post.my_reaction === emoji ? 'rgba(108,93,211,0.18)' : 'rgba(255,255,255,0.05)',
+                border: post.my_reaction === emoji ? '1px solid rgba(108,93,211,0.35)' : '1px solid rgba(255,255,255,0.08)',
+                color: post.my_reaction === emoji ? '#8B7CF8' : 'rgba(255,255,255,0.55)',
+                cursor: 'pointer',
               }}
             >
-              {emoji} <span style={{ fontSize:10, fontWeight:700 }}>{count}</span>
+              {emoji} <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600 }}>{count}</span>
             </button>
           ))}
         </div>
       )}
 
       {/* Action bar */}
-      <div style={{ borderTop:'1px solid rgba(255,255,255,0.05)', padding:'10px 16px', display:'flex', alignItems:'center', gap:4, position:'relative' }}>
-
+      <div className="flex items-center gap-1 pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 4 }}>
         {/* Like */}
-        <ActionBtn
-          icon={<Heart className="w-3.5 h-3.5" style={{ fill: post.liked_by_me ? '#8B7CF8' : 'none', stroke:'currentColor' }}/>}
-          label={post.like_count > 0 ? String(post.like_count) : 'Like'}
-          active={post.liked_by_me}
-          onClick={() => onLike(post.id, post.liked_by_me)}
-        />
+        <button
+          onClick={() => onLike(post.id)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px', borderRadius: 8,
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: post.liked_by_me ? '#f87171' : 'rgba(255,255,255,0.35)',
+            fontSize: 12, fontFamily: 'var(--font-body)', fontWeight: 500,
+            transition: 'color 0.15s',
+          }}
+        >
+          <Heart style={{ width: 15, height: 15, fill: post.liked_by_me ? '#f87171' : 'none' }} />
+          {post.like_count > 0 && fmtCount(post.like_count)}
+        </button>
 
-        {/* Comment */}
-        <ActionBtn
-          icon={<MessageCircle className="w-3.5 h-3.5"/>}
-          label={post.comment_count > 0 ? `${post.comment_count} Comment${post.comment_count !== 1 ? 's' : ''}` : 'Comment'}
-          onClick={onToggleComments}
-          active={commentsOpen}
-        />
+        {/* Comments */}
+        <button
+          onClick={() => onOpenComments(post)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px', borderRadius: 8,
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'rgba(255,255,255,0.35)', fontSize: 12, fontFamily: 'var(--font-body)', fontWeight: 500,
+            transition: 'color 0.15s',
+          }}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.7)')}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)')}
+        >
+          <MessageCircle style={{ width: 15, height: 15 }} />
+          {post.comment_count > 0 && post.comment_count}
+        </button>
 
-        {/* React */}
-        <div style={{ position:'relative' }}>
-          <ActionBtn
-            icon={<span style={{ fontSize:13 }}>{post.my_reaction ?? '😊'}</span>}
-            label="React"
-            onClick={() => setShowReactions(v => !v)}
-            active={!!post.my_reaction}
-          />
-          {showReactions && (
-            <div
-              style={{
-                position:'absolute', bottom:'calc(100% + 6px)', left:0, zIndex:50,
-                background:'#1a1638', border:'1px solid rgba(108,93,211,0.3)',
-                borderRadius:14, padding:'8px 10px', display:'flex', gap:6,
-                boxShadow:'0 8px 32px rgba(0,0,0,0.5)',
-              }}
-            >
-              {REACTIONS.map(e => (
-                <button
-                  key={e}
-                  onClick={() => { onReact(post.id, e, post.my_reaction); setShowReactions(false) }}
-                  style={{ fontSize:20, background:'none', border:'none', cursor:'pointer', padding:2, borderRadius:6, transition:'transform 0.1s' }}
-                  onMouseEnter={ev => (ev.currentTarget.style.transform='scale(1.3)')}
-                  onMouseLeave={ev => (ev.currentTarget.style.transform='scale(1)')}
-                >
-                  {e}
-                </button>
+        {/* Emoji picker */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setShowEmojis(v => !v)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px', borderRadius: 8,
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'rgba(255,255,255,0.35)', fontSize: 14,
+            }}
+          >
+            😊
+          </button>
+          {showEmojis && (
+            <div style={{
+              position: 'absolute', bottom: 36, left: 0, background: '#1a1a1a',
+              border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '8px 10px',
+              display: 'flex', gap: 6, zIndex: 50, boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+            }}>
+              {EMOJIS.map(e => (
+                <button key={e} onClick={() => { onReaction(post.id, e); setShowEmojis(false) }} style={{ fontSize: 18, background: 'none', border: 'none', cursor: 'pointer', borderRadius: 6, padding: 4, transition: 'transform 0.1s' }}
+                  onMouseEnter={(ev) => (ev.currentTarget.style.transform = 'scale(1.3)')}
+                  onMouseLeave={(ev) => (ev.currentTarget.style.transform = 'scale(1)')}
+                >{e}</button>
               ))}
-              {post.my_reaction && (
-                <button
-                  onClick={() => { onReact(post.id, post.my_reaction!, post.my_reaction); setShowReactions(false) }}
-                  style={{ fontSize:10, color:'rgba(255,255,255,0.4)', background:'none', border:'none', cursor:'pointer', paddingLeft:4 }}
-                >
-                  ✕
-                </button>
-              )}
             </div>
           )}
         </div>
-
-        {/* Spacer */}
-        <div style={{ flex:1 }} />
 
         {/* Bookmark */}
         <button
-          onClick={() => onBookmark(post.id, post.bookmarked_by_me)}
-          className="flex items-center gap-1.5"
+          onClick={() => onBookmark(post.id)}
           style={{
-            background:'none', border:'none', cursor:'pointer',
-            color: post.bookmarked_by_me ? '#fbbf24' : 'rgba(255,255,255,0.3)',
-            fontSize:11, fontFamily:'var(--font-display)', fontWeight:600, padding:'6px 8px', borderRadius:10,
+            display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px', borderRadius: 8,
+            background: 'none', border: 'none', cursor: 'pointer', marginLeft: 'auto',
+            color: post.bookmarked_by_me ? '#8B7CF8' : 'rgba(255,255,255,0.25)',
+            transition: 'color 0.15s',
           }}
         >
-          <Bookmark className="w-3.5 h-3.5" style={{ fill: post.bookmarked_by_me ? '#fbbf24' : 'none' }}/>
-          {post.bookmark_count > 0 && post.bookmark_count}
+          <Bookmark style={{ width: 15, height: 15, fill: post.bookmarked_by_me ? '#8B7CF8' : 'none' }} />
         </button>
       </div>
-
-      {/* Comments section */}
-      {commentsOpen && (
-        <div style={{ borderTop:'1px solid rgba(255,255,255,0.05)', padding:'12px 16px' }}>
-          {comments.length === 0 ? (
-            <p style={{ fontSize:12, color:'rgba(255,255,255,0.22)', fontFamily:'var(--font-body)', textAlign:'center', padding:'8px 0' }}>
-              No comments yet — be first
-            </p>
-          ) : (
-            <div className="flex flex-col gap-3 mb-3">
-              {comments.map(c => (
-                <div key={c.id} className="flex gap-2">
-                  <Avatar profile={c.profile} userId={c.user_id} size={28}/>
-                  <div style={{ background:'rgba(255,255,255,0.04)', borderRadius:10, padding:'7px 11px', flex:1 }}>
-                    <span style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.7)', fontFamily:'var(--font-display)' }}>
-                      {displayName(c.profile, c.user_id)}
-                    </span>
-                    <span style={{ fontSize:10, color:'rgba(255,255,255,0.22)', marginLeft:6, fontFamily:'var(--font-body)' }}>
-                      {timeAgo(c.created_at)}
-                    </span>
-                    <p style={{ fontSize:12, color:'rgba(255,255,255,0.65)', fontFamily:'var(--font-body)', marginTop:3, lineHeight:'1.5' }}>
-                      {c.content}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {/* Comment input */}
-          <div className="flex gap-2 items-center">
-            <div style={{ flex:1, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, padding:'8px 12px', display:'flex', alignItems:'center' }}>
-              <input
-                value={commentInput}
-                onChange={e => onCommentInput(e.target.value.slice(0, 500))}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onCommentSubmit(post.id) } }}
-                placeholder="Write a comment…"
-                style={{ flex:1, background:'none', border:'none', outline:'none', color:'#fff', fontSize:12, fontFamily:'var(--font-body)' }}
-              />
-            </div>
-            <button
-              onClick={() => onCommentSubmit(post.id)}
-              disabled={!commentInput.trim() || submittingComment}
-              style={{
-                width:34, height:34, borderRadius:10, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center',
-                background: commentInput.trim() ? 'linear-gradient(135deg,#7B6CF5,#5C4ED4)' : 'rgba(255,255,255,0.06)',
-                border:'none', cursor: commentInput.trim() ? 'pointer' : 'default',
-                color:'#fff', opacity: submittingComment ? 0.5 : 1,
-              }}
-            >
-              {submittingComment ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <Send className="w-3.5 h-3.5"/>}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
 
-function ActionBtn({ icon, label, onClick, active }: {
-  icon: React.ReactNode; label: string; onClick: () => void; active?: boolean
-}) {
+// ─── Compose box ──────────────────────────────────────────────────────────────
+function ComposeBox({ myProfile, onPost }: { myProfile: CommunityProfile | null; onPost: (p: EnrichedPost) => void }) {
+  const [content, setContent] = useState('')
+  const [postType, setPostType] = useState<PostType>('general')
+  const [imageUrl, setImageUrl] = useState('')
+  const [showImageInput, setShowImageInput] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
+  const textRef = useRef<HTMLTextAreaElement>(null)
+
+  async function submit() {
+    if (!content.trim() || sending) return
+    setSending(true); setError('')
+    try {
+      const res = await fetch('/api/community/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, post_type: postType, image_url: imageUrl || undefined }),
+      })
+      const d = await res.json()
+      if (!res.ok) { setError(d.error || 'Failed'); return }
+      onPost(d.post)
+      setContent(''); setImageUrl(''); setShowImageInput(false)
+      if (textRef.current) { textRef.current.style.height = 'auto' }
+    } catch { setError('Network error') } finally { setSending(false) }
+  }
+
   return (
-    <button
-      onClick={onClick}
-      className="flex items-center gap-1.5"
-      style={{
-        background: active ? 'rgba(108,93,211,0.12)' : 'none',
-        border: `1px solid ${active ? 'rgba(108,93,211,0.22)' : 'transparent'}`,
-        borderRadius:10, padding:'6px 10px', cursor:'pointer',
-        color: active ? '#a78bfa' : 'rgba(255,255,255,0.32)',
-        fontSize:11, fontFamily:'var(--font-display)', fontWeight:600,
-        transition:'all 0.15s',
-      }}
-      onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background='rgba(255,255,255,0.05)' }}
-      onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background='none' }}
-    >
-      {icon}
-      <span>{label}</span>
-    </button>
+    <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 16, padding: '16px 18px', marginBottom: 4 }}>
+      <div className="flex gap-3">
+        <Avatar profile={myProfile} size={38} />
+        <div className="flex-1 min-w-0">
+          <textarea
+            ref={textRef}
+            value={content}
+            onChange={(e) => { setContent(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px' }}
+            placeholder="Share a trade, setup, or insight…"
+            rows={2}
+            style={{
+              width: '100%', background: 'transparent', border: 'none', outline: 'none', resize: 'none',
+              color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 1.6, fontFamily: 'var(--font-body)',
+              caretColor: '#8B7CF8',
+            }}
+          />
+          {showImageInput && (
+            <input
+              type="url"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="Paste image URL…"
+              className="input mt-2 !text-xs !min-h-0 !py-2"
+            />
+          )}
+          {error && <p style={{ color: '#f87171', fontSize: 12, marginTop: 6, fontFamily: 'var(--font-body)' }}>{error}</p>}
+          <div className="flex items-center justify-between mt-3 flex-wrap gap-2">
+            {/* Post type */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {(['general','setup','win','loss','news_reaction'] as PostType[]).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setPostType(t)}
+                  style={{
+                    fontSize: 10, fontWeight: 600, padding: '3px 9px', borderRadius: 999, cursor: 'pointer',
+                    fontFamily: 'var(--font-display)', letterSpacing: '0.02em',
+                    background: postType === t ? TYPE_CFG[t].bg : 'rgba(255,255,255,0.04)',
+                    border: postType === t ? `1px solid ${TYPE_CFG[t].border}` : '1px solid rgba(255,255,255,0.07)',
+                    color: postType === t ? TYPE_CFG[t].color : 'rgba(255,255,255,0.3)',
+                  }}
+                >{TYPE_CFG[t].label}</button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowImageInput(v => !v)}
+                style={{ width: 32, height: 32, borderRadius: 8, background: showImageInput ? 'rgba(255,255,255,0.08)' : 'none', border: 'none', cursor: 'pointer', color: showImageInput ? '#8B7CF8' : 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              ><ImageIcon style={{ width: 15, height: 15 }} /></button>
+              <button
+                onClick={submit}
+                disabled={!content.trim() || sending}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 999,
+                  background: content.trim() ? 'rgba(108,93,211,0.9)' : 'rgba(108,93,211,0.3)',
+                  border: 'none', color: '#fff', fontSize: 13, fontWeight: 600,
+                  fontFamily: 'var(--font-display)', cursor: content.trim() ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {sending ? <Loader2 style={{ width: 13, height: 13 }} className="animate-spin" /> : <Send style={{ width: 13, height: 13 }} />}
+                Post
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Comments modal ───────────────────────────────────────────────────────────
+function CommentsModal({ post, myProfile, onClose }: { post: EnrichedPost; myProfile: CommunityProfile | null; onClose: () => void }) {
+  const [comments, setComments] = useState<Comment[]>([])
+  const [loading, setLoading] = useState(true)
+  const [text, setText] = useState('')
+  const [sending, setSending] = useState(false)
+  const cfg = TYPE_CFG[post.post_type]
+
+  useEffect(() => {
+    fetch(`/api/community/posts/${post.id}/comments`)
+      .then(r => r.json())
+      .then(d => { if (d.comments) setComments(d.comments) })
+      .finally(() => setLoading(false))
+  }, [post.id])
+
+  async function sendComment() {
+    if (!text.trim() || sending) return
+    setSending(true)
+    try {
+      const res = await fetch(`/api/community/posts/${post.id}/comments`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: text.trim() }),
+      })
+      const d = await res.json()
+      if (d.comment) { setComments(p => [...p, d.comment]); setText('') }
+    } finally { setSending(false) }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)' }} onClick={onClose}>
+      <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 640, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <div>
+            <p style={{ fontWeight: 700, fontSize: 15, color: '#fff', fontFamily: 'var(--font-display)' }}>{post.profile?.display_name || 'Trader'}</p>
+            <span style={{ fontSize: 10, fontWeight: 600, color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: 5, padding: '1px 6px', fontFamily: 'var(--font-display)' }}>{cfg.label}</span>
+          </div>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)' }}><X style={{ width: 14, height: 14 }} /></button>
+        </div>
+        {/* Original post */}
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, fontFamily: 'var(--font-body)', whiteSpace: 'pre-wrap' }}>{post.content}</p>
+        </div>
+        {/* Comments */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px' }}>
+          {loading ? <div className="flex items-center justify-center py-8"><Loader2 className="animate-spin w-4 h-4" style={{ color: '#6C5DD3' }} /></div> : comments.length === 0 ? (
+            <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: 13, fontFamily: 'var(--font-body)', paddingTop: 24 }}>No comments yet. Be first.</p>
+          ) : comments.map(c => (
+            <div key={c.id} className="flex gap-3 mb-4">
+              <Avatar profile={c.profile} size={30} />
+              <div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', fontFamily: 'var(--font-display)' }}>{c.profile?.display_name || 'Trader'} </span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-body)' }}>{timeAgo(c.created_at)}</span>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.72)', lineHeight: 1.55, fontFamily: 'var(--font-body)', marginTop: 2 }}>{c.content}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* Input */}
+        <div style={{ padding: '12px 20px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: 10, alignItems: 'flex-end' }}>
+          <Avatar profile={myProfile} size={30} />
+          <input
+            value={text}
+            onChange={e => setText(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendComment() } }}
+            placeholder="Add a comment…"
+            style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 999, padding: '9px 16px', fontSize: 13, color: 'rgba(255,255,255,0.85)', outline: 'none', fontFamily: 'var(--font-body)' }}
+          />
+          <button onClick={sendComment} disabled={!text.trim() || sending} style={{ width: 36, height: 36, borderRadius: '50%', background: text.trim() ? 'rgba(108,93,211,0.9)' : 'rgba(108,93,211,0.3)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            {sending ? <Loader2 style={{ width: 13, height: 13, color: '#fff' }} className="animate-spin" /> : <Send style={{ width: 13, height: 13, color: '#fff' }} />}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Profile editor modal ─────────────────────────────────────────────────────
+function ProfileEditor({ profile, onClose, onSave }: { profile: CommunityProfile | null; onClose: () => void; onSave: (p: CommunityProfile) => void }) {
+  const [form, setForm] = useState({ display_name: profile?.display_name ?? '', bio: profile?.bio ?? '', avatar_url: profile?.avatar_url ?? '' })
+  const [saving, setSaving] = useState(false)
+  async function save() {
+    setSaving(true)
+    try {
+      const res = await fetch('/api/community/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+      const d = await res.json()
+      if (d.profile) onSave(d.profile)
+    } finally { setSaving(false) }
+  }
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', padding: 16 }} onClick={onClose}>
+      <div style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, width: '100%', maxWidth: 420, padding: 28 }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color: '#fff' }}>Edit Profile</h2>
+          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X style={{ width: 13, height: 13 }} /></button>
+        </div>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="label">Display name</label>
+            <input value={form.display_name} onChange={e => setForm(p => ({ ...p, display_name: e.target.value }))} maxLength={30} placeholder="Your name" className="input" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="label">Bio</label>
+            <textarea value={form.bio} onChange={e => setForm(p => ({ ...p, bio: e.target.value }))} maxLength={150} rows={2} placeholder="Short bio…" className="input resize-none" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="label">Avatar URL</label>
+            <input value={form.avatar_url} onChange={e => setForm(p => ({ ...p, avatar_url: e.target.value }))} placeholder="https://…" className="input" />
+          </div>
+        </div>
+        <div className="flex items-center gap-3 mt-6">
+          <button onClick={save} disabled={saving} className="btn-blue gap-2 flex-1">
+            {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            {saving ? 'Saving…' : 'Save Profile'}
+          </button>
+          <button onClick={onClose} className="btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
   )
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function CommunityPage() {
-  const supabase = createClient()
+  const [posts, setPosts]               = useState<EnrichedPost[]>([])
+  const [loading, setLoading]           = useState(true)
+  const [feedTab, setFeedTab]           = useState<FeedTab>('foryou')
+  const [postTypeFilter, setPostTypeFilter] = useState<string>('all')
+  const [search, setSearch]             = useState('')
+  const [myProfile, setMyProfile]       = useState<CommunityProfile | null>(null)
+  const [myUserId, setMyUserId]         = useState('')
+  const [postCount, setPostCount]       = useState(0)
+  const [leaderboard, setLeaderboard]   = useState<LeaderboardEntry[]>([])
+  const [trending, setTrending]         = useState<TrendingTag[]>([])
+  const [commentPost, setCommentPost]   = useState<EnrichedPost | null>(null)
+  const [editProfile, setEditProfile]   = useState(false)
+  const [isOnline, setIsOnline]         = useState(true)
+  const [reportId, setReportId]         = useState<string | null>(null)
+  const [reportReason, setReportReason] = useState('')
+  const [reportSending, setReportSending] = useState(false)
 
-  // Profile
-  const [myProfile, setMyProfile]     = useState<(CommunityProfile & { user_id: string }) | null>(null)
-  const [myPostCount, setMyPostCount] = useState(0)
-  const [myId, setMyId]               = useState<string | null>(null)
-  const [editingProfile, setEditingProfile] = useState(false)
-  const [editName, setEditName]       = useState('')
-  const [editBio, setEditBio]         = useState('')
-  const [savingProfile, setSavingProfile] = useState(false)
-  const [avatarUploading, setAvatarUploading] = useState(false)
-  const avatarInputRef                = useRef<HTMLInputElement>(null)
+  const supabase  = createClient()
+  const channelRef = useRef<RealtimeChannel | null>(null)
 
-  // Feed
-  const [posts, setPosts]             = useState<EnrichedPost[]>([])
-  const [loading, setLoading]         = useState(true)
-  const [filter, setFilter]           = useState('all')
-  const [live, setLive]               = useState(false)
-  const channelRef                    = useRef<RealtimeChannel | null>(null)
-
-  // Compose
-  const [composing, setComposing]     = useState(false)
-  const [composeContent, setComposeContent] = useState('')
-  const [composeType, setComposeType] = useState<PostType>('general')
-  const [composeImage, setComposeImage] = useState<File | null>(null)
-  const [composePreview, setComposePreview] = useState<string | null>(null)
-  const [submitting, setSubmitting]   = useState(false)
-  const imageInputRef                 = useRef<HTMLInputElement>(null)
-
-  // Sidebar
-  const [trending, setTrending]       = useState<TrendingTag[]>([])
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
-  const [profileSearch, setProfileSearch] = useState('')
-
-  // Comments
-  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set())
-  const [postComments, setPostComments] = useState<Record<string, Comment[]>>({})
-  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({})
-  const [submittingComment, setSubmittingComment] = useState<string | null>(null)
-
-  // Admin
-  const [isAdmin, setIsAdmin]         = useState(false)
-  const [showAdminPanel, setShowAdminPanel] = useState(false)
-  const [adminPosts, setAdminPosts]   = useState<AdminPost[]>([])
-  const [adminLoading, setAdminLoading] = useState(false)
-  const [adminView, setAdminView]     = useState<'reported' | 'all' | 'removed'>('reported')
-
-  // Report modal
-  const [reportingPostId, setReportingPostId] = useState<string | null>(null)
-  const [reportReason, setReportReason] = useState('spam')
-  const [reportDetails, setReportDetails] = useState('')
-  const [submittingReport, setSubmittingReport] = useState(false)
-  const [reportSuccess, setReportSuccess] = useState(false)
-  const [postError, setPostError]     = useState<string | null>(null)
-
-  // ── Init ──────────────────────────────────────────────────────────────────
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return
-      setMyId(data.user.id)
-      const res = await fetch('/api/community/profile')
-      const json = await res.json()
-      setMyProfile(json.profile ? { ...json.profile, user_id: data.user.id } : { user_id: data.user.id, display_name: null, avatar_url: null })
-      setMyPostCount(json.post_count ?? 0)
-    })
-    fetch('/api/community/trending').then(r => r.json()).then(j => setTrending(j.trending ?? []))
-    fetch('/api/community/leaderboard').then(r => r.json()).then(j => setLeaderboard(j.leaderboard ?? []))
-
-    // Check admin
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return
-      const res = await fetch('/api/stripe/subscription-status') // reuse auth check — we'll check admin via dedicated endpoint
-      const adminCheck = await fetch('/api/community/admin/posts?view=reported')
-      if (adminCheck.status === 200) setIsAdmin(true)
-    })
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) setMyUserId(user.id)
+      const [profileRes, lbRes, trendRes] = await Promise.all([
+        fetch('/api/community/profile'),
+        fetch('/api/community/leaderboard'),
+        fetch('/api/community/trending'),
+      ])
+      const profileData = await profileRes.json()
+      const lbData = await lbRes.json()
+      const trendData = await trendRes.json()
+      setMyProfile(profileData.profile)
+      setPostCount(profileData.post_count ?? 0)
+      setLeaderboard(lbData.leaderboard ?? [])
+      setTrending(trendData.trending ?? [])
+    }
+    init()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Posts ─────────────────────────────────────────────────────────────────
-  const fetchPosts = useCallback(async (f: string) => {
+  const loadPosts = useCallback(async () => {
     setLoading(true)
     try {
-      const params = f !== 'all' ? `?post_type=${f}` : ''
-      const json = await fetch(`/api/community/posts${params}`).then(r => r.json())
-      setPosts(json.posts ?? [])
-    } catch { setPosts([]) }
-    finally { setLoading(false) }
-  }, [])
+      const params = new URLSearchParams()
+      if (feedTab === 'following') params.set('feed', 'following')
+      if (postTypeFilter !== 'all') params.set('post_type', postTypeFilter)
+      const res = await fetch(`/api/community/posts?${params}`)
+      const d = await res.json()
+      setPosts(d.posts ?? [])
+    } finally { setLoading(false) }
+  }, [feedTab, postTypeFilter])
 
-  useEffect(() => { fetchPosts(filter) }, [filter, fetchPosts])
+  useEffect(() => { loadPosts() }, [loadPosts])
 
   // Realtime
   useEffect(() => {
-    if (channelRef.current) { supabase.removeChannel(channelRef.current); channelRef.current = null }
-    const ch = supabase.channel('community_v5')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'community_posts' }, (payload) => {
-        const p = payload.new as EnrichedPost
-        if (filter !== 'all' && p.post_type !== filter) return
-        setPosts(prev => prev.some(x => x.id === p.id) ? prev : [{ ...p, liked_by_me:false, bookmarked_by_me:false, reactions:{}, my_reaction:null, profile:null }, ...prev])
-      })
-      .subscribe(s => setLive(s === 'SUBSCRIBED'))
-    channelRef.current = ch
-    return () => { supabase.removeChannel(ch) }
-  }, [filter]) // eslint-disable-line react-hooks/exhaustive-deps
+    channelRef.current = supabase.channel('community')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'community_posts' }, () => { if (feedTab === 'foryou') loadPosts() })
+      .subscribe((status) => setIsOnline(status === 'SUBSCRIBED'))
+    return () => { channelRef.current?.unsubscribe() }
+  }, [feedTab, loadPosts]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Interactions ──────────────────────────────────────────────────────────
-  // ── Delete post ───────────────────────────────────────────────────────────
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this post? This cannot be undone.')) return
-    const res = await fetch(`/api/community/posts/${id}`, { method: 'DELETE' })
-    if (res.ok) {
-      setPosts(prev => prev.filter(p => p.id !== id))
-      setAdminPosts(prev => prev.filter(p => p.id !== id))
-    }
+  async function handleLike(postId: string) {
+    await fetch(`/api/community/posts/${postId}/like`, { method: 'POST' })
+    setPosts(p => p.map(post =>
+      post.id === postId ? { ...post, liked_by_me: !post.liked_by_me, like_count: post.like_count + (post.liked_by_me ? -1 : 1) } : post
+    ))
   }
 
-  // ── Report post ───────────────────────────────────────────────────────────
-  const openReport = (id: string) => {
-    setReportingPostId(id); setReportReason('spam'); setReportDetails(''); setReportSuccess(false)
+  async function handleBookmark(postId: string) {
+    await fetch(`/api/community/posts/${postId}/bookmark`, { method: 'POST' })
+    setPosts(p => p.map(post =>
+      post.id === postId ? { ...post, bookmarked_by_me: !post.bookmarked_by_me, bookmark_count: post.bookmark_count + (post.bookmarked_by_me ? -1 : 1) } : post
+    ))
   }
 
-  const submitReport = async () => {
-    if (!reportingPostId || submittingReport) return
-    setSubmittingReport(true)
-    try {
-      const res = await fetch(`/api/community/posts/${reportingPostId}/report`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: reportReason, details: reportDetails }),
-      })
-      if (res.ok) { setReportSuccess(true); setTimeout(() => setReportingPostId(null), 1800) }
-    } finally { setSubmittingReport(false) }
-  }
-
-  // ── Admin panel ───────────────────────────────────────────────────────────
-  const loadAdminPosts = async (view: 'reported' | 'all' | 'removed') => {
-    setAdminLoading(true)
-    const json = await fetch(`/api/community/admin/posts?view=${view}`).then(r => r.json())
-    setAdminPosts(json.posts ?? [])
-    setAdminLoading(false)
-  }
-
-  const openAdminPanel = () => {
-    setShowAdminPanel(true); setAdminView('reported'); loadAdminPosts('reported')
-  }
-
-  const resolveReports = async (postId: string) => {
-    await fetch('/api/community/admin/posts', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ post_id: postId }) })
-    setAdminPosts(prev => prev.filter(p => p.id !== postId))
-  }
-
-  const handleLike = async (id: string, liked: boolean) => {
-    setPosts(prev => prev.map(p => p.id === id ? { ...p, liked_by_me: !liked, like_count: liked ? p.like_count - 1 : p.like_count + 1 } : p))
-    await fetch(`/api/community/posts/${id}/like`, { method: liked ? 'DELETE' : 'POST' })
-  }
-
-  const handleBookmark = async (id: string, bookmarked: boolean) => {
-    setPosts(prev => prev.map(p => p.id === id ? { ...p, bookmarked_by_me: !bookmarked, bookmark_count: bookmarked ? p.bookmark_count - 1 : p.bookmark_count + 1 } : p))
-    await fetch(`/api/community/posts/${id}/bookmark`, { method: bookmarked ? 'DELETE' : 'POST' })
-  }
-
-  const handleReact = async (id: string, emoji: string, current: string | null) => {
-    const removing = current === emoji
-    setPosts(prev => prev.map(p => {
-      if (p.id !== id) return p
-      const next = { ...p.reactions }
-      if (current && next[current]) { next[current]--; if (!next[current]) delete next[current] }
-      if (!removing) next[emoji] = (next[emoji] ?? 0) + 1
-      return { ...p, reactions: next, my_reaction: removing ? null : emoji }
+  async function handleReaction(postId: string, emoji: string) {
+    await fetch(`/api/community/posts/${postId}/reactions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ emoji }) })
+    setPosts(p => p.map(post => {
+      if (post.id !== postId) return post
+      const reactions = { ...post.reactions }
+      if (post.my_reaction === emoji) {
+        reactions[emoji] = Math.max(0, (reactions[emoji] ?? 1) - 1)
+        if (reactions[emoji] === 0) delete reactions[emoji]
+        return { ...post, reactions, my_reaction: null }
+      }
+      if (post.my_reaction) {
+        const prev = post.my_reaction
+        reactions[prev] = Math.max(0, (reactions[prev] ?? 1) - 1)
+        if (reactions[prev] === 0) delete reactions[prev]
+      }
+      reactions[emoji] = (reactions[emoji] ?? 0) + 1
+      return { ...post, reactions, my_reaction: emoji }
     }))
-    if (removing) {
-      await fetch(`/api/community/posts/${id}/reactions`, { method: 'DELETE' })
-    } else {
-      await fetch(`/api/community/posts/${id}/reactions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ emoji }) })
-    }
   }
 
-  const toggleComments = async (postId: string) => {
-    const next = new Set(expandedComments)
-    if (next.has(postId)) { next.delete(postId); setExpandedComments(next); return }
-    next.add(postId)
-    setExpandedComments(next)
-    if (!postComments[postId]) {
-      const json = await fetch(`/api/community/posts/${postId}/comments`).then(r => r.json())
-      setPostComments(prev => ({ ...prev, [postId]: json.comments ?? [] }))
-    }
+  async function handleDelete(postId: string) {
+    await fetch(`/api/community/posts/${postId}`, { method: 'DELETE' })
+    setPosts(p => p.filter(post => post.id !== postId))
   }
 
-  const submitComment = async (postId: string) => {
-    const content = commentInputs[postId]?.trim()
-    if (!content || submittingComment) return
-    setSubmittingComment(postId)
+  async function handleReport(postId: string) {
+    setReportId(postId); setReportReason('')
+  }
+
+  async function submitReport() {
+    if (!reportId) return
+    setReportSending(true)
     try {
-      const res  = await fetch(`/api/community/posts/${postId}/comments`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content }) })
-      const json = await res.json()
-      if (json.comment) {
-        setPostComments(prev => ({ ...prev, [postId]: [...(prev[postId] ?? []), json.comment] }))
-        setCommentInputs(prev => ({ ...prev, [postId]: '' }))
-        setPosts(prev => prev.map(p => p.id === postId ? { ...p, comment_count: p.comment_count + 1 } : p))
-      }
-    } finally { setSubmittingComment(null) }
+      await fetch(`/api/community/posts/${reportId}/report`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: reportReason || 'inappropriate' }) })
+      setReportId(null)
+    } finally { setReportSending(false) }
   }
 
-  // ── Submit post ───────────────────────────────────────────────────────────
-  const handleSubmit = async () => {
-    if (!composeContent.trim() || submitting) return
-    setSubmitting(true)
-    try {
-      let imageUrl: string | null = null
-      if (composeImage) {
-        const fd = new FormData(); fd.append('file', composeImage); fd.append('kind', 'post')
-        const up = await fetch('/api/community/upload', { method: 'POST', body: fd }).then(r => r.json())
-        imageUrl = up.url ?? null
-      }
-      const res  = await fetch('/api/community/posts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: composeContent.trim(), post_type: composeType, image_url: imageUrl }) })
-      const json = await res.json()
-      if (!res.ok) {
-        setPostError(json.error ?? 'Post rejected')
-        return
-      }
-      if (json.post) {
-        setPosts(prev => prev.some(p => p.id === json.post.id) ? prev : [json.post, ...prev])
-        setMyPostCount(c => c + 1)
-      }
-      setPostError(null)
-      setComposeContent(''); setComposeType('general'); setComposeImage(null); setComposePreview(null); setComposing(false)
-    } finally { setSubmitting(false) }
+  function handleFollow(userId: string, following: boolean) {
+    setPosts(p => p.map(post =>
+      post.user_id === userId ? { ...post, i_follow_author: following } : post
+    ))
   }
 
-  // ── Avatar upload ──────────────────────────────────────────────────────────
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return
-    setAvatarUploading(true)
-    try {
-      const fd = new FormData(); fd.append('file', file); fd.append('kind', 'avatar')
-      const up = await fetch('/api/community/upload', { method: 'POST', body: fd }).then(r => r.json())
-      if (up.url) {
-        await fetch('/api/community/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ avatar_url: up.url }) })
-        setMyProfile(prev => prev ? { ...prev, avatar_url: up.url } : prev)
-      }
-    } finally { setAvatarUploading(false) }
-  }
+  const filtered = posts.filter(p => {
+    if (!search) return true
+    return (
+      p.profile?.display_name?.toLowerCase().includes(search.toLowerCase()) ||
+      p.content.toLowerCase().includes(search.toLowerCase()) ||
+      p.tickers?.some(t => t.toLowerCase().includes(search.toLowerCase()))
+    )
+  })
 
-  // ── Save profile ───────────────────────────────────────────────────────────
-  const saveProfile = async () => {
-    setSavingProfile(true)
-    try {
-      const res  = await fetch('/api/community/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ display_name: editName, bio: editBio }) })
-      const json = await res.json()
-      if (json.profile) setMyProfile(prev => ({ ...prev!, ...json.profile }))
-      setEditingProfile(false)
-    } finally { setSavingProfile(false) }
-  }
+  const myFollowerCount = myProfile?.follower_count ?? 0
+  const myFollowingCount = myProfile?.following_count ?? 0
 
-  // ── Compose image pick ─────────────────────────────────────────────────────
-  const handleImagePick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return
-    setComposeImage(file)
-    setComposePreview(URL.createObjectURL(file))
-  }
-
-  // ─── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div style={{ position:'relative', minHeight:'100vh', background:'linear-gradient(135deg,#12103a 0%,#1a1260 35%,#16104e 60%,#0f0c38 100%)', overflow:'hidden' }}>
-      <Swooshes/>
+    <div className="px-4 md:px-8 pt-6 md:pt-10 pb-12 animate-fade-in">
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <p className="page-label">Social Feed</p>
+          <h1 className="page-title">Community</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: isOnline ? '#34d399' : '#f87171', boxShadow: isOnline ? '0 0 8px rgba(52,211,153,0.6)' : 'none' }} />
+        </div>
+      </div>
 
-      <div className="relative flex gap-0" style={{ zIndex:1, minHeight:'100vh', padding:'28px 24px 40px' }}>
-
-        {/* ── LEFT SIDEBAR ──────────────────────────────────────────────────── */}
-        <div style={{ width:190, flexShrink:0, marginRight:24 }}>
-
-          {/* Avatar */}
-          <div style={{ position:'relative', width:88, height:88, marginBottom:10 }}>
-            <Avatar profile={myProfile} userId={myId ?? ''} size={88}/>
-            <button
-              onClick={() => avatarInputRef.current?.click()}
-              disabled={avatarUploading}
-              style={{ position:'absolute', bottom:0, right:0, width:26, height:26, borderRadius:'50%', background:'linear-gradient(135deg,#7B6CF5,#5C4ED4)', border:'2px solid #12103a', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}
-            >
-              {avatarUploading ? <Loader2 className="w-3 h-3 animate-spin text-white"/> : <Camera className="w-3 h-3 text-white"/>}
-            </button>
-            <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange}/>
-          </div>
-
-          {/* Name + edit */}
-          {editingProfile ? (
-            <div className="flex flex-col gap-2 mb-4">
-              <input
-                value={editName}
-                onChange={e => setEditName(e.target.value.slice(0,30))}
-                placeholder="Display name"
-                style={{ background:'rgba(255,255,255,0.07)', border:'1px solid rgba(108,93,211,0.3)', borderRadius:8, padding:'6px 10px', color:'#fff', fontSize:12, fontFamily:'var(--font-display)', outline:'none', width:'100%' }}
-              />
-              <textarea
-                value={editBio}
-                onChange={e => setEditBio(e.target.value.slice(0,150))}
-                placeholder="Bio (150 chars)"
-                rows={2}
-                style={{ background:'rgba(255,255,255,0.07)', border:'1px solid rgba(108,93,211,0.3)', borderRadius:8, padding:'6px 10px', color:'rgba(255,255,255,0.7)', fontSize:11, fontFamily:'var(--font-body)', outline:'none', width:'100%', resize:'none' }}
-              />
-              <div className="flex gap-1.5">
-                <button onClick={saveProfile} disabled={savingProfile} style={{ flex:1, background:'linear-gradient(135deg,#7B6CF5,#5C4ED4)', border:'none', borderRadius:8, padding:'6px', color:'#fff', fontSize:11, fontFamily:'var(--font-display)', fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
-                  {savingProfile ? <Loader2 className="w-3 h-3 animate-spin"/> : <Check className="w-3 h-3"/>} Save
-                </button>
-                <button onClick={() => setEditingProfile(false)} style={{ flex:1, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:'6px', color:'rgba(255,255,255,0.4)', fontSize:11, fontFamily:'var(--font-display)', cursor:'pointer' }}>
-                  Cancel
-                </button>
+      <div className="flex gap-6">
+        {/* ── Main feed ── */}
+        <div className="flex-1 min-w-0">
+          {/* My profile banner */}
+          {myProfile && (
+            <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '14px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
+              <Avatar profile={myProfile} size={48} />
+              <div className="flex-1 min-w-0">
+                <p style={{ fontWeight: 700, fontSize: 15, color: '#fff', fontFamily: 'var(--font-display)' }}>{myProfile.display_name || 'Set up your profile'}</p>
+                {myProfile.bio && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-body)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{myProfile.bio}</p>}
+                <div className="flex items-center gap-4 mt-2">
+                  <span style={{ fontSize: 12, fontFamily: 'var(--font-body)' }}>
+                    <span style={{ fontWeight: 700, color: '#fff' }}>{fmtCount(myFollowerCount)}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.35)', marginLeft: 4 }}>followers</span>
+                  </span>
+                  <span style={{ fontSize: 12, fontFamily: 'var(--font-body)' }}>
+                    <span style={{ fontWeight: 700, color: '#fff' }}>{fmtCount(myFollowingCount)}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.35)', marginLeft: 4 }}>following</span>
+                  </span>
+                  <span style={{ fontSize: 12, fontFamily: 'var(--font-body)' }}>
+                    <span style={{ fontWeight: 700, color: '#fff' }}>{fmtCount(postCount)}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.35)', marginLeft: 4 }}>posts</span>
+                  </span>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="mb-4">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'#fff' }}>
-                  {displayName(myProfile, myId ?? '')}
-                </p>
-                <button onClick={() => { setEditName(myProfile?.display_name ?? ''); setEditBio(myProfile?.bio ?? ''); setEditingProfile(true) }}
-                  style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.3)', padding:2 }}>
-                  <Pencil className="w-3 h-3"/>
-                </button>
-              </div>
-              {myProfile?.bio && <p style={{ fontSize:11, color:'rgba(255,255,255,0.38)', fontFamily:'var(--font-body)', lineHeight:'1.4' }}>{myProfile.bio}</p>}
-              <p style={{ fontSize:10, color:'rgba(255,255,255,0.28)', fontFamily:'var(--font-display)', marginTop:4 }}>{myPostCount} post{myPostCount !== 1 ? 's' : ''}</p>
+              <button onClick={() => setEditProfile(true)} style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>
+                <Pencil style={{ width: 13, height: 13 }} />
+              </button>
             </div>
           )}
 
-          {/* Live */}
-          {live && (
-            <div className="flex items-center gap-1.5 mb-4">
-              <span style={{ width:6, height:6, borderRadius:'50%', background:'#34d399', boxShadow:'0 0 6px #34d399', display:'inline-block' }}/>
-              <span style={{ fontSize:10, color:'#34d399', fontFamily:'var(--font-display)', fontWeight:600 }}>Live</span>
-            </div>
-          )}
+          {/* Compose */}
+          <ComposeBox
+            myProfile={myProfile}
+            onPost={(p) => { setPosts(prev => [p, ...prev]); setPostCount(c => c + 1) }}
+          />
 
-          {/* Filter pills */}
-          <div className="flex flex-col gap-2">
-            {TYPE_FILTERS.map(tab => (
-              <button key={tab.key} onClick={() => setFilter(tab.key)} style={{ background: filter===tab.key ? 'rgba(108,93,211,0.25)' : 'rgba(255,255,255,0.07)', border: filter===tab.key ? '1px solid rgba(108,93,211,0.4)' : '1px solid rgba(255,255,255,0.09)', borderRadius:999, padding:'8px 16px', color: filter===tab.key ? '#c4b8ff' : 'rgba(255,255,255,0.55)', fontFamily:'var(--font-display)', fontWeight:600, fontSize:12, cursor:'pointer', textAlign:'left', width:'100%' }}>
-                {tab.label}
+          {/* Feed tabs */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, margin: '16px 0 14px', borderBottom: '1px solid rgba(255,255,255,0.07)', paddingBottom: 0 }}>
+            {([
+              { key: 'foryou', label: 'For You', icon: Sparkles },
+              { key: 'following', label: 'Following', icon: Rss },
+            ] as const).map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                onClick={() => setFeedTab(key)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px',
+                  fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-display)',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: feedTab === key ? '#fff' : 'rgba(255,255,255,0.35)',
+                  borderBottom: feedTab === key ? '2px solid #8B7CF8' : '2px solid transparent',
+                  marginBottom: -1, transition: 'color 0.15s',
+                }}
+              >
+                <Icon style={{ width: 13, height: 13 }} />{label}
               </button>
             ))}
           </div>
 
-          <button onClick={() => setComposing(true)} style={{ marginTop:20, background:'linear-gradient(135deg,#7B6CF5,#5C4ED4)', border:'none', borderRadius:999, padding:'10px 0', color:'#fff', fontFamily:'var(--font-display)', fontWeight:700, fontSize:13, cursor:'pointer', width:'100%', boxShadow:'0 0 20px rgba(108,93,211,0.35)' }}>
-            + New Post
-          </button>
-        </div>
-
-        {/* ── CENTER FEED ───────────────────────────────────────────────────── */}
-        <div style={{ flex:1, minWidth:0, marginRight:20 }}>
-          <h1 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:26, color:'#fff', letterSpacing:'-0.02em', marginBottom:10 }}>
-            Community Kove
-          </h1>
-          <div style={{ height:1, background:'rgba(255,255,255,0.12)', marginBottom:20 }}/>
-
-          {/* Admin bar */}
-          {isAdmin && (
-            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16, padding:'10px 14px', background:'rgba(248,113,113,0.08)', border:'1px solid rgba(248,113,113,0.2)', borderRadius:14 }}>
-              <ShieldAlert className="w-4 h-4" style={{ color:'#f87171', flexShrink:0 }}/>
-              <span style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:12, color:'#f87171' }}>Admin Mode</span>
-              <button onClick={openAdminPanel} style={{ marginLeft:'auto', background:'rgba(248,113,113,0.15)', border:'1px solid rgba(248,113,113,0.3)', borderRadius:8, padding:'5px 12px', color:'#f87171', fontFamily:'var(--font-display)', fontWeight:700, fontSize:11, cursor:'pointer' }}>
-                Moderation Queue
-              </button>
+          {/* Filters row */}
+          <div className="flex items-center gap-2 mb-4 flex-wrap">
+            <div className="relative flex-1 min-w-[160px] max-w-xs">
+              <Search style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: '#444' }} />
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search posts, traders…"
+                className="input !pl-9 !min-h-0 !py-2 !text-xs !rounded-xl"
+              />
             </div>
-          )}
+            <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 3 }}>
+              {(['all','win','loss','setup'] as const).map(f => (
+                <button key={f} onClick={() => setPostTypeFilter(f)}
+                  style={{
+                    padding: '4px 11px', borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                    fontFamily: 'var(--font-display)', background: postTypeFilter === f ? 'rgba(255,255,255,0.08)' : 'transparent',
+                    color: postTypeFilter === f ? '#fff' : 'rgba(255,255,255,0.3)', border: 'none', textTransform: 'capitalize',
+                  }}
+                >{f}</button>
+              ))}
+            </div>
+          </div>
 
+          {/* Posts */}
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-5 h-5 animate-spin" style={{ color:'#7B6CF5' }}/>
+              <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#6C5DD3' }} />
             </div>
-          ) : posts.length === 0 ? (
-            <div className="text-center py-20">
-              <p style={{ color:'rgba(255,255,255,0.22)', fontFamily:'var(--font-display)', fontSize:14 }}>No posts yet — be the first</p>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div style={{ width: 52, height: 52, borderRadius: 16, background: 'rgba(108,93,211,0.08)', border: '1px solid rgba(108,93,211,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                {feedTab === 'following' ? <Rss style={{ width: 20, height: 20, color: 'rgba(108,93,211,0.6)' }} /> : <Users style={{ width: 20, height: 20, color: 'rgba(108,93,211,0.6)' }} />}
+              </div>
+              <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 14, fontFamily: 'var(--font-display)', fontWeight: 600 }}>
+                {feedTab === 'following' ? "You're not following anyone yet" : 'No posts yet'}
+              </p>
+              <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: 12, fontFamily: 'var(--font-body)', marginTop: 6 }}>
+                {feedTab === 'following' ? 'Follow traders from the For You feed to see their posts here' : 'Be the first to share a trade or insight'}
+              </p>
             </div>
           ) : (
-            posts.map(post => (
-              <PostCard
-                key={post.id}
-                post={post}
-                myId={myId}
-                isAdmin={isAdmin}
-                onLike={handleLike}
-                onBookmark={handleBookmark}
-                onReact={handleReact}
-                onDelete={handleDelete}
-                onReport={openReport}
-                commentsOpen={expandedComments.has(post.id)}
-                onToggleComments={() => toggleComments(post.id)}
-                comments={postComments[post.id] ?? []}
-                commentInput={commentInputs[post.id] ?? ''}
-                onCommentInput={v => setCommentInputs(prev => ({ ...prev, [post.id]: v }))}
-                onCommentSubmit={submitComment}
-                submittingComment={submittingComment === post.id}
-              />
-            ))
+            <div className="flex flex-col gap-3">
+              {filtered.map(post => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  myUserId={myUserId}
+                  onLike={handleLike}
+                  onBookmark={handleBookmark}
+                  onReaction={handleReaction}
+                  onDelete={handleDelete}
+                  onReport={handleReport}
+                  onFollow={handleFollow}
+                  onOpenComments={setCommentPost}
+                />
+              ))}
+            </div>
           )}
         </div>
 
-        {/* ── RIGHT SIDEBAR ─────────────────────────────────────────────────── */}
-        <div style={{ width:210, flexShrink:0 }}>
-
-          {/* Search profiles */}
-          <div style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.09)', borderRadius:12, padding:'8px 12px', display:'flex', alignItems:'center', gap:8, marginBottom:14 }}>
-            <Search className="w-3.5 h-3.5" style={{ color:'rgba(255,255,255,0.3)', flexShrink:0 }}/>
-            <input
-              value={profileSearch}
-              onChange={e => setProfileSearch(e.target.value)}
-              placeholder="Search traders…"
-              style={{ background:'none', border:'none', outline:'none', color:'#fff', fontSize:12, fontFamily:'var(--font-body)', width:'100%' }}
-            />
-          </div>
-
-          {/* Trending */}
-          <div style={{ background:'rgba(20,15,65,0.8)', border:'1px solid rgba(108,93,211,0.2)', borderRadius:18, padding:'16px 16px 14px', marginBottom:14, backdropFilter:'blur(12px)' }}>
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="w-3.5 h-3.5" style={{ color:'#8B7CF8' }}/>
-              <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:13, color:'#fff' }}>Trending</h3>
-            </div>
-            {trending.length === 0 ? (
-              <p style={{ fontSize:11, color:'rgba(255,255,255,0.22)', fontFamily:'var(--font-body)' }}>Post something to see trends</p>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {trending.map((t, i) => (
-                  <div key={t.tag} className="flex items-center justify-between">
-                    <span style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:12, color:'#8B7CF8' }}>{t.tag}</span>
-                    <span style={{ fontFamily:'var(--font-body)', fontSize:10, color:'rgba(255,255,255,0.28)' }}>{t.count} post{t.count !== 1 ? 's' : ''}</span>
+        {/* ── Right sidebar (desktop only) ── */}
+        <aside className="hidden lg:flex flex-col gap-4" style={{ width: 280, flexShrink: 0 }}>
+          {/* Trending tags */}
+          {trending.length > 0 && (
+            <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '16px 18px' }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Trending</p>
+              {trending.slice(0, 8).map((t, i) => (
+                <div key={t.tag} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 0', borderBottom: i < Math.min(trending.length, 8) - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#fff', fontFamily: 'var(--font-display)' }}>{t.tag}</p>
+                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-body)' }}>{t.count} posts</p>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Leaderboard */}
-          <div style={{ background:'rgba(20,15,65,0.8)', border:'1px solid rgba(108,93,211,0.2)', borderRadius:18, padding:'16px 16px 14px', backdropFilter:'blur(12px)' }}>
-            <div className="flex items-center gap-2 mb-3">
-              <Trophy className="w-3.5 h-3.5" style={{ color:'#fbbf24' }}/>
-              <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:13, color:'#fff' }}>Leaderboard</h3>
+                  <TrendingUp style={{ width: 14, height: 14, color: '#34d399' }} />
+                </div>
+              ))}
             </div>
-            {leaderboard.length === 0 ? (
-              <p style={{ fontSize:11, color:'rgba(255,255,255,0.22)', fontFamily:'var(--font-body)' }}>No activity yet</p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {leaderboard.map(entry => (
-                  <div key={entry.user_id} className="flex items-center gap-2">
-                    <span style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:11, width:14, textAlign:'center', color: entry.rank===1?'#fbbf24':entry.rank===2?'#94a3b8':entry.rank===3?'#cd7f32':'rgba(255,255,255,0.22)' }}>
-                      {entry.rank}
-                    </span>
-                    <Avatar profile={entry.profile} userId={entry.user_id} size={26}/>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <p style={{ fontFamily:'var(--font-display)', fontWeight:600, fontSize:11, color:'rgba(255,255,255,0.75)', lineHeight:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                        {displayName(entry.profile, entry.user_id)}
-                      </p>
-                      <p style={{ fontFamily:'var(--font-body)', fontSize:9, color:'rgba(255,255,255,0.28)', marginTop:2 }}>
-                        {entry.posts}p · {entry.likes}♥
-                      </p>
-                    </div>
+          )}
+
+          {/* Top traders leaderboard */}
+          {leaderboard.length > 0 && (
+            <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '16px 18px' }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Top Traders</p>
+              {leaderboard.slice(0, 5).map((entry, i) => (
+                <div key={entry.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < Math.min(leaderboard.length, 5) - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: i === 0 ? '#fbbf24' : i === 1 ? '#9ca3af' : i === 2 ? '#b45309' : 'rgba(255,255,255,0.25)', width: 18, textAlign: 'center', fontFamily: 'var(--font-display)' }}>
+                    {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`}
+                  </span>
+                  <Avatar profile={entry.profile} size={30} />
+                  <div className="flex-1 min-w-0">
+                    <p style={{ fontSize: 12, fontWeight: 600, color: '#fff', fontFamily: 'var(--font-display)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.profile?.display_name || 'Trader'}</p>
+                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-body)' }}>{entry.likes} likes · {entry.posts} posts</p>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </aside>
       </div>
 
-      {/* ── Report modal ──────────────────────────────────────────────────────── */}
-      {reportingPostId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(0,0,0,0.72)', backdropFilter:'blur(6px)' }}
-          onClick={e => { if (e.target === e.currentTarget) setReportingPostId(null) }}>
-          <div style={{ width:'100%', maxWidth:420, background:'#0d0b28', border:'1px solid rgba(248,113,113,0.25)', borderRadius:20, padding:24, boxShadow:'0 24px 80px rgba(0,0,0,0.7)' }}>
-            <div className="flex items-center gap-2 mb-4">
-              <Flag className="w-4 h-4" style={{ color:'#f87171' }}/>
-              <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:16, color:'#fff' }}>Report Post</h2>
-              <button onClick={() => setReportingPostId(null)} style={{ marginLeft:'auto', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.3)' }}><X className="w-4 h-4"/></button>
-            </div>
+      {/* ── Comments modal ── */}
+      {commentPost && <CommentsModal post={commentPost} myProfile={myProfile} onClose={() => setCommentPost(null)} />}
 
-            {reportSuccess ? (
-              <div className="flex flex-col items-center gap-3 py-4">
-                <ShieldCheck className="w-8 h-8" style={{ color:'#34d399' }}/>
-                <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'#34d399' }}>Report submitted</p>
-                <p style={{ fontFamily:'var(--font-body)', fontSize:12, color:'rgba(255,255,255,0.4)', textAlign:'center' }}>Our moderation team will review this post.</p>
+      {/* ── Profile editor modal ── */}
+      {editProfile && <ProfileEditor profile={myProfile} onClose={() => setEditProfile(false)} onSave={(p) => { setMyProfile(p); setEditProfile(false) }} />}
+
+      {/* ── Report modal ── */}
+      {reportId && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', padding: 16 }} onClick={() => setReportId(null)}>
+          <div style={{ background: '#141414', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, width: '100%', maxWidth: 380, padding: 28 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Flag style={{ width: 16, height: 16, color: '#fbbf24' }} />
               </div>
-            ) : (
-              <>
-                <p style={{ fontSize:12, color:'rgba(255,255,255,0.4)', fontFamily:'var(--font-body)', marginBottom:14 }}>Why are you reporting this post?</p>
-                <div className="flex flex-col gap-2 mb-4">
-                  {[
-                    { value:'spam',           label:'Spam or self-promotion' },
-                    { value:'hate_speech',    label:'Hate speech or slurs' },
-                    { value:'nudity',         label:'Nudity or sexual content' },
-                    { value:'violence',       label:'Graphic violence' },
-                    { value:'misinformation', label:'False or misleading information' },
-                    { value:'other',          label:'Other' },
-                  ].map(opt => (
-                    <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer">
-                      <input type="radio" name="reason" value={opt.value} checked={reportReason === opt.value} onChange={() => setReportReason(opt.value)}
-                        style={{ accentColor:'#7B6CF5' }}/>
-                      <span style={{ fontSize:13, color: reportReason===opt.value ? '#fff' : 'rgba(255,255,255,0.5)', fontFamily:'var(--font-body)' }}>{opt.label}</span>
-                    </label>
-                  ))}
-                </div>
-                <textarea value={reportDetails} onChange={e => setReportDetails(e.target.value.slice(0,500))} placeholder="Additional context (optional)…" rows={2}
-                  style={{ width:'100%', resize:'none', outline:'none', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, padding:'10px 12px', color:'rgba(255,255,255,0.7)', fontFamily:'var(--font-body)', fontSize:12, marginBottom:14 }}/>
-                <button onClick={submitReport} disabled={submittingReport}
-                  className="w-full flex items-center justify-center gap-2"
-                  style={{ background:'linear-gradient(135deg,#ef4444,#dc2626)', border:'none', borderRadius:12, padding:'11px', color:'#fff', fontFamily:'var(--font-display)', fontWeight:700, fontSize:13, cursor:submittingReport?'not-allowed':'pointer', opacity:submittingReport?0.6:1 }}>
-                  {submittingReport ? <Loader2 className="w-4 h-4 animate-spin"/> : <Flag className="w-4 h-4"/>}
-                  Submit Report
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── Admin panel modal ─────────────────────────────────────────────────── */}
-      {showAdminPanel && isAdmin && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 md:items-center" style={{ background:'rgba(0,0,0,0.8)', backdropFilter:'blur(8px)' }}
-          onClick={e => { if (e.target === e.currentTarget) setShowAdminPanel(false) }}>
-          <div style={{ width:'100%', maxWidth:700, maxHeight:'85vh', background:'#0a0818', border:'1px solid rgba(248,113,113,0.25)', borderRadius:22, display:'flex', flexDirection:'column', boxShadow:'0 24px 80px rgba(0,0,0,0.8)', overflow:'hidden' }}>
-            {/* Header */}
-            <div className="flex items-center gap-3 p-5" style={{ borderBottom:'1px solid rgba(255,255,255,0.07)' }}>
-              <ShieldAlert className="w-5 h-5" style={{ color:'#f87171' }}/>
-              <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:17, color:'#fff' }}>Moderation Panel</h2>
-              <button onClick={() => setShowAdminPanel(false)} style={{ marginLeft:'auto', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.35)' }}><X className="w-4 h-4"/></button>
+              <div>
+                <p style={{ fontWeight: 700, fontSize: 15, color: '#fff', fontFamily: 'var(--font-display)' }}>Report Post</p>
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-body)' }}>Help keep the community safe</p>
+              </div>
             </div>
-
-            {/* View tabs */}
-            <div className="flex gap-1 p-4 pb-0">
-              {(['reported','all','removed'] as const).map(v => (
-                <button key={v} onClick={() => { setAdminView(v); loadAdminPosts(v) }}
-                  style={{ background: adminView===v ? 'rgba(248,113,113,0.15)' : 'rgba(255,255,255,0.05)', border:`1px solid ${adminView===v ? 'rgba(248,113,113,0.3)' : 'rgba(255,255,255,0.08)'}`, borderRadius:10, padding:'6px 14px', color: adminView===v ? '#f87171' : 'rgba(255,255,255,0.4)', fontFamily:'var(--font-display)', fontWeight:600, fontSize:12, cursor:'pointer', textTransform:'capitalize' }}>
-                  {v === 'reported' ? '🚨 Reported' : v === 'all' ? '📋 All Posts' : '🗑 Removed'}
-                </button>
-              ))}
-            </div>
-
-            {/* Posts list */}
-            <div style={{ flex:1, overflowY:'auto', padding:16 }}>
-              {adminLoading ? (
-                <div className="flex items-center justify-center py-16"><Loader2 className="w-5 h-5 animate-spin" style={{ color:'#f87171' }}/></div>
-              ) : adminPosts.length === 0 ? (
-                <div className="text-center py-16">
-                  <ShieldCheck className="w-8 h-8 mx-auto mb-3" style={{ color:'#34d399' }}/>
-                  <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'#34d399' }}>All clear</p>
-                  <p style={{ fontFamily:'var(--font-body)', fontSize:12, color:'rgba(255,255,255,0.3)', marginTop:4 }}>No {adminView} posts</p>
-                </div>
-              ) : adminPosts.map(p => (
-                <div key={p.id} style={{ background: p.is_removed ? 'rgba(248,113,113,0.05)' : '#111122', border:`1px solid ${p.is_removed ? 'rgba(248,113,113,0.15)' : 'rgba(255,255,255,0.07)'}`, borderRadius:14, padding:16, marginBottom:10 }}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:12, color:'rgba(255,255,255,0.7)' }}>
-                          {p.profile?.display_name ?? `Trader #${hashId(p.user_id)}`}
-                        </span>
-                        {p.reports && (
-                          <span style={{ fontSize:10, fontWeight:700, color:'#f87171', background:'rgba(248,113,113,0.12)', border:'1px solid rgba(248,113,113,0.25)', borderRadius:6, padding:'1px 6px', fontFamily:'var(--font-display)' }}>
-                            🚨 {p.reports.count} report{p.reports.count !== 1 ? 's' : ''}: {p.reports.reasons.join(', ')}
-                          </span>
-                        )}
-                        {p.is_removed && <span style={{ fontSize:10, color:'#f87171', fontFamily:'var(--font-display)', fontWeight:700 }}>REMOVED</span>}
-                      </div>
-                      <p style={{ fontSize:13, color:'rgba(255,255,255,0.6)', fontFamily:'var(--font-body)', lineHeight:'1.5', marginBottom:p.image_url ? 8 : 0 }}>{p.content}</p>
-                      {p.image_url && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.image_url} alt="Post img" style={{ height:60, borderRadius:8, objectFit:'cover', border:'1px solid rgba(255,255,255,0.08)' }}/>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-1.5 flex-shrink-0">
-                      {!p.is_removed && (
-                        <button onClick={() => handleDelete(p.id)} style={{ background:'rgba(248,113,113,0.12)', border:'1px solid rgba(248,113,113,0.25)', borderRadius:8, padding:'6px 10px', color:'#f87171', fontFamily:'var(--font-display)', fontWeight:700, fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
-                          <Trash2 className="w-3 h-3"/> Delete
-                        </button>
-                      )}
-                      {adminView === 'reported' && (
-                        <button onClick={() => resolveReports(p.id)} style={{ background:'rgba(52,211,153,0.1)', border:'1px solid rgba(52,211,153,0.2)', borderRadius:8, padding:'6px 10px', color:'#34d399', fontFamily:'var(--font-display)', fontWeight:700, fontSize:11, cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
-                          <ShieldCheck className="w-3 h-3"/> Dismiss
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Compose modal ─────────────────────────────────────────────────────── */}
-      {composing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background:'rgba(0,0,0,0.72)', backdropFilter:'blur(6px)' }}
-          onClick={e => { if (e.target === e.currentTarget) setComposing(false) }}>
-          <div style={{ width:'100%', maxWidth:520, background:'#0d0b28', border:'1px solid rgba(108,93,211,0.3)', borderRadius:22, padding:28, boxShadow:'0 24px 80px rgba(0,0,0,0.7)' }}>
-            <div className="flex items-center justify-between mb-5">
-              <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:17, color:'#fff' }}>New Post</h2>
-              <button onClick={() => { setComposing(false); setComposeImage(null); setComposePreview(null) }} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.35)' }}>
-                <X className="w-4 h-4"/>
+            <textarea value={reportReason} onChange={e => setReportReason(e.target.value)} placeholder="What's wrong with this post? (optional)" rows={3} className="input resize-none mb-4" />
+            <div className="flex gap-3">
+              <button onClick={submitReport} disabled={reportSending} className="btn-blue gap-2 flex-1">
+                {reportSending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Submit Report
               </button>
-            </div>
-
-            {/* Type selector */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {(Object.entries(TYPE_CFG) as [PostType, typeof TYPE_CFG[PostType]][]).map(([t, c]) => (
-                <button key={t} onClick={() => setComposeType(t)} style={{ background: composeType===t ? c.bg : 'rgba(255,255,255,0.04)', border:`1px solid ${composeType===t ? c.border : 'rgba(255,255,255,0.08)'}`, borderRadius:999, padding:'5px 13px', color: composeType===t ? c.color : 'rgba(255,255,255,0.3)', fontFamily:'var(--font-display)', fontWeight:600, fontSize:12, cursor:'pointer' }}>
-                  {c.label}
-                </button>
-              ))}
-            </div>
-
-            <textarea
-              value={composeContent}
-              onChange={e => setComposeContent(e.target.value.slice(0,1000))}
-              placeholder="Share your setup, win, loss, or market reaction… Use $XAUUSD to tag instruments."
-              rows={5}
-              style={{ width:'100%', resize:'none', outline:'none', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'13px 15px', color:'#fff', fontFamily:'var(--font-body)', fontSize:14, lineHeight:'1.6' }}
-              autoFocus
-            />
-
-            {/* Moderation error */}
-            {postError && (
-              <div className="flex items-start gap-2 mt-3 p-3 rounded-xl" style={{ background:'rgba(248,113,113,0.1)', border:'1px solid rgba(248,113,113,0.25)' }}>
-                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color:'#f87171' }}/>
-                <p style={{ fontSize:12, color:'#f87171', fontFamily:'var(--font-body)', lineHeight:'1.5' }}>{postError}</p>
-              </div>
-            )}
-
-            {/* Image preview */}
-            {composePreview && (
-              <div style={{ position:'relative', marginTop:10 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={composePreview} alt="Preview" style={{ width:'100%', borderRadius:12, maxHeight:200, objectFit:'cover' }}/>
-                <button onClick={() => { setComposeImage(null); setComposePreview(null) }}
-                  style={{ position:'absolute', top:6, right:6, background:'rgba(0,0,0,0.6)', border:'none', borderRadius:'50%', width:24, height:24, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'#fff' }}>
-                  <X className="w-3 h-3"/>
-                </button>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between mt-3">
-              <div className="flex items-center gap-2">
-                <button onClick={() => imageInputRef.current?.click()} style={{ display:'flex', alignItems:'center', gap:5, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.09)', borderRadius:10, padding:'6px 12px', color:'rgba(255,255,255,0.45)', fontSize:12, fontFamily:'var(--font-display)', cursor:'pointer' }}>
-                  <ImageIcon className="w-3.5 h-3.5"/> Image
-                </button>
-                <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImagePick}/>
-                <span style={{ fontSize:10, color: composeContent.length > 900 ? '#f87171' : 'rgba(255,255,255,0.2)', fontFamily:'var(--font-body)' }}>
-                  {composeContent.length}/1000
-                </span>
-              </div>
-              <button
-                onClick={handleSubmit}
-                disabled={!composeContent.trim() || submitting}
-                className="flex items-center gap-2"
-                style={{ background:'linear-gradient(135deg,#7B6CF5,#5C4ED4)', border:'none', borderRadius:12, padding:'10px 22px', color:'#fff', fontFamily:'var(--font-display)', fontWeight:700, fontSize:13, cursor: !composeContent.trim()||submitting ? 'not-allowed' : 'pointer', opacity: !composeContent.trim()||submitting ? 0.5 : 1, boxShadow:'0 0 20px rgba(108,93,211,0.35)' }}>
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Send className="w-3.5 h-3.5"/>}
-                Post
-              </button>
+              <button onClick={() => setReportId(null)} className="btn-secondary">Cancel</button>
             </div>
           </div>
         </div>

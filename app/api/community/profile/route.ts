@@ -9,19 +9,15 @@ export async function GET() {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const admin = createAdminClient()
-    const { data: profile } = await admin
-      .from('community_profiles')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle()
+    const [profileRes, postCountRes] = await Promise.all([
+      admin.from('community_profiles').select('*').eq('user_id', user.id).maybeSingle(),
+      admin.from('community_posts').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+    ])
 
-    // Count posts
-    const { count } = await admin
-      .from('community_posts')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id)
+    const profile = profileRes.data
+    const post_count = postCountRes.count ?? 0
 
-    return NextResponse.json({ profile, post_count: count ?? 0 })
+    return NextResponse.json({ profile, post_count })
   } catch (err) {
     console.error('GET profile error:', err)
     return NextResponse.json({ error: 'Failed' }, { status: 500 })

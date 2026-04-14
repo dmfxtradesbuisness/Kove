@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Loader2, ExternalLink, RefreshCw, Newspaper, Settings } from 'lucide-react'
+import { Loader2, ExternalLink, RefreshCw, Newspaper, Settings, Calendar, Clock } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Article {
@@ -17,26 +17,94 @@ interface Article {
   created_at: string
 }
 
-// ─── Config ───────────────────────────────────────────────────────────────────
-const CATEGORY_CFG: Record<string, { label: string; text: string; bg: string; border: string; dot: string }> = {
-  forex:   { label: 'Forex',   text: '#a78bfa', bg: 'rgba(139,92,246,0.1)',   border: 'rgba(139,92,246,0.22)',  dot: '#7B6CF5' },
-  crypto:  { label: 'Crypto',  text: '#fbbf24', bg: 'rgba(251,191,36,0.1)',   border: 'rgba(251,191,36,0.22)',  dot: '#fbbf24' },
-  markets: { label: 'Markets', text: '#34d399', bg: 'rgba(52,211,153,0.1)',   border: 'rgba(52,211,153,0.22)',  dot: '#34d399' },
-  global:  { label: 'Global',  text: '#60a5fa', bg: 'rgba(96,165,250,0.1)',   border: 'rgba(96,165,250,0.22)',  dot: '#60a5fa' },
-  general: { label: 'General', text: '#888888', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.10)', dot: '#555' },
+interface EconEvent {
+  name: string
+  date: Date
+  impact: 'high' | 'medium' | 'low'
+  description: string
+  actual?: string
+  forecast?: string
+}
+
+// ─── Economic calendar 2026 ───────────────────────────────────────────────────
+function buildEconCalendar(): EconEvent[] {
+  const y = new Date().getFullYear()
+  const events: EconEvent[] = [
+    // FOMC
+    ...[
+      [1,28],[3,18],[5,6],[6,17],[7,29],[9,16],[10,28],[12,9],
+    ].map(([m,d]) => ({ name: 'FOMC Meeting', date: new Date(y,m-1,d), impact: 'high' as const, description: 'Federal Reserve interest rate decision' })),
+
+    // CPI (2nd Tuesday of month ~)
+    ...[
+      [1,15],[2,12],[3,12],[4,10],[5,13],[6,11],[7,14],[8,13],[9,11],[10,9],[11,12],[12,10],
+    ].map(([m,d]) => ({ name: 'CPI', date: new Date(y,m-1,d), impact: 'high' as const, description: 'Consumer Price Index — inflation data' })),
+
+    // NFP (first Friday)
+    ...[
+      [1,10],[2,7],[3,7],[4,4],[5,2],[6,5],[7,3],[8,7],[9,4],[10,2],[11,6],[12,4],
+    ].map(([m,d]) => ({ name: 'NFP', date: new Date(y,m-1,d), impact: 'high' as const, description: 'Non-Farm Payrolls — jobs data' })),
+
+    // PPI
+    ...[
+      [1,16],[2,13],[3,13],[4,11],[5,14],[6,12],[7,15],[8,14],[9,12],[10,10],[11,13],[12,11],
+    ].map(([m,d]) => ({ name: 'PPI', date: new Date(y,m-1,d), impact: 'medium' as const, description: 'Producer Price Index' })),
+
+    // Retail Sales
+    ...[
+      [1,16],[2,14],[3,17],[4,16],[5,15],[6,16],[7,16],[8,15],[9,12],[10,16],[11,14],[12,12],
+    ].map(([m,d]) => ({ name: 'Retail Sales', date: new Date(y,m-1,d), impact: 'medium' as const, description: 'US Retail Sales MoM' })),
+
+    // GDP (quarterly — prelim)
+    ...[
+      [1,30],[4,30],[7,30],[10,30],
+    ].map(([m,d]) => ({ name: 'GDP', date: new Date(y,m-1,d), impact: 'high' as const, description: 'Gross Domestic Product QoQ' })),
+
+    // Unemployment Claims (weekly — first Thursday of each month shown)
+    ...[
+      [1,9],[2,6],[3,6],[4,3],[5,1],[6,5],[7,3],[8,6],[9,4],[10,2],[11,5],[12,4],
+    ].map(([m,d]) => ({ name: 'Initial Claims', date: new Date(y,m-1,d), impact: 'low' as const, description: 'Weekly unemployment claims' })),
+  ]
+  return events
+}
+
+function getUpcomingEvents(days = 60): EconEvent[] {
+  const now = new Date()
+  const cutoff = new Date(now.getTime() + days * 86400000)
+  return buildEconCalendar()
+    .filter(e => e.date >= now && e.date <= cutoff)
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+}
+
+function daysUntil(date: Date): number {
+  return Math.ceil((date.getTime() - Date.now()) / 86400000)
+}
+
+const IMPACT_CFG = {
+  high:   { label: 'HIGH',   color: '#f87171', bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.25)',  dot: '#f87171' },
+  medium: { label: 'MED',    color: '#fbbf24', bg: 'rgba(251,191,36,0.10)', border: 'rgba(251,191,36,0.22)', dot: '#fbbf24' },
+  low:    { label: 'LOW',    color: '#6b7280', bg: 'rgba(107,114,128,0.08)', border: 'rgba(107,114,128,0.18)', dot: '#6b7280' },
+}
+
+// ─── News config ──────────────────────────────────────────────────────────────
+const CATEGORY_CFG: Record<string, { label: string; color: string; bg: string; border: string; dot: string }> = {
+  forex:   { label: 'Forex',   color: '#a78bfa', bg: 'rgba(139,92,246,0.1)',   border: 'rgba(139,92,246,0.22)',  dot: '#7B6CF5' },
+  crypto:  { label: 'Crypto',  color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',   border: 'rgba(251,191,36,0.22)',  dot: '#fbbf24' },
+  markets: { label: 'Markets', color: '#34d399', bg: 'rgba(52,211,153,0.1)',   border: 'rgba(52,211,153,0.22)',  dot: '#34d399' },
+  global:  { label: 'Global',  color: '#60a5fa', bg: 'rgba(96,165,250,0.1)',   border: 'rgba(96,165,250,0.22)',  dot: '#60a5fa' },
+  general: { label: 'General', color: '#6b7280', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)',  dot: '#555'    },
 }
 
 const FILTER_TABS = [
-  { key: 'all',     label: 'All' },
-  { key: 'forex',   label: 'Forex' },
-  { key: 'crypto',  label: 'Crypto' },
+  { key: 'all',     label: 'All'     },
+  { key: 'forex',   label: 'Forex'   },
+  { key: 'crypto',  label: 'Crypto'  },
   { key: 'markets', label: 'Markets' },
-  { key: 'global',  label: 'Global' },
+  { key: 'global',  label: 'Global'  },
 ]
 
-const REFRESH_INTERVAL = 5 * 60 * 1000 // 5 minutes
+const REFRESH_INTERVAL = 5 * 60 * 1000
 
-// ─── Utils ────────────────────────────────────────────────────────────────────
 function timeAgo(dateStr: string | null): string {
   if (!dateStr) return '—'
   const secs = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
@@ -53,17 +121,17 @@ function formatTime(dateStr: string | null): string {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function NewsPage() {
-  const [articles, setArticles]     = useState<Article[]>([])
-  const [loading, setLoading]       = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [filter, setFilter]         = useState('all')
-  const [configured, setConfigured] = useState(true)
+  const [articles, setArticles]       = useState<Article[]>([])
+  const [loading, setLoading]         = useState(true)
+  const [refreshing, setRefreshing]   = useState(false)
+  const [filter, setFilter]           = useState('all')
+  const [configured, setConfigured]   = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [upcomingEvents]              = useState<EconEvent[]>(() => getUpcomingEvents(60))
 
   const fetchNews = useCallback(async (cat: string, isRefresh = false) => {
     if (isRefresh) setRefreshing(true)
     else setLoading(true)
-
     try {
       const params = cat !== 'all' ? `?category=${cat}` : ''
       const res = await fetch(`/api/news${params}`)
@@ -79,111 +147,142 @@ export default function NewsPage() {
     }
   }, [])
 
-  // Initial load + filter change
   useEffect(() => { fetchNews(filter) }, [filter, fetchNews])
-
-  // Auto-refresh
   useEffect(() => {
     const id = setInterval(() => fetchNews(filter, true), REFRESH_INTERVAL)
     return () => clearInterval(id)
   }, [filter, fetchNews])
 
-  // ─── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div
-      className="px-4 md:px-8 pt-6 md:pt-10 pb-12 animate-fade-in"
-      style={{ maxWidth: 760 }}
-    >
-      {/* Header */}
-      <div className="flex items-start justify-between mb-7">
+    <div className="px-4 md:px-8 pt-6 md:pt-10 pb-12 animate-fade-in" style={{ maxWidth: 800 }}>
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between mb-6">
         <div>
-          <p
-            className="text-xs uppercase tracking-widest mb-1.5 font-medium"
-            style={{ color: '#444', fontFamily: 'var(--font-display)' }}
-          >
-            Market Intelligence
-          </p>
-          <h1
-            className="text-3xl font-black tracking-tight text-white"
-            style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}
-          >
-            News
-          </h1>
-          <p className="text-xs font-light mt-1" style={{ color: '#555', fontFamily: 'var(--font-body)' }}>
-            Live market news &amp; economic events
-          </p>
+          <p className="page-label">Market Intelligence</p>
+          <h1 className="page-title">News</h1>
         </div>
-
         <div className="flex items-center gap-2">
           {lastUpdated && (
-            <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-body)' }}>
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-body)' }}>
               Updated {timeAgo(lastUpdated.toISOString())}
             </span>
           )}
           <button
             onClick={() => fetchNews(filter, true)}
             disabled={refreshing}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all disabled:opacity-40"
             style={{
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              color: 'rgba(255,255,255,0.5)',
-              fontFamily: 'var(--font-display)',
-              cursor: refreshing ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10,
+              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+              color: 'rgba(255,255,255,0.5)', fontSize: 11, fontFamily: 'var(--font-display)',
+              fontWeight: 600, cursor: refreshing ? 'not-allowed' : 'pointer', opacity: refreshing ? 0.5 : 1,
             }}
           >
-            <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw style={{ width: 11, height: 11 }} className={refreshing ? 'animate-spin' : ''} />
             Refresh
           </button>
         </div>
       </div>
 
-      {/* API key notice */}
-      {!configured && !loading && (
-        <div
-          className="flex items-start gap-3 p-4 rounded-2xl mb-5"
-          style={{ background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.15)' }}
-        >
-          <Settings className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#fbbf24' }} />
-          <div>
-            <p className="text-sm font-semibold" style={{ color: '#fbbf24', fontFamily: 'var(--font-display)' }}>
-              Finnhub API key not configured
+      {/* ── Economic Calendar ── */}
+      {upcomingEvents.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div className="flex items-center gap-2 mb-3">
+            <Calendar style={{ width: 13, height: 13, color: '#8B7CF8' }} />
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Upcoming Events
             </p>
-            <p className="text-xs mt-0.5 leading-relaxed" style={{ color: 'rgba(251,191,36,0.6)', fontFamily: 'var(--font-body)' }}>
-              Add <code className="font-mono" style={{ color: '#fbbf24' }}>FINNHUB_API_KEY</code> to your Vercel environment variables.
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+            {upcomingEvents.map((ev, i) => {
+              const cfg = IMPACT_CFG[ev.impact]
+              const days = daysUntil(ev.date)
+              const isToday = days === 0
+              const isTomorrow = days === 1
+              return (
+                <div
+                  key={`${ev.name}-${i}`}
+                  style={{
+                    flexShrink: 0,
+                    background: isToday ? 'rgba(108,93,211,0.12)' : '#111',
+                    border: isToday ? '1px solid rgba(108,93,211,0.35)' : '1px solid rgba(255,255,255,0.07)',
+                    borderRadius: 14,
+                    padding: '12px 16px',
+                    minWidth: 160,
+                    maxWidth: 180,
+                  }}
+                >
+                  {/* Impact badge */}
+                  <div className="flex items-center justify-between mb-2">
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 5,
+                      background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color,
+                      fontFamily: 'var(--font-display)', letterSpacing: '0.06em',
+                    }}>
+                      {cfg.label}
+                    </span>
+                    {isToday && (
+                      <span style={{ fontSize: 9, fontWeight: 700, color: '#8B7CF8', fontFamily: 'var(--font-display)', background: 'rgba(108,93,211,0.15)', padding: '2px 7px', borderRadius: 5 }}>TODAY</span>
+                    )}
+                  </div>
+
+                  {/* Event name */}
+                  <p style={{ fontWeight: 700, fontSize: 14, color: '#fff', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', lineHeight: 1.2, marginBottom: 4 }}>
+                    {ev.name}
+                  </p>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-body)', lineHeight: 1.4, marginBottom: 8 }}>
+                    {ev.description}
+                  </p>
+
+                  {/* Date + countdown */}
+                  <div className="flex items-center gap-1.5">
+                    <Clock style={{ width: 10, height: 10, color: 'rgba(255,255,255,0.3)' }} />
+                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-body)' }}>
+                      {ev.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                    <span style={{
+                      fontSize: 10, fontWeight: 600, marginLeft: 'auto',
+                      color: isToday ? '#8B7CF8' : isTomorrow ? '#fbbf24' : 'rgba(255,255,255,0.3)',
+                      fontFamily: 'var(--font-display)',
+                    }}>
+                      {isToday ? 'Today' : isTomorrow ? 'Tomorrow' : `in ${days}d`}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── API key notice ── */}
+      {!configured && !loading && (
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px 16px', borderRadius: 12, marginBottom: 16, background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.15)' }}>
+          <Settings style={{ width: 14, height: 14, marginTop: 1, flexShrink: 0, color: '#fbbf24' }} />
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 600, color: '#fbbf24', fontFamily: 'var(--font-display)' }}>Finnhub API key not configured</p>
+            <p style={{ fontSize: 12, marginTop: 3, lineHeight: 1.5, color: 'rgba(251,191,36,0.6)', fontFamily: 'var(--font-body)' }}>
+              Add <code style={{ color: '#fbbf24' }}>FINNHUB_API_KEY</code> to your Vercel environment variables.
               Get a free key at{' '}
-              <a
-                href="https://finnhub.io"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-                style={{ color: '#fbbf24' }}
-              >
-                finnhub.io
-              </a>
+              <a href="https://finnhub.io" target="_blank" rel="noopener noreferrer" style={{ color: '#fbbf24', textDecoration: 'underline' }}>finnhub.io</a>
             </p>
           </div>
         </div>
       )}
 
-      {/* Filter tabs */}
-      <div
-        className="flex gap-1 mb-5 p-1 rounded-xl"
-        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-      >
+      {/* ── Filter tabs ── */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 16, padding: 4, borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
         {FILTER_TABS.map((tab) => {
           const active = filter === tab.key
           return (
             <button
               key={tab.key}
               onClick={() => setFilter(tab.key)}
-              className="flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all"
               style={{
+                flex: 1, padding: '7px 0', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                fontFamily: 'var(--font-display)', cursor: 'pointer', transition: 'all 0.15s',
                 background: active ? '#1e1e1e' : 'transparent',
                 color: active ? '#fff' : 'rgba(255,255,255,0.3)',
-                fontFamily: 'var(--font-display)',
                 border: active ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent',
-                cursor: 'pointer',
               }}
             >
               {tab.label}
@@ -192,32 +291,21 @@ export default function NewsPage() {
         })}
       </div>
 
-      {/* Content */}
+      {/* ── Content ── */}
       {loading ? (
         <div className="flex items-center justify-center py-24">
           <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#6C5DD3' }} />
         </div>
       ) : articles.length === 0 ? (
         <div className="text-center py-24">
-          <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-            style={{ background: 'rgba(108,93,211,0.08)', border: '1px solid rgba(108,93,211,0.15)' }}
-          >
-            <Newspaper className="w-6 h-6" style={{ color: 'rgba(108,93,211,0.6)' }} />
+          <div style={{ width: 52, height: 52, borderRadius: 16, background: 'rgba(108,93,211,0.08)', border: '1px solid rgba(108,93,211,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <Newspaper style={{ width: 22, height: 22, color: 'rgba(108,93,211,0.6)' }} />
           </div>
-          <p
-            className="text-sm font-semibold"
-            style={{ color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-display)' }}
-          >
+          <p style={{ fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-display)' }}>
             {configured ? 'No articles found' : 'News unavailable'}
           </p>
-          <p
-            className="text-xs mt-1"
-            style={{ color: 'rgba(255,255,255,0.12)', fontFamily: 'var(--font-body)' }}
-          >
-            {configured
-              ? 'Try switching to a different category'
-              : 'Configure your Finnhub API key to see live news'}
+          <p style={{ fontSize: 12, marginTop: 6, color: 'rgba(255,255,255,0.12)', fontFamily: 'var(--font-body)' }}>
+            {configured ? 'Try switching to a different category' : 'Configure your Finnhub API key to see live news'}
           </p>
         </div>
       ) : (
@@ -230,111 +318,49 @@ export default function NewsPage() {
                 href={article.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group block rounded-2xl px-5 py-4 transition-all"
-                style={{
-                  background: '#111111',
-                  border: '1px solid rgba(255,255,255,0.05)',
-                  textDecoration: 'none',
-                }}
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)'
-                  ;(e.currentTarget as HTMLElement).style.background = '#141414'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.05)'
-                  ;(e.currentTarget as HTMLElement).style.background = '#111111'
-                }}
+                style={{ display: 'block', background: '#111', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '14px 16px', textDecoration: 'none', transition: 'all 0.15s' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.12)'; (e.currentTarget as HTMLElement).style.background = '#141414' }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.06)'; (e.currentTarget as HTMLElement).style.background = '#111' }}
               >
                 <div className="flex items-start gap-3">
-                  {/* Category dot */}
-                  <div
-                    className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
-                    style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}
-                  >
-                    <span
-                      className="w-2 h-2 rounded-full"
-                      style={{ background: cfg.dot }}
-                    />
+                  {/* Icon */}
+                  <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, marginTop: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cfg.bg, border: `1px solid ${cfg.border}` }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.dot, display: 'block' }} />
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    {/* Meta row */}
+                    {/* Meta */}
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                      <span
-                        className="text-[10px] font-semibold"
-                        style={{ color: cfg.text, fontFamily: 'var(--font-display)' }}
-                      >
-                        {cfg.label}
-                      </span>
-                      {article.source && (
-                        <>
-                          <span style={{ color: 'rgba(255,255,255,0.12)' }}>·</span>
-                          <span
-                            className="text-[10px]"
-                            style={{ color: 'rgba(255,255,255,0.28)', fontFamily: 'var(--font-body)' }}
-                          >
-                            {article.source}
-                          </span>
-                        </>
-                      )}
-                      {article.published_at && (
-                        <>
-                          <span style={{ color: 'rgba(255,255,255,0.12)' }}>·</span>
-                          <span
-                            className="text-[10px]"
-                            style={{ color: 'rgba(255,255,255,0.22)', fontFamily: 'var(--font-body)' }}
-                          >
-                            {timeAgo(article.published_at)}
-                          </span>
-                          <span
-                            className="text-[10px] hidden sm:inline"
-                            style={{ color: 'rgba(255,255,255,0.15)', fontFamily: 'var(--font-body)' }}
-                          >
-                            {formatTime(article.published_at)}
-                          </span>
-                        </>
-                      )}
-                      <ExternalLink
-                        className="w-3 h-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                        style={{ color: 'rgba(255,255,255,0.3)' }}
-                      />
+                      <span style={{ fontSize: 10, fontWeight: 700, color: cfg.color, fontFamily: 'var(--font-display)', letterSpacing: '0.03em' }}>{cfg.label}</span>
+                      {article.source && <>
+                        <span style={{ color: 'rgba(255,255,255,0.12)' }}>·</span>
+                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.28)', fontFamily: 'var(--font-body)' }}>{article.source}</span>
+                      </>}
+                      {article.published_at && <>
+                        <span style={{ color: 'rgba(255,255,255,0.12)' }}>·</span>
+                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', fontFamily: 'var(--font-body)' }}>{timeAgo(article.published_at)}</span>
+                        <span className="hidden sm:inline" style={{ fontSize: 10, color: 'rgba(255,255,255,0.15)', fontFamily: 'var(--font-body)' }}>{formatTime(article.published_at)}</span>
+                      </>}
+                      <ExternalLink style={{ width: 11, height: 11, marginLeft: 'auto', color: 'rgba(255,255,255,0.2)' }} />
                     </div>
 
                     {/* Title */}
-                    <p
-                      className="text-sm font-semibold leading-snug transition-colors"
-                      style={{
-                        color: 'rgba(255,255,255,0.85)',
-                        fontFamily: 'var(--font-display)',
-                        letterSpacing: '-0.01em',
-                      }}
-                    >
+                    <p style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.85)', fontFamily: 'var(--font-display)', lineHeight: 1.45, letterSpacing: '-0.01em' }}>
                       {article.title}
                     </p>
 
                     {/* Summary */}
                     {article.summary && article.summary !== article.title && (
-                      <p
-                        className="text-xs mt-1.5 leading-relaxed line-clamp-2"
-                        style={{ color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-body)' }}
-                      >
+                      <p className="line-clamp-2" style={{ fontSize: 12, marginTop: 5, color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-body)', lineHeight: 1.55 }}>
                         {article.summary}
                       </p>
                     )}
 
                     {/* Tickers */}
-                    {article.tickers && article.tickers.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2.5">
+                    {article.tickers?.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
                         {article.tickers.map((ticker) => (
-                          <span
-                            key={ticker}
-                            className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
-                            style={{
-                              background: 'rgba(108,93,211,0.1)',
-                              color: '#8B7CF8',
-                              border: '1px solid rgba(108,93,211,0.2)',
-                            }}
-                          >
+                          <span key={ticker} style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 5, background: 'rgba(108,93,211,0.1)', color: '#8B7CF8', border: '1px solid rgba(108,93,211,0.2)', fontFamily: 'var(--font-display)' }}>
                             ${ticker}
                           </span>
                         ))}
