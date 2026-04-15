@@ -41,7 +41,7 @@ const TICKER = [
   { pair: 'AUD/USD', price: '0.6482', change: '+0.07%', up: true },
 ]
 
-const NAV_LINKS = ['Features', 'Pricing']
+const NAV_LINKS = ['Features', 'Pricing', 'FAQ']
 
 const FEATURES = [
   {
@@ -101,6 +101,7 @@ export default function LandingPage() {
   const parallax = useParallax()
   const [tickers] = useState([...TICKER, ...TICKER])
   const [scrolled, setScrolled] = useState(false)
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 20)
@@ -363,6 +364,79 @@ export default function LandingPage() {
               </Link>
               <p style={{ textAlign: 'center', marginTop: 10, fontFamily: 'var(--font-body)', fontSize: 11, color: 'rgba(255,255,255,0.22)' }}>Cancel anytime · 7-day money back guarantee</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section id="faq" className="py-24 md:py-32" style={{ background: '#0a0a0a' }}>
+        <div className="max-w-3xl mx-auto px-6">
+          <div className="reveal text-center mb-14">
+            <p className="page-label mb-3" style={{ color: '#7B6CF5' }}>FAQ</p>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 700, letterSpacing: '-0.03em', color: '#fff', lineHeight: 1.1 }}>
+              Everything you need to know.
+            </h2>
+          </div>
+          <div className="reveal">
+            {[
+              {
+                q: 'How do I log a trade?',
+                a: 'Go to the Trade Journal from the sidebar. Tap the + button, fill in the pair, entry/exit, stop loss, take profit, lot size, and any notes. P&L calculates automatically for closed trades.',
+              },
+              {
+                q: "What's the Discipline Score?",
+                a: 'The Discipline Score (0–100) grades your trading behavior across four categories: stop loss usage, win rate, overtrading frequency, and revenge trading patterns. It updates every time you log a trade.',
+              },
+              {
+                q: 'How does Win Rate work?',
+                a: "Win rate only starts calculating after you've logged at least 10 closed trades. This prevents meaningless percentages from a small sample size.",
+              },
+              {
+                q: 'What is the Goals tab?',
+                a: 'Set monthly targets for P&L, win rate, and max drawdown. KoveFX tracks progress with visual rings and milestone checklists so you always know where you stand.',
+              },
+              {
+                q: "What's in the Economic Calendar?",
+                a: "The News tab shows this week's high-impact market events — CPI, NFP, FOMC, PPI, GDP, and more. Filter by impact level (High/Med/Low) or by currency (USD, EUR, GBP, JPY, NQ).",
+              },
+              {
+                q: 'What is the Community tab?',
+                a: 'Share trade setups, wins, losses, and market reactions with other traders. Follow people, react to posts, and see a curated feed. There\'s also a Discord server to join for live discussion.',
+              },
+              {
+                q: 'What is the Screenshot Gallery?',
+                a: 'Upload and organize your chart screenshots for trade review. Great for visual journaling and pattern recognition.',
+              },
+              {
+                q: 'Is my data private?',
+                a: 'Yes. Your trades, journal entries, and statistics are private by default. Only your Community posts are visible to others — and only when you choose to post.',
+              },
+              {
+                q: 'Do I need a credit card to start?',
+                a: 'No. Starter is completely free forever with no card required. Pro ($19/month) unlocks the full AI intelligence layer.',
+              },
+              {
+                q: "What's the difference between Starter and Pro?",
+                a: 'Starter gives you unlimited trade logging, full history, and basic stats. Pro adds behavioral AI analysis, discipline scoring, pattern detection, and personalized insights.',
+              },
+            ].map((item, i) => (
+              <div key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '20px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                >
+                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 500, color: '#fff', lineHeight: 1.4 }}>{item.q}</span>
+                  <span style={{ flexShrink: 0, fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 300, color: openFaq === i ? '#7B6CF5' : 'rgba(255,255,255,0.35)', lineHeight: 1, transition: 'color 0.15s' }}>
+                    {openFaq === i ? '−' : '+'}
+                  </span>
+                </button>
+                {openFaq === i && (
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.7, paddingBottom: 20, margin: 0 }}>
+                    {item.a}
+                  </p>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>

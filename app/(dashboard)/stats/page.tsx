@@ -446,7 +446,7 @@ export default function StatsPage() {
   const wins = closedTrades.filter((t) => (t.pnl ?? 0) > 0)
   const losses = closedTrades.filter((t) => (t.pnl ?? 0) < 0)
   const totalPnl = closedTrades.reduce((s, t) => s + (t.pnl ?? 0), 0)
-  const winRate = closedTrades.length > 0 ? (wins.length / closedTrades.length) * 100 : 0
+  const winRate = closedTrades.length >= 10 ? (wins.length / closedTrades.length) * 100 : null
   const avgWin = wins.length > 0 ? wins.reduce((s, t) => s + (t.pnl ?? 0), 0) / wins.length : 0
   const avgLoss = losses.length > 0 ? Math.abs(losses.reduce((s, t) => s + (t.pnl ?? 0), 0) / losses.length) : 0
   const profitFactor = avgLoss > 0 ? avgWin / avgLoss : 0
@@ -557,7 +557,7 @@ export default function StatsPage() {
           {/* Stat cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
             <StatCard label="Total Trades" value={String(trades.length)} sub={`${closedTrades.length} closed`} icon={Activity} neutral />
-            <StatCard label="Win Rate" value={`${winRate.toFixed(1)}%`} sub={`${wins.length}W / ${losses.length}L`} icon={Target} positive={winRate >= 50} />
+            <StatCard label="Win Rate" value={winRate !== null ? `${winRate.toFixed(1)}%` : '—'} sub={winRate !== null ? `${wins.length}W / ${losses.length}L` : `${closedTrades.length}/10 trades`} icon={Target} positive={winRate !== null ? winRate >= 50 : undefined} neutral={winRate === null} />
             <StatCard label="Total P&L" value={`${totalPnl >= 0 ? '+' : ''}$${Math.abs(totalPnl) >= 10000 ? (totalPnl / 1000).toFixed(2) + 'k' : totalPnl.toFixed(2)}`} sub="All closed" icon={totalPnl >= 0 ? TrendingUp : TrendingDown} positive={totalPnl >= 0} />
             <StatCard label="Avg Win" value={avgWin > 0 ? `$${avgWin.toFixed(2)}` : '—'} sub={`${wins.length} winners`} icon={TrendingUp} positive={avgWin > 0 || undefined} neutral={avgWin === 0} />
             <StatCard label="Avg Loss" value={avgLoss > 0 ? `$${avgLoss.toFixed(2)}` : '—'} sub={`${losses.length} losers`} icon={TrendingDown} positive={avgLoss > 0 ? false : undefined} neutral={avgLoss === 0} />

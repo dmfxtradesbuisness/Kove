@@ -398,11 +398,28 @@ function PostCard({
 function ComposeBox({ myProfile, onPost }: { myProfile: CommunityProfile | null; onPost: (p: EnrichedPost) => void }) {
   const [content, setContent] = useState('')
   const [postType, setPostType] = useState<PostType>('general')
-  const [imageUrl, setImageUrl] = useState('')
-  const [showImageInput, setShowImageInput] = useState(false)
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const textRef = useRef<HTMLTextAreaElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true); setError('')
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('kind', 'post')
+      const res = await fetch('/api/community/upload', { method: 'POST', body: fd })
+      const d = await res.json()
+      if (!res.ok) { setError(d.error || 'Upload failed'); return }
+      setUploadedImageUrl(d.url)
+    } catch { setError('Upload failed') } finally { setUploading(false) }
+    e.target.value = ''
+  }
 
   async function submit() {
     if (!content.trim() || sending) return
@@ -411,12 +428,12 @@ function ComposeBox({ myProfile, onPost }: { myProfile: CommunityProfile | null;
       const res = await fetch('/api/community/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, post_type: postType, image_url: imageUrl || undefined }),
+        body: JSON.stringify({ content, post_type: postType, image_url: uploadedImageUrl || undefined }),
       })
       const d = await res.json()
       if (!res.ok) { setError(d.error || 'Failed'); return }
       onPost(d.post)
-      setContent(''); setImageUrl(''); setShowImageInput(false)
+      setContent(''); setUploadedImageUrl(null)
       if (textRef.current) { textRef.current.style.height = 'auto' }
     } catch { setError('Network error') } finally { setSending(false) }
   }
@@ -438,16 +455,20 @@ function ComposeBox({ myProfile, onPost }: { myProfile: CommunityProfile | null;
               caretColor: '#8B7CF8',
             }}
           />
-          {showImageInput && (
-            <input
-              type="url"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="Paste image URL…"
-              className="input mt-2 !text-xs !min-h-0 !py-2"
-            />
+          {/* Image preview */}
+          {uploadedImageUrl && (
+            <div style={{ position: 'relative', display: 'inline-block', marginTop: 8, borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={uploadedImageUrl} alt="preview" style={{ maxWidth: '100%', maxHeight: 160, display: 'block', objectFit: 'cover' }} />
+              <button
+                onClick={() => setUploadedImageUrl(null)}
+                style={{ position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: '50%', background: 'rgba(0,0,0,0.7)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}
+              ><X style={{ width: 10, height: 10 }} /></button>
+            </div>
           )}
           {error && <p style={{ color: '#f87171', fontSize: 12, marginTop: 6, fontFamily: 'var(--font-body)' }}>{error}</p>}
+          {/* Hidden file input */}
+          <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" style={{ display: 'none' }} onChange={handleFileChange} />
           <div className="flex items-center justify-between mt-3 flex-wrap gap-2">
             {/* Post type */}
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -467,9 +488,10 @@ function ComposeBox({ myProfile, onPost }: { myProfile: CommunityProfile | null;
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setShowImageInput(v => !v)}
-                style={{ width: 32, height: 32, borderRadius: 8, background: showImageInput ? 'rgba(255,255,255,0.08)' : 'none', border: 'none', cursor: 'pointer', color: showImageInput ? '#8B7CF8' : 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              ><ImageIcon style={{ width: 15, height: 15 }} /></button>
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                style={{ width: 32, height: 32, borderRadius: 8, background: (uploadedImageUrl || uploading) ? 'rgba(255,255,255,0.08)' : 'none', border: 'none', cursor: uploading ? 'not-allowed' : 'pointer', color: uploadedImageUrl ? '#8B7CF8' : 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >{uploading ? <Loader2 style={{ width: 15, height: 15 }} className="animate-spin" /> : <ImageIcon style={{ width: 15, height: 15 }} />}</button>
               <button
                 onClick={submit}
                 disabled={!content.trim() || sending}
@@ -919,7 +941,7 @@ export default function CommunityPage() {
               </div>
             </div>
             <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-body)', lineHeight: 1.5, marginBottom: 12 }}>
-              Join thousands of traders for live calls, signals, and community discussions.
+              Connect with traders, share ideas, and be part of the community.
             </p>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '9px 0', borderRadius: 10, background: 'rgba(88,101,242,0.85)', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-display)' }}>
               <svg width="16" height="12" viewBox="0 0 71 55" fill="currentColor">

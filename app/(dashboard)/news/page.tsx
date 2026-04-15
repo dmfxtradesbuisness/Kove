@@ -22,6 +22,7 @@ interface EconEvent {
   date: Date
   impact: 'high' | 'medium' | 'low'
   description: string
+  currencies: string[]
   actual?: string
   forecast?: string
 }
@@ -33,47 +34,64 @@ function buildEconCalendar(): EconEvent[] {
     // FOMC
     ...[
       [1,28],[3,18],[5,6],[6,17],[7,29],[9,16],[10,28],[12,9],
-    ].map(([m,d]) => ({ name: 'FOMC Meeting', date: new Date(y,m-1,d), impact: 'high' as const, description: 'Federal Reserve interest rate decision' })),
+    ].map(([m,d]) => ({ name: 'FOMC Meeting', date: new Date(y,m-1,d), impact: 'high' as const, description: 'Federal Reserve interest rate decision', currencies: ['USD', 'NQ'] })),
 
     // CPI (2nd Tuesday of month ~)
     ...[
       [1,15],[2,12],[3,12],[4,10],[5,13],[6,11],[7,14],[8,13],[9,11],[10,9],[11,12],[12,10],
-    ].map(([m,d]) => ({ name: 'CPI', date: new Date(y,m-1,d), impact: 'high' as const, description: 'Consumer Price Index — inflation data' })),
+    ].map(([m,d]) => ({ name: 'CPI', date: new Date(y,m-1,d), impact: 'high' as const, description: 'Consumer Price Index — inflation data', currencies: ['USD', 'NQ'] })),
 
     // NFP (first Friday)
     ...[
       [1,10],[2,7],[3,7],[4,4],[5,2],[6,5],[7,3],[8,7],[9,4],[10,2],[11,6],[12,4],
-    ].map(([m,d]) => ({ name: 'NFP', date: new Date(y,m-1,d), impact: 'high' as const, description: 'Non-Farm Payrolls — jobs data' })),
+    ].map(([m,d]) => ({ name: 'NFP', date: new Date(y,m-1,d), impact: 'high' as const, description: 'Non-Farm Payrolls — jobs data', currencies: ['USD', 'NQ'] })),
 
     // PPI
     ...[
       [1,16],[2,13],[3,13],[4,11],[5,14],[6,12],[7,15],[8,14],[9,12],[10,10],[11,13],[12,11],
-    ].map(([m,d]) => ({ name: 'PPI', date: new Date(y,m-1,d), impact: 'medium' as const, description: 'Producer Price Index' })),
+    ].map(([m,d]) => ({ name: 'PPI', date: new Date(y,m-1,d), impact: 'medium' as const, description: 'Producer Price Index', currencies: ['USD'] })),
 
     // Retail Sales
     ...[
       [1,16],[2,14],[3,17],[4,16],[5,15],[6,16],[7,16],[8,15],[9,12],[10,16],[11,14],[12,12],
-    ].map(([m,d]) => ({ name: 'Retail Sales', date: new Date(y,m-1,d), impact: 'medium' as const, description: 'US Retail Sales MoM' })),
+    ].map(([m,d]) => ({ name: 'Retail Sales', date: new Date(y,m-1,d), impact: 'medium' as const, description: 'US Retail Sales MoM', currencies: ['USD'] })),
 
     // GDP (quarterly — prelim)
     ...[
       [1,30],[4,30],[7,30],[10,30],
-    ].map(([m,d]) => ({ name: 'GDP', date: new Date(y,m-1,d), impact: 'high' as const, description: 'Gross Domestic Product QoQ' })),
+    ].map(([m,d]) => ({ name: 'GDP', date: new Date(y,m-1,d), impact: 'high' as const, description: 'Gross Domestic Product QoQ', currencies: ['USD', 'NQ'] })),
 
     // Unemployment Claims (weekly — first Thursday of each month shown)
     ...[
       [1,9],[2,6],[3,6],[4,3],[5,1],[6,5],[7,3],[8,6],[9,4],[10,2],[11,5],[12,4],
-    ].map(([m,d]) => ({ name: 'Initial Claims', date: new Date(y,m-1,d), impact: 'low' as const, description: 'Weekly unemployment claims' })),
+    ].map(([m,d]) => ({ name: 'Initial Claims', date: new Date(y,m-1,d), impact: 'low' as const, description: 'Weekly unemployment claims', currencies: ['USD'] })),
   ]
   return events
 }
 
-function getUpcomingEvents(days = 60): EconEvent[] {
+function getThisWeekEvents(): EconEvent[] {
   const now = new Date()
-  const cutoff = new Date(now.getTime() + days * 86400000)
+  const dow = now.getDay() // 0=Sun, 1=Mon...
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1))
+  monday.setHours(0, 0, 0, 0)
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+  sunday.setHours(23, 59, 59, 999)
   return buildEconCalendar()
-    .filter(e => e.date >= now && e.date <= cutoff)
+    .filter(e => e.date >= monday && e.date <= sunday)
     .sort((a, b) => a.date.getTime() - b.date.getTime())
+}
+
+function getWeekLabel(): string {
+  const now = new Date()
+  const dow = now.getDay()
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1))
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+  const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return `${fmt(monday)} – ${fmt(sunday)}`
 }
 
 function daysUntil(date: Date): number {
@@ -81,10 +99,19 @@ function daysUntil(date: Date): number {
 }
 
 const IMPACT_CFG = {
-  high:   { label: 'HIGH',   color: '#f87171', bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.25)',  dot: '#f87171' },
-  medium: { label: 'MED',    color: '#fbbf24', bg: 'rgba(251,191,36,0.10)', border: 'rgba(251,191,36,0.22)', dot: '#fbbf24' },
-  low:    { label: 'LOW',    color: '#6b7280', bg: 'rgba(107,114,128,0.08)', border: 'rgba(107,114,128,0.18)', dot: '#6b7280' },
+  high:   { label: 'HIGH',   color: '#f87171', bg: 'rgba(239,68,68,0.12)',  border: 'rgba(239,68,68,0.25)',  dot: '#f87171', emoji: '🔴' },
+  medium: { label: 'MED',    color: '#fbbf24', bg: 'rgba(251,191,36,0.10)', border: 'rgba(251,191,36,0.22)', dot: '#fbbf24', emoji: '🟡' },
+  low:    { label: 'LOW',    color: '#6b7280', bg: 'rgba(107,114,128,0.08)', border: 'rgba(107,114,128,0.18)', dot: '#6b7280', emoji: '⚪' },
 }
+
+const IMPACT_FILTERS: { key: 'all' | 'high' | 'medium' | 'low'; label: string }[] = [
+  { key: 'all',    label: 'All' },
+  { key: 'high',   label: '🔴 High' },
+  { key: 'medium', label: '🟡 Med' },
+  { key: 'low',    label: '⚪ Low' },
+]
+
+const CURRENCY_FILTERS = ['All', 'USD', 'EUR', 'GBP', 'JPY', 'NQ']
 
 // ─── News config ──────────────────────────────────────────────────────────────
 const CATEGORY_CFG: Record<string, { label: string; color: string; bg: string; border: string; dot: string }> = {
@@ -127,7 +154,15 @@ export default function NewsPage() {
   const [filter, setFilter]           = useState('all')
   const [configured, setConfigured]   = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
-  const [upcomingEvents]              = useState<EconEvent[]>(() => getUpcomingEvents(60))
+  const [impactFilter, setImpactFilter]   = useState<'all' | 'high' | 'medium' | 'low'>('all')
+  const [currencyFilter, setCurrencyFilter] = useState('all')
+  const [weekEvents] = useState<EconEvent[]>(() => getThisWeekEvents())
+
+  const filteredEvents = weekEvents.filter(ev => {
+    if (impactFilter !== 'all' && ev.impact !== impactFilter) return false
+    if (currencyFilter !== 'all' && !ev.currencies.includes(currencyFilter)) return false
+    return true
+  })
 
   const fetchNews = useCallback(async (cat: string, isRefresh = false) => {
     if (isRefresh) setRefreshing(true)
@@ -154,7 +189,7 @@ export default function NewsPage() {
   }, [filter, fetchNews])
 
   return (
-    <div className="px-4 md:px-8 pt-6 md:pt-10 pb-12 animate-fade-in" style={{ maxWidth: 800 }}>
+    <div className="px-4 md:px-8 pt-6 md:pt-10 pb-12 animate-fade-in">
       {/* ── Header ── */}
       <div className="flex items-start justify-between mb-6">
         <div>
@@ -184,16 +219,71 @@ export default function NewsPage() {
       </div>
 
       {/* ── Economic Calendar ── */}
-      {upcomingEvents.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <div className="flex items-center gap-2 mb-3">
-            <Calendar style={{ width: 13, height: 13, color: '#8B7CF8' }} />
-            <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Upcoming Events
-            </p>
-          </div>
+      <div style={{ marginBottom: 28 }}>
+        {/* Section header */}
+        <div className="flex items-center gap-2 mb-3">
+          <Calendar style={{ width: 13, height: 13, color: '#8B7CF8' }} />
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Economic Calendar
+          </p>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-body)', marginLeft: 4 }}>
+            {getWeekLabel()}
+          </span>
+        </div>
+
+        {/* Impact filter row */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+          {IMPACT_FILTERS.map(f => {
+            const active = impactFilter === f.key
+            return (
+              <button
+                key={f.key}
+                onClick={() => setImpactFilter(f.key)}
+                style={{
+                  padding: '5px 12px', borderRadius: 20, fontSize: 11, fontWeight: 600,
+                  fontFamily: 'var(--font-display)', cursor: 'pointer', transition: 'all 0.15s',
+                  background: active ? '#8B7CF8' : 'rgba(255,255,255,0.04)',
+                  color: active ? '#fff' : 'rgba(255,255,255,0.4)',
+                  border: active ? '1px solid #8B7CF8' : '1px solid rgba(255,255,255,0.08)',
+                }}
+              >
+                {f.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Currency filter row */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+          {CURRENCY_FILTERS.map(c => {
+            const key = c === 'All' ? 'all' : c
+            const active = currencyFilter === key
+            return (
+              <button
+                key={c}
+                onClick={() => setCurrencyFilter(key)}
+                style={{
+                  padding: '5px 12px', borderRadius: 20, fontSize: 11, fontWeight: 600,
+                  fontFamily: 'var(--font-display)', cursor: 'pointer', transition: 'all 0.15s',
+                  background: active ? '#8B7CF8' : 'rgba(255,255,255,0.04)',
+                  color: active ? '#fff' : 'rgba(255,255,255,0.4)',
+                  border: active ? '1px solid #8B7CF8' : '1px solid rgba(255,255,255,0.08)',
+                }}
+              >
+                {c}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Event cards */}
+        {filteredEvents.length === 0 ? (
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-body)', padding: '12px 0' }}>
+            No events match your filters this week.
+          </p>
+        ) : (
           <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-            {upcomingEvents.map((ev, i) => {
+            {filteredEvents.map((ev, i) => {
               const cfg = IMPACT_CFG[ev.impact]
               const days = daysUntil(ev.date)
               const isToday = days === 0
@@ -207,21 +297,24 @@ export default function NewsPage() {
                     border: isToday ? '1px solid rgba(108,93,211,0.35)' : '1px solid rgba(255,255,255,0.07)',
                     borderRadius: 14,
                     padding: '12px 16px',
-                    minWidth: 160,
-                    maxWidth: 180,
+                    minWidth: 170,
+                    maxWidth: 200,
                   }}
                 >
-                  {/* Impact badge */}
+                  {/* Impact badge + today badge */}
                   <div className="flex items-center justify-between mb-2">
                     <span style={{
                       fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 5,
                       background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color,
                       fontFamily: 'var(--font-display)', letterSpacing: '0.06em',
                     }}>
-                      {cfg.label}
+                      {cfg.emoji} {cfg.label}
                     </span>
                     {isToday && (
                       <span style={{ fontSize: 9, fontWeight: 700, color: '#8B7CF8', fontFamily: 'var(--font-display)', background: 'rgba(108,93,211,0.15)', padding: '2px 7px', borderRadius: 5 }}>TODAY</span>
+                    )}
+                    {isTomorrow && !isToday && (
+                      <span style={{ fontSize: 9, fontWeight: 700, color: '#fbbf24', fontFamily: 'var(--font-display)', background: 'rgba(251,191,36,0.1)', padding: '2px 7px', borderRadius: 5 }}>TMRW</span>
                     )}
                   </div>
 
@@ -232,6 +325,19 @@ export default function NewsPage() {
                   <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-body)', lineHeight: 1.4, marginBottom: 8 }}>
                     {ev.description}
                   </p>
+
+                  {/* Currency tags */}
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
+                    {ev.currencies.map(cur => (
+                      <span key={cur} style={{
+                        fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                        background: 'rgba(139,124,248,0.1)', border: '1px solid rgba(139,124,248,0.2)',
+                        color: '#8B7CF8', fontFamily: 'var(--font-display)', letterSpacing: '0.04em',
+                      }}>
+                        {cur}
+                      </span>
+                    ))}
+                  </div>
 
                   {/* Date + countdown */}
                   <div className="flex items-center gap-1.5">
@@ -251,8 +357,8 @@ export default function NewsPage() {
               )
             })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* ── API key notice ── */}
       {!configured && !loading && (
