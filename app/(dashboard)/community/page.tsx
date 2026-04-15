@@ -54,6 +54,28 @@ interface Comment {
   profile: CommunityProfile | null
 }
 
+interface FlaggedReport {
+  id: string
+  reason: string
+  details: string | null
+  created_at: string
+}
+interface FlaggedGroup {
+  post_id: string
+  reports: FlaggedReport[]
+  post: { id: string; content: string; post_type: string; created_at: string; is_removed: boolean } | null
+  author_name: string | null
+}
+interface RemovedPost {
+  id: string
+  user_id: string
+  content: string
+  post_type: string
+  created_at: string
+  removed_at: string | null
+  author_name: string | null
+}
+
 interface LeaderboardEntry {
   rank: number
   user_id: string
@@ -653,6 +675,11 @@ export default function CommunityPage() {
   const [reportId, setReportId]         = useState<string | null>(null)
   const [reportReason, setReportReason] = useState('')
   const [reportSending, setReportSending] = useState(false)
+  const [showAdmin, setShowAdmin]       = useState(false)
+  const [adminSubTab, setAdminSubTab]   = useState<'flagged' | 'removed'>('flagged')
+  const [flaggedPosts, setFlaggedPosts] = useState<FlaggedGroup[]>([])
+  const [removedPosts, setRemovedPosts] = useState<RemovedPost[]>([])
+  const [adminLoading, setAdminLoading] = useState(false)
 
   const supabase  = createClient()
   const channelRef = useRef<RealtimeChannel | null>(null)
@@ -757,6 +784,30 @@ export default function CommunityPage() {
     ))
   }
 
+  async function loadAdminData(tab: 'flagged' | 'removed') {
+    setAdminLoading(true)
+    try {
+      const res = await fetch(`/api/admin/moderation?type=${tab}`)
+      const d = await res.json()
+      if (tab === 'flagged') setFlaggedPosts(d.flagged ?? [])
+      else setRemovedPosts(d.removed ?? [])
+    } finally { setAdminLoading(false) }
+  }
+
+  async function adminAction(action: string, payload: Record<string, string>) {
+    await fetch('/api/admin/moderation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...payload }),
+    })
+    loadAdminData(adminSubTab)
+  }
+
+  function openAdmin() {
+    setShowAdmin(true)
+    loadAdminData('flagged')
+  }
+
   const filtered = posts.filter(p => {
     if (!search) return true
     return (
@@ -809,9 +860,12 @@ export default function CommunityPage() {
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {myProfile?.is_admin && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 999, background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', color: '#f87171', fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-display)' }}>
+                  <button
+                    onClick={openAdmin}
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 999, background: showAdmin ? 'rgba(248,113,113,0.15)' : 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)', color: '#f87171', fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-display)', cursor: 'pointer', transition: 'all 0.15s' }}
+                  >
                     <ShieldCheck style={{ width: 11, height: 11 }} /> Admin
-                  </div>
+                  </button>
                 )}
                 <button onClick={() => setEditProfile(true)} style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }}>
                   <Pencil style={{ width: 13, height: 13 }} />
@@ -820,7 +874,127 @@ export default function CommunityPage() {
             </div>
           )}
 
-          {/* Compose */}
+          {/* ── Admin Panel ── */}
+          {showAdmin && myProfile?.is_admin && (
+            <div>
+              {/* Admin header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <div className="flex items-center gap-2">
+                  <ShieldAlert style={{ width: 15, height: 15, color: '#f87171' }} />
+                  <span style={{ fontWeight: 700, fontSize: 15, color: '#fff', fontFamily: 'var(--font-display)' }}>Admin Panel</span>
+                </div>
+                <button onClick={() => setShowAdmin(false)} style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.05)', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <X style={{ width: 13, height: 13 }} />
+                </button>
+              </div>
+
+              {/* Sub-tabs */}
+              <div style={{ display: 'flex', gap: 2, marginBottom: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: 3 }}>
+                {([
+                  { key: 'flagged', label: 'Flagged Posts', count: flaggedPosts.length },
+                  { key: 'removed', label: 'Removed Posts', count: removedPosts.length },
+                ] as const).map(({ key, label, count }) => (
+                  <button key={key} onClick={() => { setAdminSubTab(key); loadAdminData(key) }}
+                    style={{
+                      flex: 1, padding: '7px 12px', borderRadius: 9, fontSize: 12, fontWeight: 600,
+                      fontFamily: 'var(--font-display)', cursor: 'pointer', transition: 'all 0.15s',
+                      background: adminSubTab === key ? '#1e1e1e' : 'transparent',
+                      color: adminSubTab === key ? '#fff' : 'rgba(255,255,255,0.3)',
+                      border: adminSubTab === key ? '1px solid rgba(255,255,255,0.08)' : '1px solid transparent',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}
+                  >
+                    {label}
+                    {count > 0 && <span style={{ fontSize: 10, fontWeight: 700, background: adminSubTab === key ? 'rgba(248,113,113,0.15)' : 'rgba(255,255,255,0.06)', color: adminSubTab === key ? '#f87171' : 'rgba(255,255,255,0.3)', padding: '1px 6px', borderRadius: 999 }}>{count}</span>}
+                  </button>
+                ))}
+              </div>
+
+              {adminLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#6C5DD3' }} />
+                </div>
+              ) : adminSubTab === 'flagged' ? (
+                flaggedPosts.length === 0 ? (
+                  <div className="text-center py-12">
+                    <ShieldCheck style={{ width: 32, height: 32, color: 'rgba(52,211,153,0.3)', margin: '0 auto 12px' }} />
+                    <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-display)' }}>No flagged posts</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {flaggedPosts.map(group => (
+                      <div key={group.post_id} style={{ background: '#111', border: '1px solid rgba(248,113,113,0.15)', borderRadius: 14, padding: '14px 16px' }}>
+                        {/* Report badges */}
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {group.reports.map(r => (
+                            <span key={r.id} style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.18)', color: '#fbbf24', fontFamily: 'var(--font-display)' }}>
+                              {r.reason}
+                            </span>
+                          ))}
+                          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-body)', marginLeft: 4 }}>
+                            {group.reports.length} report{group.reports.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        {/* Post content */}
+                        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', fontFamily: 'var(--font-body)', lineHeight: 1.55, marginBottom: 4, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {group.post?.content ?? '[post unavailable]'}
+                        </p>
+                        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-body)', marginBottom: 10 }}>
+                          by {group.author_name ?? 'Unknown'}{group.post?.is_removed ? ' · already removed' : ''}
+                        </p>
+                        {/* Actions */}
+                        <div className="flex items-center gap-2">
+                          {!group.post?.is_removed && (
+                            <button
+                              onClick={() => adminAction('remove_post', { post_id: group.post_id })}
+                              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)', color: '#f87171', fontSize: 11, fontWeight: 600, fontFamily: 'var(--font-display)', cursor: 'pointer' }}
+                            >
+                              <Trash2 style={{ width: 11, height: 11 }} /> Remove Post
+                            </button>
+                          )}
+                          <button
+                            onClick={() => adminAction('dismiss_all', { post_id: group.post_id })}
+                            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 600, fontFamily: 'var(--font-display)', cursor: 'pointer' }}
+                          >
+                            <Check style={{ width: 11, height: 11 }} /> Dismiss
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              ) : (
+                removedPosts.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Trash2 style={{ width: 32, height: 32, color: 'rgba(255,255,255,0.1)', margin: '0 auto 12px' }} />
+                    <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-display)' }}>No removed posts</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {removedPosts.map(p => (
+                      <div key={p.id} style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: '14px 16px', opacity: 0.85 }}>
+                        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', fontFamily: 'var(--font-body)', lineHeight: 1.55, marginBottom: 4, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {p.content}
+                        </p>
+                        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-body)', marginBottom: 10 }}>
+                          by {p.author_name ?? 'Unknown'} · removed {p.removed_at ? new Date(p.removed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
+                        </p>
+                        <button
+                          onClick={() => adminAction('restore_post', { post_id: p.id })}
+                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)', color: '#34d399', fontSize: 11, fontWeight: 600, fontFamily: 'var(--font-display)', cursor: 'pointer' }}
+                        >
+                          <Check style={{ width: 11, height: 11 }} /> Restore Post
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+            </div>
+          )}
+
+          {/* Compose + Feed (hidden when admin panel is open) */}
+          {!showAdmin && <>
           <ComposeBox
             myProfile={myProfile}
             onPost={(p) => { setPosts(prev => [p, ...prev]); setPostCount(c => c + 1) }}
@@ -909,6 +1083,7 @@ export default function CommunityPage() {
               ))}
             </div>
           )}
+          </>}
         </div>
 
         {/* ── Right sidebar (desktop only) ── */}

@@ -132,6 +132,19 @@ const FILTER_TABS = [
 
 const REFRESH_INTERVAL = 5 * 60 * 1000
 
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, ' ')       // remove all tags
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s{2,}/g, ' ')        // collapse whitespace
+    .trim()
+}
+
 function timeAgo(dateStr: string | null): string {
   if (!dateStr) return '—'
   const secs = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
@@ -458,7 +471,7 @@ export default function NewsPage() {
                     {/* Summary */}
                     {article.summary && article.summary !== article.title && (
                       <p className="line-clamp-2" style={{ fontSize: 12, marginTop: 5, color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-body)', lineHeight: 1.55 }}>
-                        {article.summary}
+                        {stripHtml(article.summary)}
                       </p>
                     )}
 
