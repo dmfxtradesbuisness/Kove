@@ -23,6 +23,7 @@ interface CommunityProfile {
   is_public?: boolean
   follower_count?: number
   following_count?: number
+  is_admin?: boolean
 }
 
 interface EnrichedPost {
@@ -156,6 +157,7 @@ function FollowButton({ userId, isFollowing, onChange }: { userId: string; isFol
 function PostCard({
   post,
   myUserId,
+  isAdmin,
   onLike,
   onBookmark,
   onReaction,
@@ -166,6 +168,7 @@ function PostCard({
 }: {
   post: EnrichedPost
   myUserId: string
+  isAdmin?: boolean
   onLike: (id: string) => void
   onBookmark: (id: string) => void
   onReaction: (id: string, emoji: string) => void
@@ -246,12 +249,22 @@ function PostCard({
                     <Trash2 style={{ width: 13, height: 13 }} /> Delete post
                   </button>
                 ) : (
-                  <button
-                    onClick={() => { onReport(post.id); setShowMenu(false) }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', borderRadius: 8, background: 'none', border: 'none', color: '#fbbf24', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
-                  >
-                    <Flag style={{ width: 13, height: 13 }} /> Report
-                  </button>
+                  <>
+                    <button
+                      onClick={() => { onReport(post.id); setShowMenu(false) }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', borderRadius: 8, background: 'none', border: 'none', color: '#fbbf24', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+                    >
+                      <Flag style={{ width: 13, height: 13 }} /> Report
+                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => { onDelete(post.id); setShowMenu(false) }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', borderRadius: 8, background: 'none', border: 'none', color: '#f87171', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-body)', borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: 2, paddingTop: 10 }}
+                      >
+                        <ShieldAlert style={{ width: 13, height: 13 }} /> Remove (Admin)
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -772,9 +785,16 @@ export default function CommunityPage() {
                   </span>
                 </div>
               </div>
-              <button onClick={() => setEditProfile(true)} style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>
-                <Pencil style={{ width: 13, height: 13 }} />
-              </button>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {myProfile?.is_admin && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 999, background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', color: '#f87171', fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-display)' }}>
+                    <ShieldCheck style={{ width: 11, height: 11 }} /> Admin
+                  </div>
+                )}
+                <button onClick={() => setEditProfile(true)} style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.09)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }}>
+                  <Pencil style={{ width: 13, height: 13 }} />
+                </button>
+              </div>
             </div>
           )}
 
@@ -855,6 +875,7 @@ export default function CommunityPage() {
                   key={post.id}
                   post={post}
                   myUserId={myUserId}
+                  isAdmin={myProfile?.is_admin}
                   onLike={handleLike}
                   onBookmark={handleBookmark}
                   onReaction={handleReaction}
@@ -870,6 +891,44 @@ export default function CommunityPage() {
 
         {/* ── Right sidebar (desktop only) ── */}
         <aside className="hidden lg:flex flex-col gap-4" style={{ width: 280, flexShrink: 0 }}>
+          {/* Discord community card */}
+          <a
+            href="https://discord.gg/uzyjZbRp8S"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'block', textDecoration: 'none',
+              background: 'linear-gradient(135deg, rgba(88,101,242,0.12) 0%, rgba(108,93,211,0.08) 100%)',
+              border: '1px solid rgba(88,101,242,0.25)',
+              borderRadius: 16, padding: '16px 18px',
+              transition: 'border-color 0.15s, transform 0.15s',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(88,101,242,0.5)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)' }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(88,101,242,0.25)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://cdn.discordapp.com/icons/1450169178987434024/cfad1572b4cffa17b78bd05b75b2c13c.webp?size=1024"
+                alt="DMFX Discord"
+                style={{ width: 44, height: 44, borderRadius: 12, flexShrink: 0, border: '2px solid rgba(88,101,242,0.3)' }}
+              />
+              <div className="min-w-0">
+                <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: 'var(--font-display)', lineHeight: 1.3 }}>The DMFX Trading Zone</p>
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontFamily: 'var(--font-body)', marginTop: 2 }}>Official Discord Server</p>
+              </div>
+            </div>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-body)', lineHeight: 1.5, marginBottom: 12 }}>
+              Join thousands of traders for live calls, signals, and community discussions.
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '9px 0', borderRadius: 10, background: 'rgba(88,101,242,0.85)', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-display)' }}>
+              <svg width="16" height="12" viewBox="0 0 71 55" fill="currentColor">
+                <path d="M60.1 4.9A58.6 58.6 0 0 0 45.5.4a.22.22 0 0 0-.23.1 40.8 40.8 0 0 0-1.8 3.7 54.1 54.1 0 0 0-16.3 0 37.5 37.5 0 0 0-1.8-3.7.23.23 0 0 0-.23-.1A58.4 58.4 0 0 0 10.5 4.9a.2.2 0 0 0-.1.08C1.6 18.1-.95 31 .3 43.7a.24.24 0 0 0 .09.17 58.9 58.9 0 0 0 17.7 9 .23.23 0 0 0 .25-.08 42 42 0 0 0 3.6-5.9.22.22 0 0 0-.12-.31 38.8 38.8 0 0 1-5.5-2.6.23.23 0 0 1-.02-.38c.37-.28.74-.57 1.1-.86a.22.22 0 0 1 .23-.03c11.6 5.3 24.1 5.3 35.5 0a.22.22 0 0 1 .23.03c.36.29.73.58 1.1.86a.23.23 0 0 1-.02.38 36 36 0 0 1-5.5 2.6.22.22 0 0 0-.12.31 47.2 47.2 0 0 0 3.6 5.9c.06.1.17.13.25.08a58.7 58.7 0 0 0 17.7-9 .23.23 0 0 0 .09-.16C72.9 29.3 69 16.5 60.2 5a.18.18 0 0 0-.1-.09ZM23.7 36.3c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2c3.6 0 6.5 3.3 6.4 7.2 0 3.9-2.8 7.2-6.4 7.2Zm23.7 0c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2c3.6 0 6.5 3.3 6.4 7.2 0 3.9-2.8 7.2-6.4 7.2Z"/>
+              </svg>
+              Join Discord
+            </div>
+          </a>
+
           {/* Trending tags */}
           {trending.length > 0 && (
             <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '16px 18px' }}>
