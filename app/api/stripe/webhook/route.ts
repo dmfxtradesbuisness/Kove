@@ -77,7 +77,6 @@ export async function POST(request: NextRequest) {
         if (session.subscription) {
           const sub = await stripe.subscriptions.retrieve(session.subscription as string)
           await grantPremium(supabase, userId, session.customer as string, sub)
-          console.log(`✓ Premium granted: user=${userId} sub=${sub.id} status=${sub.status}`)
         } else if (session.payment_status === 'paid') {
           // One-time payment fallback
           await supabase.from('subscriptions').upsert(
@@ -135,7 +134,6 @@ export async function POST(request: NextRequest) {
             .eq('stripe_subscription_id', sub.id)
         }
 
-        console.log(`✓ Invoice paid: sub=${subscriptionId} status=${sub.status}`)
         break
       }
 
@@ -174,7 +172,6 @@ export async function POST(request: NextRequest) {
             .update({ subscription_status: 'canceled', stripe_subscription_id: null })
             .eq('stripe_subscription_id', sub.id)
         }
-        console.log(`✓ Subscription canceled: sub=${sub.id}`)
         break
       }
 
@@ -188,7 +185,7 @@ export async function POST(request: NextRequest) {
             .from('subscriptions')
             .update({ subscription_status: 'past_due' })
             .eq('stripe_subscription_id', subscriptionId)
-          console.log(`⚠ Payment failed: sub=${subscriptionId}`)
+          console.error(`Payment failed: sub=${subscriptionId}`)
         }
         break
       }

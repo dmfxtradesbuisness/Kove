@@ -217,16 +217,16 @@ function PnlCalendar({ trades }: { trades: Trade[] }) {
           )}
         </div>
         <div className="flex items-center gap-1">
-          {[['‹', prevMonth], ['›', nextMonth]].map(([ch, fn]) => (
+          {([['‹', prevMonth], ['›', nextMonth]] as [string, () => void][]).map(([ch, fn]) => (
             <button
-              key={ch as string}
-              onClick={fn as () => void}
+              key={ch}
+              onClick={fn}
               className="w-6 h-6 rounded flex items-center justify-center transition-all text-sm"
               style={{ color: 'rgba(255,255,255,0.25)' }}
-              onMouseEnter={(e) => { ;(e.currentTarget as HTMLElement).style.color = '#fff'; ;(e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)' }}
-              onMouseLeave={(e) => { ;(e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)'; ;(e.currentTarget as HTMLElement).style.background = 'transparent' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#fff'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)' }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.25)'; (e.currentTarget as HTMLElement).style.background = 'transparent' }}
             >
-              {ch as string}
+              {ch}
             </button>
           ))}
         </div>

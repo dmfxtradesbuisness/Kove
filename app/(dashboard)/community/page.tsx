@@ -6,8 +6,8 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 import {
   Heart, Loader2, Send, Bookmark, TrendingUp, Trophy,
   X, ImageIcon, MessageCircle,
-  Camera, Pencil, Check, Search, MoreHorizontal,
-  Trash2, Flag, ShieldAlert, ShieldCheck, AlertTriangle,
+  Pencil, Check, Search, MoreHorizontal,
+  Trash2, Flag, ShieldAlert, ShieldCheck,
   UserPlus, UserCheck, Users, Sparkles, Rss,
 } from 'lucide-react'
 

@@ -73,8 +73,8 @@ export default function GalleryPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
-          <p className="text-[#444] text-xs uppercase tracking-widest mb-2 font-medium">Visual Log</p>
-          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Trade Gallery</h1>
+          <p className="page-label">Visual Log</p>
+          <h1 className="page-title">Trade Gallery</h1>
           <p className="text-[#444] text-xs font-light mt-1">
             {trades.length} screenshot{trades.length !== 1 ? 's' : ''} saved
           </p>

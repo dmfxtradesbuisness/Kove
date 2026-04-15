@@ -426,10 +426,8 @@ function AccountContent() {
   return (
     <div className="animate-fade-in">
       <div className="mb-6 md:mb-8">
-        <p className="text-[#444] text-xs uppercase tracking-widest mb-1.5 font-medium">Settings</p>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>
-          Account
-        </h1>
+        <p className="page-label">Settings</p>
+        <h1 className="page-title">Account</h1>
       </div>
 
       {/* Banners */}
