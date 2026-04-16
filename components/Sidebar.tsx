@@ -6,20 +6,21 @@ import { useState, useEffect } from 'react'
 import {
   BookOpen, BarChart2, Sparkles, LogOut,
   Target, Images, Users2, Newspaper, Menu, X,
-  ChevronRight, User,
+  ChevronRight, User, Plug,
 } from 'lucide-react'
 import KoveLogo, { KoveWordmark } from '@/components/KoveLogo'
 import { createClient } from '@/lib/supabase/client'
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
-  { href: '/journal',   label: 'Journal',     icon: BookOpen  },
-  { href: '/stats',     label: 'Statistics',  icon: BarChart2 },
-  { href: '/goals',     label: 'Goals',       icon: Target,   pro: true  },
-  { href: '/gallery',   label: 'Gallery',     icon: Images    },
-  { href: '/ai',        label: 'AI Insights', icon: Sparkles, pro: true  },
-  { href: '/community', label: 'Community',   icon: Users2    },
-  { href: '/news',      label: 'News',        icon: Newspaper },
+  { href: '/journal',     label: 'Journal',     icon: BookOpen  },
+  { href: '/stats',       label: 'Statistics',  icon: BarChart2 },
+  { href: '/goals',       label: 'Goals',       icon: Target,   pro: true  },
+  { href: '/gallery',     label: 'Gallery',     icon: Images    },
+  { href: '/ai',          label: 'AI Insights', icon: Sparkles, pro: true  },
+  { href: '/connections', label: 'Connections', icon: Plug      },
+  { href: '/community',   label: 'Community',   icon: Users2    },
+  { href: '/news',        label: 'News',        icon: Newspaper },
 ]
 
 interface Profile {

@@ -37,24 +37,43 @@ export async function POST(request: NextRequest) {
           content: [
             {
               type: 'text',
-              text: `You are a trade data extractor for a trading journal app. Analyze this trading screenshot (could be from MT4, MT5, TradingView, a broker platform, or any trading app) and extract the trade details.
+              text: `You are a trade data extractor for a trading journal app. Analyze this image carefully.
 
-Return ONLY a valid JSON object. Use null for any field you cannot determine with reasonable confidence.
+This could be:
+A) A broker STATEMENT or TRADE HISTORY table (MT4 report, account history, trade list) — numbers will be in clear table columns. Read them directly.
+B) A CHART screenshot (TradingView, MT4 chart, etc.) — prices are harder to read. Follow the specific instructions below.
+
+=== FOR CHART SCREENSHOTS ===
+Look carefully in this order:
+1. RIGHT-SIDE PRICE AXIS — read the Y-axis numbers carefully. Note the price scale.
+2. HORIZONTAL LINES on the chart — these are usually SL (red/pink), TP (green/blue), or entry levels. Each line usually has a price label at its right end.
+3. TRADE MARKERS — triangles, arrows, or dots on candles marking entry/exit. Look for any price tooltip or label near them.
+4. INFO PANELS / BOXES on the chart — MT4 often shows "Open: 1.08500" type overlays.
+5. CANDLE PRICES — if you can identify the entry/exit candle, read the open/close prices from the right axis at that level.
+6. Any popup, tooltip, or annotation with price data.
+
+Do NOT invent prices. If you genuinely cannot read a price value, use null.
+
+=== FOR STATEMENT SCREENSHOTS ===
+Read the table columns directly: Open Price, Close Price, S/L, T/P, Profit/Loss, Lots, Symbol, Type.
+
+=== OUTPUT ===
+Return ONLY a valid JSON object. Use null for anything you cannot read with confidence.
 
 {
-  "pair": "instrument symbol string (e.g. EUR/USD, XAU/USD, NQ, BTC/USD, US30) — normalize to slash format if possible",
-  "type": "BUY or SELL — use LONG/SHORT cues if direction labels are absent",
+  "pair": "instrument symbol (e.g. EUR/USD, XAU/USD, NQ, BTC/USD, US30) — normalize to slash format",
+  "type": "BUY or SELL",
   "entry_price": number or null,
   "exit_price": number or null,
   "stop_loss": number or null,
   "take_profit": number or null,
   "lot_size": number or null,
-  "pnl": number or null (positive = profit, negative = loss — include sign),
-  "outcome": "win" if profitable, "loss" if losing, "breakeven" if ~zero, null if trade is still open,
-  "notes": "1-2 sentence description of what you observe: entry/exit context, pattern visible, any labels on the chart" or null
+  "pnl": number or null (positive = profit, negative = loss),
+  "outcome": "win" or "loss" or "breakeven" or null,
+  "notes": "1-2 sentences describing what you see — pattern, chart context, any visible labels" or null
 }
 
-No markdown, no explanation — only the raw JSON object.`,
+No markdown, no explanation. Raw JSON only.`,
             },
             {
               type: 'image_url',

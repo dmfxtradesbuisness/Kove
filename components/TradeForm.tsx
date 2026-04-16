@@ -338,7 +338,7 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
               {scanning ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /><span>Scanning trade…</span></>
               ) : (
-                <><Camera className="w-4 h-4" /><span>Scan trade from photo</span><Sparkles className="w-3.5 h-3.5 opacity-60" /></>
+                <><Camera className="w-4 h-4" /><span>Scan from screenshot or statement</span><Sparkles className="w-3.5 h-3.5 opacity-60" /></>
               )}
             </button>
           )}
