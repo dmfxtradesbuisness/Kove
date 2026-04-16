@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { X, Upload, Loader2, CheckSquare, Square, ListChecks } from 'lucide-react'
+import { X, Upload, Loader2, CheckSquare, Square, ListChecks, Camera, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import InstrumentPicker from '@/components/InstrumentPicker'
 import type { Trade, TradeFormData } from '@/lib/types'
@@ -39,9 +39,50 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
   )
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [scanning, setScanning] = useState(false)
+  const [scanned, setScanned] = useState(false)
   const [error, setError] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
+  const scanRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
+
+  async function handleScanImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    // Reset so same file can be re-selected
+    e.target.value = ''
+    setScanning(true)
+    setError('')
+    try {
+      const fd = new FormData()
+      fd.append('image', file)
+      const res = await fetch('/api/ai/parse-trade', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error ?? 'Could not read trade from image.')
+        return
+      }
+      const t = data.trade ?? {}
+      setForm((prev) => ({
+        ...prev,
+        pair: t.pair ?? prev.pair,
+        type: t.type === 'SELL' ? 'SELL' : t.type === 'BUY' ? 'BUY' : prev.type,
+        outcome: t.outcome ?? prev.outcome,
+        entry_price: t.entry_price != null ? String(t.entry_price) : prev.entry_price,
+        exit_price: t.exit_price != null ? String(t.exit_price) : prev.exit_price,
+        stop_loss: t.stop_loss != null ? String(t.stop_loss) : prev.stop_loss,
+        take_profit: t.take_profit != null ? String(t.take_profit) : prev.take_profit,
+        lot_size: t.lot_size != null ? String(t.lot_size) : prev.lot_size,
+        pnl: t.pnl != null ? String(t.pnl) : prev.pnl,
+        notes: t.notes ? (prev.notes ? prev.notes + '\n' + t.notes : t.notes) : prev.notes,
+      }))
+      setScanned(true)
+    } catch {
+      setError('Failed to scan image. Please try again.')
+    } finally {
+      setScanning(false)
+    }
+  }
 
   // Checklist state
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([])
@@ -277,6 +318,41 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
         </div>
 
         <form onSubmit={handleSubmit} className="p-5 md:p-6 flex flex-col gap-4">
+
+          {/* Scan from image */}
+          <input ref={scanRef} type="file" accept="image/*" onChange={handleScanImage} className="hidden" />
+          {!trade && (
+            <button
+              type="button"
+              onClick={() => scanRef.current?.click()}
+              disabled={scanning}
+              className="flex items-center justify-center gap-2.5 w-full rounded-2xl text-sm font-semibold transition-all duration-150"
+              style={{
+                height: 52,
+                background: scanning ? 'rgba(108,93,211,0.08)' : 'rgba(108,93,211,0.1)',
+                border: '1px dashed rgba(108,93,211,0.35)',
+                color: scanning ? 'rgba(139,124,248,0.5)' : '#8B7CF8',
+                cursor: scanning ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {scanning ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /><span>Scanning trade…</span></>
+              ) : (
+                <><Camera className="w-4 h-4" /><span>Scan trade from photo</span><Sparkles className="w-3.5 h-3.5 opacity-60" /></>
+              )}
+            </button>
+          )}
+
+          {/* Scanned banner */}
+          {scanned && (
+            <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl text-sm animate-fade-in"
+              style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)', color: '#34D399' }}
+            >
+              <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="font-medium">Trade scanned — review the fields below and fix anything that looks off.</span>
+            </div>
+          )}
+
           {/* Instrument + Direction */}
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-2">
