@@ -3,6 +3,7 @@ export interface Trade {
   user_id: string
   pair: string
   type: 'BUY' | 'SELL'
+  outcome: 'win' | 'loss' | 'breakeven' | null
   entry_price: number
   exit_price: number | null
   stop_loss: number | null
@@ -29,6 +30,7 @@ export interface Subscription {
 export type TradeFormData = {
   pair: string
   type: 'BUY' | 'SELL'
+  outcome: 'win' | 'loss' | 'breakeven' | null
   entry_price: string
   exit_price: string
   stop_loss: string

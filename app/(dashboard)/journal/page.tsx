@@ -455,6 +455,10 @@ export default function JournalPage() {
   const [search, setSearch] = useState('')
   const [showSearch, setShowSearch] = useState(false)
   const [showWowModal, setShowWowModal] = useState(false)
+  const [accountBalance, setAccountBalance] = useState<number | null>(null)
+  const [editingBalance, setEditingBalance] = useState(false)
+  const [balanceInput, setBalanceInput] = useState('')
+  const [savingBalance, setSavingBalance] = useState(false)
 
   // Detect post-upgrade redirect
   useEffect(() => {
@@ -464,6 +468,36 @@ export default function JournalPage() {
       window.history.replaceState({}, '', window.location.pathname)
     }
   }, [])
+
+  // Load account balance from preferences
+  useEffect(() => {
+    fetch('/api/preferences')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.preferences?.account_balance != null) {
+          setAccountBalance(Number(d.preferences.account_balance))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  async function saveBalance() {
+    setSavingBalance(true)
+    const val = balanceInput === '' ? null : Number(balanceInput)
+    try {
+      await fetch('/api/preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account_balance: balanceInput }),
+      })
+      setAccountBalance(val)
+      setEditingBalance(false)
+    } catch {
+      // ignore
+    } finally {
+      setSavingBalance(false)
+    }
+  }
 
   const fetchTrades = useCallback(async () => {
     try {
@@ -641,7 +675,7 @@ export default function JournalPage() {
         </div>
 
         {/* Stat Tiles */}
-        <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
           {[
             { label: 'Total Trades', value: String(trades.length), sub: `${closedTrades.length} closed`, color: '#fff' },
             { label: 'Win Rate', value: `${winRate}%`, sub: `${wins} wins`, color: winRate >= 50 ? '#34D399' : '#F87171' },
@@ -651,17 +685,58 @@ export default function JournalPage() {
               key={label}
               style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '16px 18px' }}
             >
-              <p style={{ fontFamily: 'var(--font-display)', fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px', margin: '0 0 8px 0' }}>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 8px 0' }}>
                 {label}
               </p>
               <p style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: 700, color, letterSpacing: '-0.03em', lineHeight: 1, margin: 0 }}>
                 {value}
               </p>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'rgba(255,255,255,0.2)', marginTop: '4px', margin: '4px 0 0 0' }}>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'rgba(255,255,255,0.2)', margin: '4px 0 0 0' }}>
                 {sub}
               </p>
             </div>
           ))}
+
+          {/* Account Balance Tile */}
+          <div style={{ background: '#111111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '16px 18px' }}>
+            <p style={{ fontFamily: 'var(--font-display)', fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.28)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 8px 0' }}>
+              Account Balance
+            </p>
+            {editingBalance ? (
+              <div className="flex items-center gap-2 mt-1">
+                <input
+                  type="number"
+                  step="0.01"
+                  autoFocus
+                  value={balanceInput}
+                  onChange={(e) => setBalanceInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') saveBalance(); if (e.key === 'Escape') setEditingBalance(false) }}
+                  placeholder="10000"
+                  style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(108,93,211,0.4)', borderRadius: '6px', padding: '5px 8px', fontSize: '13px', color: '#fff', fontFamily: 'var(--font-display)', outline: 'none' }}
+                />
+                <button
+                  onClick={saveBalance}
+                  disabled={savingBalance}
+                  style={{ background: 'var(--accent)', border: 'none', borderRadius: '6px', padding: '5px 10px', fontSize: '11px', color: '#fff', fontFamily: 'var(--font-display)', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                >
+                  {savingBalance ? '…' : 'Save'}
+                </button>
+              </div>
+            ) : (
+              <>
+                <p
+                  onClick={() => { setBalanceInput(accountBalance != null ? String(accountBalance) : ''); setEditingBalance(true) }}
+                  style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: 700, color: accountBalance != null ? (accountBalance + totalPnl >= 0 ? '#34D399' : '#F87171') : 'rgba(255,255,255,0.2)', letterSpacing: '-0.03em', lineHeight: 1, margin: 0, cursor: 'pointer' }}
+                  title="Click to set starting balance"
+                >
+                  {accountBalance != null ? fmtPnl(accountBalance + totalPnl) : 'Set balance'}
+                </p>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'rgba(255,255,255,0.2)', margin: '4px 0 0 0' }}>
+                  {accountBalance != null ? `started $${accountBalance.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : 'click to set'}
+                </p>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Main grid: chart + right sidebar */}

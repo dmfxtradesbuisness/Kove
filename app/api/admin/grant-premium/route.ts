@@ -9,7 +9,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { user_id, admin_secret, active = true } = body
 
-    // Verify admin secret
+    // Verify admin secret — also reject if ADMIN_SECRET is not configured
+    if (!process.env.ADMIN_SECRET) {
+      return NextResponse.json({ error: 'Not configured' }, { status: 503 })
+    }
     if (!admin_secret || admin_secret !== process.env.ADMIN_SECRET) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

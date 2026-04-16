@@ -18,7 +18,7 @@ interface ChecklistItem {
 }
 
 const emptyForm: TradeFormData = {
-  pair: 'EUR/USD', type: 'BUY',
+  pair: 'EUR/USD', type: 'BUY', outcome: null,
   entry_price: '', exit_price: '', stop_loss: '', take_profit: '',
   lot_size: '', pnl: '', notes: '', screenshot_url: '',
 }
@@ -26,7 +26,7 @@ const emptyForm: TradeFormData = {
 export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps) {
   const [form, setForm] = useState<TradeFormData>(
     trade ? {
-      pair: trade.pair, type: trade.type,
+      pair: trade.pair, type: trade.type, outcome: trade.outcome ?? null,
       entry_price: String(trade.entry_price),
       exit_price: trade.exit_price ? String(trade.exit_price) : '',
       stop_loss: trade.stop_loss ? String(trade.stop_loss) : '',
@@ -306,6 +306,31 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* Outcome */}
+          <div className="flex flex-col gap-2">
+            <label className="label">Outcome</label>
+            <div className="flex gap-2 h-[48px]">
+              {(['win', 'loss', 'breakeven'] as const).map((o) => (
+                <button
+                  key={o}
+                  type="button"
+                  onClick={() => setForm((prev) => ({ ...prev, outcome: prev.outcome === o ? null : o }))}
+                  className={`flex-1 rounded-xl text-sm font-bold transition-all duration-150 ${
+                    form.outcome === o
+                      ? o === 'win'
+                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+                        : o === 'loss'
+                          ? 'bg-red-500/15 text-red-400 border border-red-500/25'
+                          : 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/25'
+                      : 'bg-[#0a0a0a] border border-white/[0.07] text-[#444] hover:text-[#888]'
+                  }`}
+                >
+                  {o === 'win' ? 'WIN' : o === 'loss' ? 'LOSS' : 'B/E'}
+                </button>
+              ))}
             </div>
           </div>
 

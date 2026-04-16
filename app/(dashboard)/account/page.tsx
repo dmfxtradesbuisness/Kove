@@ -475,7 +475,7 @@ function AccountContent() {
                 {avatarLoading ? (
                   <Loader2 className="w-6 h-6 animate-spin text-white/60" />
                 ) : avatarUrl ? (
-                  <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                  <img src={avatarUrl} alt="avatar" loading="lazy" className="w-full h-full object-cover" />
                 ) : (
                   <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 28, color: '#fff' }}>
                     {initials}

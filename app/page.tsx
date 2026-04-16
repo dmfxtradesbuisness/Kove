@@ -92,7 +92,7 @@ const PRO_FEATURES = [
   'Discipline score + tracking',
   'Time-of-day performance analysis',
   'Setup profitability analysis',
-  'Weekly AI insights report',
+  'Weekly performance insights',
   'Personalized improvement plan',
 ]
 

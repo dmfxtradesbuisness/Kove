@@ -129,7 +129,7 @@ function Avatar({ profile, size = 36 }: { profile: CommunityProfile | null; size
       }}
     >
       {profile?.avatar_url
-        ? <img src={profile.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ? <img src={profile.avatar_url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         : <span style={{ fontSize: size * 0.33, fontWeight: 700, color: '#fff', fontFamily: 'var(--font-display)' }}>{initials}</span>
       }
     </div>

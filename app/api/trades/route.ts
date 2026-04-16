@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
   const {
     pair,
     type,
+    outcome,
     entry_price,
     exit_price,
     stop_loss,
@@ -64,6 +65,7 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       pair: pair.toUpperCase(),
       type,
+      outcome: outcome ?? null,
       entry_price: parseFloat(entry_price) || null,
       exit_price: exit_price ? parseFloat(exit_price) : null,
       stop_loss: stop_loss ? parseFloat(stop_loss) : null,

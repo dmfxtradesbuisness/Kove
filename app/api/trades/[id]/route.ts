@@ -21,6 +21,7 @@ export async function PUT(
   const {
     pair,
     type,
+    outcome,
     entry_price,
     exit_price,
     stop_loss,
@@ -36,6 +37,7 @@ export async function PUT(
     .update({
       pair: pair?.toUpperCase(),
       type,
+      outcome: outcome !== undefined ? outcome ?? null : undefined,
       entry_price: entry_price ? parseFloat(entry_price) : undefined,
       exit_price: exit_price !== undefined ? (exit_price ? parseFloat(exit_price) : null) : undefined,
       stop_loss: stop_loss !== undefined ? (stop_loss ? parseFloat(stop_loss) : null) : undefined,
