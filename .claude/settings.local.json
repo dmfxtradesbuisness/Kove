@@ -8,7 +8,12 @@
       "Bash(curl --version)",
       "Read(//c/Users/dmfxt/AppData/Local/com.vercel.cli/**)",
       "Read(//c/Users/dmfxt/OneDrive/Desktop/kove/$HOME/.local/share/com.vercel.cli/**)",
-      "Read(//c/Users/dmfxt/OneDrive/Desktop/kove/$HOME/.vercel/**)"
+      "Read(//c/Users/dmfxt/OneDrive/Desktop/kove/$HOME/.vercel/**)",
+      "mcp__f5b591cc-cec7-43c2-b34a-e5d5575f56b6__execute_sql",
+      "mcp__f5b591cc-cec7-43c2-b34a-e5d5575f56b6__apply_migration",
+      "mcp__f5b591cc-cec7-43c2-b34a-e5d5575f56b6__list_projects",
+      "Bash(npx tsc:*)",
+      "Bash(npx next:*)"
     ]
   }
 }
