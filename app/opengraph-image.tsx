@@ -32,7 +32,7 @@ export default async function Image() {
             width: 800,
             height: 800,
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(29,78,216,0.35) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(108,93,211,0.35) 0%, transparent 70%)',
           }}
         />
 
@@ -42,12 +42,12 @@ export default async function Image() {
             width: 80,
             height: 80,
             borderRadius: 20,
-            background: 'linear-gradient(135deg, #2563EB, #1E40AF)',
+            background: 'linear-gradient(135deg, #7B6CF5, #5C4ED4)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: 32,
-            boxShadow: '0 0 60px rgba(29,78,216,0.6)',
+            boxShadow: '0 0 60px rgba(108,93,211,0.6)',
           }}
         >
           <svg width="48" height="48" viewBox="0 0 28 28" fill="none">
@@ -60,7 +60,7 @@ export default async function Image() {
           <span style={{ fontSize: 80, fontWeight: 800, color: 'rgba(255,255,255,0.15)', letterSpacing: '-4px' }}>
             Kove
           </span>
-          <span style={{ fontSize: 80, fontWeight: 800, color: '#2563EB', letterSpacing: '-4px' }}>
+          <span style={{ fontSize: 80, fontWeight: 800, color: '#7B6CF5', letterSpacing: '-4px' }}>
             FX
           </span>
         </div>
@@ -86,8 +86,8 @@ export default async function Image() {
             <div
               key={f}
               style={{
-                background: 'rgba(29,78,216,0.15)',
-                border: '1px solid rgba(29,78,216,0.3)',
+                background: 'rgba(108,93,211,0.15)',
+                border: '1px solid rgba(108,93,211,0.3)',
                 borderRadius: 100,
                 padding: '8px 18px',
                 fontSize: 16,

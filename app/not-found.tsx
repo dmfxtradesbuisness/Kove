@@ -31,7 +31,7 @@ export default function NotFound() {
           width: 480,
           height: 360,
           borderRadius: '50%',
-          background: 'radial-gradient(circle at 50% 40%, rgba(29,78,216,0.35) 0%, rgba(70,50,180,0.12) 45%, transparent 70%)',
+          background: 'radial-gradient(circle at 50% 40%, rgba(108,93,211,0.35) 0%, rgba(70,50,180,0.12) 45%, transparent 70%)',
           filter: 'blur(50px)',
         }}
       />
@@ -72,7 +72,7 @@ export default function NotFound() {
                 lineHeight: 1,
                 letterSpacing: '-0.04em',
                 color: 'transparent',
-                WebkitTextStroke: '1px rgba(29,78,216,0.3)',
+                WebkitTextStroke: '1px rgba(108,93,211,0.3)',
               }}
             >
               404

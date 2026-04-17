@@ -122,7 +122,7 @@ function Avatar({ profile, size = 36 }: { profile: CommunityProfile | null; size
     <div
       style={{
         width: size, height: size, borderRadius: '50%', flexShrink: 0,
-        background: profile?.avatar_url ? 'transparent' : 'linear-gradient(135deg,#1D4ED8,#3B82F6)',
+        background: profile?.avatar_url ? 'transparent' : 'linear-gradient(135deg,#6C5DD3,#8B7CF8)',
         overflow: 'hidden',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         border: '2px solid rgba(255,255,255,0.07)',
@@ -162,8 +162,8 @@ function FollowButton({ userId, isFollowing, onChange }: { userId: string; isFol
         fontFamily: 'var(--font-display)',
         cursor: loading ? 'not-allowed' : 'pointer',
         transition: 'all 0.15s',
-        background: isFollowing ? 'rgba(255,255,255,0.06)' : 'rgba(29,78,216,0.85)',
-        border: isFollowing ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(29,78,216,0.5)',
+        background: isFollowing ? 'rgba(255,255,255,0.06)' : 'rgba(108,93,211,0.85)',
+        border: isFollowing ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(108,93,211,0.5)',
         color: isFollowing ? 'rgba(255,255,255,0.6)' : '#fff',
         minWidth: 84,
         justifyContent: 'center',
@@ -303,7 +303,7 @@ function PostCard({
       {post.tickers?.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-3">
           {post.tickers.map(t => (
-            <span key={t} style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: 'rgba(29,78,216,0.1)', color: '#3B82F6', border: '1px solid rgba(29,78,216,0.2)', fontFamily: 'var(--font-display)' }}>{t}</span>
+            <span key={t} style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: 'rgba(108,93,211,0.1)', color: '#8B7CF8', border: '1px solid rgba(108,93,211,0.2)', fontFamily: 'var(--font-display)' }}>{t}</span>
           ))}
         </div>
       )}
@@ -326,9 +326,9 @@ function PostCard({
               style={{
                 display: 'flex', alignItems: 'center', gap: 4,
                 padding: '3px 9px', borderRadius: 999, fontSize: 12,
-                background: post.my_reaction === emoji ? 'rgba(29,78,216,0.18)' : 'rgba(255,255,255,0.05)',
-                border: post.my_reaction === emoji ? '1px solid rgba(29,78,216,0.35)' : '1px solid rgba(255,255,255,0.08)',
-                color: post.my_reaction === emoji ? '#3B82F6' : 'rgba(255,255,255,0.55)',
+                background: post.my_reaction === emoji ? 'rgba(108,93,211,0.18)' : 'rgba(255,255,255,0.05)',
+                border: post.my_reaction === emoji ? '1px solid rgba(108,93,211,0.35)' : '1px solid rgba(255,255,255,0.08)',
+                color: post.my_reaction === emoji ? '#8B7CF8' : 'rgba(255,255,255,0.55)',
                 cursor: 'pointer',
               }}
             >
@@ -405,11 +405,11 @@ function PostCard({
           style={{
             display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px', borderRadius: 8,
             background: 'none', border: 'none', cursor: 'pointer', marginLeft: 'auto',
-            color: post.bookmarked_by_me ? '#3B82F6' : 'rgba(255,255,255,0.25)',
+            color: post.bookmarked_by_me ? '#8B7CF8' : 'rgba(255,255,255,0.25)',
             transition: 'color 0.15s',
           }}
         >
-          <Bookmark style={{ width: 15, height: 15, fill: post.bookmarked_by_me ? '#3B82F6' : 'none' }} />
+          <Bookmark style={{ width: 15, height: 15, fill: post.bookmarked_by_me ? '#8B7CF8' : 'none' }} />
         </button>
       </div>
     </div>
@@ -474,7 +474,7 @@ function ComposeBox({ myProfile, onPost }: { myProfile: CommunityProfile | null;
             style={{
               width: '100%', background: 'transparent', border: 'none', outline: 'none', resize: 'none',
               color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 1.6, fontFamily: 'var(--font-body)',
-              caretColor: '#3B82F6',
+              caretColor: '#8B7CF8',
             }}
           />
           {/* Image preview */}
@@ -512,14 +512,14 @@ function ComposeBox({ myProfile, onPost }: { myProfile: CommunityProfile | null;
               <button
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
-                style={{ width: 32, height: 32, borderRadius: 8, background: (uploadedImageUrl || uploading) ? 'rgba(255,255,255,0.08)' : 'none', border: 'none', cursor: uploading ? 'not-allowed' : 'pointer', color: uploadedImageUrl ? '#3B82F6' : 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: 32, height: 32, borderRadius: 8, background: (uploadedImageUrl || uploading) ? 'rgba(255,255,255,0.08)' : 'none', border: 'none', cursor: uploading ? 'not-allowed' : 'pointer', color: uploadedImageUrl ? '#8B7CF8' : 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >{uploading ? <Loader2 style={{ width: 15, height: 15 }} className="animate-spin" /> : <ImageIcon style={{ width: 15, height: 15 }} />}</button>
               <button
                 onClick={submit}
                 disabled={!content.trim() || sending}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 999,
-                  background: content.trim() ? 'rgba(29,78,216,0.9)' : 'rgba(29,78,216,0.3)',
+                  background: content.trim() ? 'rgba(108,93,211,0.9)' : 'rgba(108,93,211,0.3)',
                   border: 'none', color: '#fff', fontSize: 13, fontWeight: 600,
                   fontFamily: 'var(--font-display)', cursor: content.trim() ? 'pointer' : 'not-allowed',
                   transition: 'all 0.15s',
@@ -580,7 +580,7 @@ function CommentsModal({ post, myProfile, onClose }: { post: EnrichedPost; myPro
         </div>
         {/* Comments */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px' }}>
-          {loading ? <div className="flex items-center justify-center py-8"><Loader2 className="animate-spin w-4 h-4" style={{ color: '#1D4ED8' }} /></div> : comments.length === 0 ? (
+          {loading ? <div className="flex items-center justify-center py-8"><Loader2 className="animate-spin w-4 h-4" style={{ color: '#6C5DD3' }} /></div> : comments.length === 0 ? (
             <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: 13, fontFamily: 'var(--font-body)', paddingTop: 24 }}>No comments yet. Be first.</p>
           ) : comments.map(c => (
             <div key={c.id} className="flex gap-3 mb-4">
@@ -603,7 +603,7 @@ function CommentsModal({ post, myProfile, onClose }: { post: EnrichedPost; myPro
             placeholder="Add a comment…"
             style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 999, padding: '9px 16px', fontSize: 13, color: 'rgba(255,255,255,0.85)', outline: 'none', fontFamily: 'var(--font-body)' }}
           />
-          <button onClick={sendComment} disabled={!text.trim() || sending} style={{ width: 36, height: 36, borderRadius: '50%', background: text.trim() ? 'rgba(29,78,216,0.9)' : 'rgba(29,78,216,0.3)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <button onClick={sendComment} disabled={!text.trim() || sending} style={{ width: 36, height: 36, borderRadius: '50%', background: text.trim() ? 'rgba(108,93,211,0.9)' : 'rgba(108,93,211,0.3)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             {sending ? <Loader2 style={{ width: 13, height: 13, color: '#fff' }} className="animate-spin" /> : <Send style={{ width: 13, height: 13, color: '#fff' }} />}
           </button>
         </div>
@@ -912,7 +912,7 @@ export default function CommunityPage() {
 
               {adminLoading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#1D4ED8' }} />
+                  <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#6C5DD3' }} />
                 </div>
               ) : adminSubTab === 'flagged' ? (
                 flaggedPosts.length === 0 ? (
@@ -1014,7 +1014,7 @@ export default function CommunityPage() {
                   fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-display)',
                   background: 'none', border: 'none', cursor: 'pointer',
                   color: feedTab === key ? '#fff' : 'rgba(255,255,255,0.35)',
-                  borderBottom: feedTab === key ? '2px solid #3B82F6' : '2px solid transparent',
+                  borderBottom: feedTab === key ? '2px solid #8B7CF8' : '2px solid transparent',
                   marginBottom: -1, transition: 'color 0.15s',
                 }}
               >
@@ -1050,12 +1050,12 @@ export default function CommunityPage() {
           {/* Posts */}
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#1D4ED8' }} />
+              <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#6C5DD3' }} />
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div style={{ width: 52, height: 52, borderRadius: 16, background: 'rgba(29,78,216,0.08)', border: '1px solid rgba(29,78,216,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                {feedTab === 'following' ? <Rss style={{ width: 20, height: 20, color: 'rgba(29,78,216,0.6)' }} /> : <Users style={{ width: 20, height: 20, color: 'rgba(29,78,216,0.6)' }} />}
+              <div style={{ width: 52, height: 52, borderRadius: 16, background: 'rgba(108,93,211,0.08)', border: '1px solid rgba(108,93,211,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                {feedTab === 'following' ? <Rss style={{ width: 20, height: 20, color: 'rgba(108,93,211,0.6)' }} /> : <Users style={{ width: 20, height: 20, color: 'rgba(108,93,211,0.6)' }} />}
               </div>
               <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 14, fontFamily: 'var(--font-display)', fontWeight: 600 }}>
                 {feedTab === 'following' ? "You're not following anyone yet" : 'No posts yet'}
@@ -1095,7 +1095,7 @@ export default function CommunityPage() {
             rel="noopener noreferrer"
             style={{
               display: 'block', textDecoration: 'none',
-              background: 'linear-gradient(135deg, rgba(88,101,242,0.12) 0%, rgba(29,78,216,0.08) 100%)',
+              background: 'linear-gradient(135deg, rgba(88,101,242,0.12) 0%, rgba(108,93,211,0.08) 100%)',
               border: '1px solid rgba(88,101,242,0.25)',
               borderRadius: 16, padding: '16px 18px',
               transition: 'border-color 0.15s, transform 0.15s',

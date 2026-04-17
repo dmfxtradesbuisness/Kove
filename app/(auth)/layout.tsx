@@ -24,7 +24,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           height: '400px',
           borderRadius: '50%',
           background: `radial-gradient(circle at 50% 40%,
-            rgba(37,99,235,0.55) 0%,
+            rgba(123,108,245,0.55) 0%,
             rgba(90,60,200,0.28) 35%,
             rgba(50,30,130,0.1) 60%,
             transparent 80%)`,

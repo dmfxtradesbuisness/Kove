@@ -80,8 +80,8 @@ export default function Sidebar() {
       <div
         style={{
           width: size, height: size, borderRadius: '50%', flexShrink: 0,
-          background: avatarUrl ? 'transparent' : 'linear-gradient(135deg,#2563EB,#3B82F6)',
-          border: '1.5px solid rgba(37,99,235,0.4)',
+          background: avatarUrl ? 'transparent' : 'linear-gradient(135deg,#6C5DD3,#8B7CF8)',
+          border: '1.5px solid rgba(108,93,211,0.4)',
           overflow: 'hidden',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}
@@ -97,11 +97,11 @@ export default function Sidebar() {
   return (
     <>
       {/* ═══════════════════════════════════════════════════════════════════
-          DESKTOP SIDEBAR
+          DESKTOP SIDEBAR (unchanged)
       ═══════════════════════════════════════════════════════════════════ */}
       <aside
         className="hidden md:flex fixed left-0 top-0 h-screen w-[220px] flex-col z-40"
-        style={{ background: '#060606', borderRight: '1px solid rgba(255,255,255,0.06)' }}
+        style={{ background: '#0c0c0c', borderRight: '1px solid rgba(255,255,255,0.06)' }}
       >
         {/* Logo — wordmark */}
         <div className="flex items-center justify-center px-4 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -119,14 +119,14 @@ export default function Sidebar() {
                 key={href}
                 href={href}
                 className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-100"
-                style={{ fontFamily: 'var(--font-display)', background: active ? 'rgba(37,99,235,0.12)' : 'transparent', color: active ? '#3B82F6' : 'rgba(255,255,255,0.35)' }}
+                style={{ fontFamily: 'var(--font-display)', background: active ? 'rgba(108,93,211,0.12)' : 'transparent', color: active ? '#8B7CF8' : 'rgba(255,255,255,0.35)' }}
                 onMouseEnter={(e) => { if (!active) { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.7)' } }}
                 onMouseLeave={(e) => { if (!active) { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.35)' } }}
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 <span className="flex-1">{label}</span>
                 {pro && (
-                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 8, fontWeight: 700, background: 'rgba(37,99,235,0.15)', color: '#3B82F6', border: '1px solid rgba(37,99,235,0.25)', borderRadius: 4, padding: '2px 5px', letterSpacing: '0.08em' }}>
+                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 8, fontWeight: 700, background: 'rgba(108,93,211,0.15)', color: '#8B7CF8', border: '1px solid rgba(108,93,211,0.25)', borderRadius: 4, padding: '2px 5px', letterSpacing: '0.08em' }}>
                     PRO
                   </span>
                 )}
@@ -174,7 +174,7 @@ export default function Sidebar() {
         className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4"
         style={{
           height: 56,
-          background: 'rgba(0,0,0,0.97)',
+          background: 'rgba(8,8,8,0.96)',
           borderBottom: '1px solid rgba(255,255,255,0.07)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
@@ -200,9 +200,9 @@ export default function Sidebar() {
             className="flex items-center justify-center rounded-xl transition-all"
             style={{
               width: 40, height: 40,
-              background: menuOpen ? 'rgba(37,99,235,0.15)' : 'rgba(255,255,255,0.06)',
-              border: `1px solid ${menuOpen ? 'rgba(37,99,235,0.3)' : 'rgba(255,255,255,0.08)'}`,
-              color: menuOpen ? '#3B82F6' : 'rgba(255,255,255,0.7)',
+              background: menuOpen ? 'rgba(108,93,211,0.15)' : 'rgba(255,255,255,0.06)',
+              border: `1px solid ${menuOpen ? 'rgba(108,93,211,0.3)' : 'rgba(255,255,255,0.08)'}`,
+              color: menuOpen ? '#8B7CF8' : 'rgba(255,255,255,0.7)',
             }}
           >
             {menuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -234,7 +234,7 @@ export default function Sidebar() {
         className="md:hidden fixed left-0 right-0 z-40 flex flex-col"
         style={{
           top: 56,
-          background: 'rgba(2,2,2,0.99)',
+          background: 'rgba(10,9,18,0.98)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
           borderBottom: '1px solid rgba(255,255,255,0.07)',
@@ -253,7 +253,7 @@ export default function Sidebar() {
           className="flex items-center gap-3 px-5 py-4"
           style={{
             borderBottom: '1px solid rgba(255,255,255,0.06)',
-            background: isActive('/account') ? 'rgba(37,99,235,0.08)' : 'transparent',
+            background: isActive('/account') ? 'rgba(108,93,211,0.08)' : 'transparent',
           }}
         >
           <AvatarCircle size={40} />
@@ -279,13 +279,13 @@ export default function Sidebar() {
                 className="flex items-center gap-4 px-5 transition-colors"
                 style={{
                   height: 52,
-                  color: active ? '#3B82F6' : 'rgba(255,255,255,0.75)',
-                  background: active ? 'rgba(37,99,235,0.1)' : 'transparent',
+                  color: active ? '#8B7CF8' : 'rgba(255,255,255,0.75)',
+                  background: active ? 'rgba(108,93,211,0.1)' : 'transparent',
                 }}
               >
                 <div
                   className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: active ? 'rgba(37,99,235,0.2)' : 'rgba(255,255,255,0.06)' }}
+                  style={{ background: active ? 'rgba(108,93,211,0.2)' : 'rgba(255,255,255,0.06)' }}
                 >
                   <Icon className="w-3.5 h-3.5" />
                 </div>
@@ -293,11 +293,11 @@ export default function Sidebar() {
                   {label}
                 </span>
                 {pro && (
-                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 8, fontWeight: 700, background: 'rgba(37,99,235,0.2)', color: '#3B82F6', border: '1px solid rgba(37,99,235,0.3)', borderRadius: 4, padding: '2px 6px', letterSpacing: '0.08em' }}>
+                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 8, fontWeight: 700, background: 'rgba(108,93,211,0.2)', color: '#8B7CF8', border: '1px solid rgba(108,93,211,0.3)', borderRadius: 4, padding: '2px 6px', letterSpacing: '0.08em' }}>
                     PRO
                   </span>
                 )}
-                {active && <div style={{ width: 3, height: 20, background: '#3B82F6', borderRadius: 2, flexShrink: 0 }} />}
+                {active && <div style={{ width: 3, height: 20, background: '#8B7CF8', borderRadius: 2, flexShrink: 0 }} />}
               </Link>
             )
           })}

@@ -115,7 +115,7 @@ const CURRENCY_FILTERS = ['All', 'USD', 'EUR', 'GBP', 'JPY', 'NQ']
 
 // ─── News config ──────────────────────────────────────────────────────────────
 const CATEGORY_CFG: Record<string, { label: string; color: string; bg: string; border: string; dot: string }> = {
-  forex:   { label: 'Forex',   color: '#a78bfa', bg: 'rgba(139,92,246,0.1)',   border: 'rgba(139,92,246,0.22)',  dot: '#2563EB' },
+  forex:   { label: 'Forex',   color: '#a78bfa', bg: 'rgba(139,92,246,0.1)',   border: 'rgba(139,92,246,0.22)',  dot: '#7B6CF5' },
   crypto:  { label: 'Crypto',  color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',   border: 'rgba(251,191,36,0.22)',  dot: '#fbbf24' },
   markets: { label: 'Markets', color: '#34d399', bg: 'rgba(52,211,153,0.1)',   border: 'rgba(52,211,153,0.22)',  dot: '#34d399' },
   global:  { label: 'Global',  color: '#60a5fa', bg: 'rgba(96,165,250,0.1)',   border: 'rgba(96,165,250,0.22)',  dot: '#60a5fa' },
@@ -235,7 +235,7 @@ export default function NewsPage() {
       <div style={{ marginBottom: 28 }}>
         {/* Section header */}
         <div className="flex items-center gap-2 mb-3">
-          <Calendar style={{ width: 13, height: 13, color: '#3B82F6' }} />
+          <Calendar style={{ width: 13, height: 13, color: '#8B7CF8' }} />
           <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             Economic Calendar
           </p>
@@ -255,9 +255,9 @@ export default function NewsPage() {
                 style={{
                   padding: '5px 12px', borderRadius: 20, fontSize: 11, fontWeight: 600,
                   fontFamily: 'var(--font-display)', cursor: 'pointer', transition: 'all 0.15s',
-                  background: active ? '#3B82F6' : 'rgba(255,255,255,0.04)',
+                  background: active ? '#8B7CF8' : 'rgba(255,255,255,0.04)',
                   color: active ? '#fff' : 'rgba(255,255,255,0.4)',
-                  border: active ? '1px solid #3B82F6' : '1px solid rgba(255,255,255,0.08)',
+                  border: active ? '1px solid #8B7CF8' : '1px solid rgba(255,255,255,0.08)',
                 }}
               >
                 {f.label}
@@ -278,9 +278,9 @@ export default function NewsPage() {
                 style={{
                   padding: '5px 12px', borderRadius: 20, fontSize: 11, fontWeight: 600,
                   fontFamily: 'var(--font-display)', cursor: 'pointer', transition: 'all 0.15s',
-                  background: active ? '#3B82F6' : 'rgba(255,255,255,0.04)',
+                  background: active ? '#8B7CF8' : 'rgba(255,255,255,0.04)',
                   color: active ? '#fff' : 'rgba(255,255,255,0.4)',
-                  border: active ? '1px solid #3B82F6' : '1px solid rgba(255,255,255,0.08)',
+                  border: active ? '1px solid #8B7CF8' : '1px solid rgba(255,255,255,0.08)',
                 }}
               >
                 {c}
@@ -306,8 +306,8 @@ export default function NewsPage() {
                   key={`${ev.name}-${i}`}
                   style={{
                     flexShrink: 0,
-                    background: isToday ? 'rgba(29,78,216,0.12)' : '#111',
-                    border: isToday ? '1px solid rgba(29,78,216,0.35)' : '1px solid rgba(255,255,255,0.07)',
+                    background: isToday ? 'rgba(108,93,211,0.12)' : '#111',
+                    border: isToday ? '1px solid rgba(108,93,211,0.35)' : '1px solid rgba(255,255,255,0.07)',
                     borderRadius: 14,
                     padding: '12px 16px',
                     minWidth: 170,
@@ -324,7 +324,7 @@ export default function NewsPage() {
                       {cfg.emoji} {cfg.label}
                     </span>
                     {isToday && (
-                      <span style={{ fontSize: 9, fontWeight: 700, color: '#3B82F6', fontFamily: 'var(--font-display)', background: 'rgba(29,78,216,0.15)', padding: '2px 7px', borderRadius: 5 }}>TODAY</span>
+                      <span style={{ fontSize: 9, fontWeight: 700, color: '#8B7CF8', fontFamily: 'var(--font-display)', background: 'rgba(108,93,211,0.15)', padding: '2px 7px', borderRadius: 5 }}>TODAY</span>
                     )}
                     {isTomorrow && !isToday && (
                       <span style={{ fontSize: 9, fontWeight: 700, color: '#fbbf24', fontFamily: 'var(--font-display)', background: 'rgba(251,191,36,0.1)', padding: '2px 7px', borderRadius: 5 }}>TMRW</span>
@@ -345,7 +345,7 @@ export default function NewsPage() {
                       <span key={cur} style={{
                         fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
                         background: 'rgba(139,124,248,0.1)', border: '1px solid rgba(139,124,248,0.2)',
-                        color: '#3B82F6', fontFamily: 'var(--font-display)', letterSpacing: '0.04em',
+                        color: '#8B7CF8', fontFamily: 'var(--font-display)', letterSpacing: '0.04em',
                       }}>
                         {cur}
                       </span>
@@ -360,7 +360,7 @@ export default function NewsPage() {
                     </span>
                     <span style={{
                       fontSize: 10, fontWeight: 600, marginLeft: 'auto',
-                      color: isToday ? '#3B82F6' : isTomorrow ? '#fbbf24' : 'rgba(255,255,255,0.3)',
+                      color: isToday ? '#8B7CF8' : isTomorrow ? '#fbbf24' : 'rgba(255,255,255,0.3)',
                       fontFamily: 'var(--font-display)',
                     }}>
                       {isToday ? 'Today' : isTomorrow ? 'Tomorrow' : `in ${days}d`}
@@ -413,12 +413,12 @@ export default function NewsPage() {
       {/* ── Content ── */}
       {loading ? (
         <div className="flex items-center justify-center py-24">
-          <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#1D4ED8' }} />
+          <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#6C5DD3' }} />
         </div>
       ) : articles.length === 0 ? (
         <div className="text-center py-24">
-          <div style={{ width: 52, height: 52, borderRadius: 16, background: 'rgba(29,78,216,0.08)', border: '1px solid rgba(29,78,216,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-            <Newspaper style={{ width: 22, height: 22, color: 'rgba(29,78,216,0.6)' }} />
+          <div style={{ width: 52, height: 52, borderRadius: 16, background: 'rgba(108,93,211,0.08)', border: '1px solid rgba(108,93,211,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <Newspaper style={{ width: 22, height: 22, color: 'rgba(108,93,211,0.6)' }} />
           </div>
           <p style={{ fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.25)', fontFamily: 'var(--font-display)' }}>
             {configured ? 'No articles found' : 'News unavailable'}
@@ -479,7 +479,7 @@ export default function NewsPage() {
                     {article.tickers?.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {article.tickers.map((ticker) => (
-                          <span key={ticker} style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 5, background: 'rgba(29,78,216,0.1)', color: '#3B82F6', border: '1px solid rgba(29,78,216,0.2)', fontFamily: 'var(--font-display)' }}>
+                          <span key={ticker} style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 5, background: 'rgba(108,93,211,0.1)', color: '#8B7CF8', border: '1px solid rgba(108,93,211,0.2)', fontFamily: 'var(--font-display)' }}>
                             ${ticker}
                           </span>
                         ))}

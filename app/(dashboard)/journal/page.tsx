@@ -30,13 +30,13 @@ function WowModal({ onClose }: { onClose: () => void }) {
       <div
         style={{
           background: 'linear-gradient(145deg,#0f0d28,#0c0a20)',
-          border: '1px solid rgba(37,99,235,0.25)',
+          border: '1px solid rgba(123,108,245,0.25)',
           borderRadius: 24,
           padding: '36px 32px',
           maxWidth: 480,
           width: '100%',
           position: 'relative',
-          boxShadow: '0 0 80px rgba(37,99,235,0.2)',
+          boxShadow: '0 0 80px rgba(123,108,245,0.2)',
         }}
       >
         {/* Close */}
@@ -83,7 +83,7 @@ function WowModal({ onClose }: { onClose: () => void }) {
           <Link
             href="/ai"
             onClick={onClose}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px', borderRadius: 14, background: 'linear-gradient(135deg,#2563EB,#1E40AF)', color: '#fff', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, textDecoration: 'none', boxShadow: '0 0 24px rgba(37,99,235,0.35)' }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px', borderRadius: 14, background: 'linear-gradient(135deg,#7B6CF5,#5C4ED4)', color: '#fff', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, textDecoration: 'none', boxShadow: '0 0 24px rgba(123,108,245,0.35)' }}
           >
             <Sparkles size={15} />
             Chat with KoveAI
@@ -256,7 +256,7 @@ function PnlCalendar({ trades }: { trades: Trade[] }) {
                         background: hasData ? (pnl >= 0 ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)') : 'rgba(255,255,255,0.02)',
                         border: isToday ? '1px solid rgba(139,124,248,0.5)' : hasData ? `1px solid ${pnl >= 0 ? 'rgba(52,211,153,0.2)' : 'rgba(248,113,113,0.2)'}` : '1px solid transparent',
                       }}>
-                        <span style={{ fontSize: '10px', fontWeight: 500, color: isToday ? '#3B82F6' : hasData ? '#fff' : 'rgba(255,255,255,0.18)', lineHeight: 1 }}>{day}</span>
+                        <span style={{ fontSize: '10px', fontWeight: 500, color: isToday ? '#8B7CF8' : hasData ? '#fff' : 'rgba(255,255,255,0.18)', lineHeight: 1 }}>{day}</span>
                         {hasData && (
                           <span style={{ fontSize: '8px', fontWeight: 700, color: pnl >= 0 ? '#34D399' : '#F87171', lineHeight: 1 }}>{fmtPnlCompact(pnl)}</span>
                         )}
@@ -600,7 +600,7 @@ export default function JournalPage() {
                 width: '200px',
                 outline: 'none',
               }}
-              onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = 'rgba(29,78,216,0.4)' }}
+              onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = 'rgba(108,93,211,0.4)' }}
               onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.08)' }}
             />
           </div>
@@ -616,7 +616,7 @@ export default function JournalPage() {
           {/* Avatar */}
           <div
             className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer"
-            style={{ background: 'linear-gradient(135deg, #2563EB, #1E40AF)', color: '#fff', fontFamily: 'var(--font-display)' }}
+            style={{ background: 'linear-gradient(135deg, #7B6CF5, #5C4ED4)', color: '#fff', fontFamily: 'var(--font-display)' }}
           >
             K
           </div>
@@ -640,10 +640,10 @@ export default function JournalPage() {
                 background: 'var(--accent)',
                 border: 'none',
                 color: '#fff',
-                boxShadow: '0 0 20px rgba(29,78,216,0.35)',
+                boxShadow: '0 0 20px rgba(108,93,211,0.35)',
                 cursor: 'pointer',
               }}
-              onMouseEnter={(e) => { ;(e.currentTarget as HTMLElement).style.background = '#3B82F6' }}
+              onMouseEnter={(e) => { ;(e.currentTarget as HTMLElement).style.background = '#8B7CF8' }}
               onMouseLeave={(e) => { ;(e.currentTarget as HTMLElement).style.background = 'var(--accent)' }}
             >
               <Plus className="w-3.5 h-3.5" />
@@ -712,7 +712,7 @@ export default function JournalPage() {
                   onChange={(e) => setBalanceInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') saveBalance(); if (e.key === 'Escape') setEditingBalance(false) }}
                   placeholder="10000"
-                  style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(29,78,216,0.4)', borderRadius: '6px', padding: '5px 8px', fontSize: '13px', color: '#fff', fontFamily: 'var(--font-display)', outline: 'none' }}
+                  style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(108,93,211,0.4)', borderRadius: '6px', padding: '5px 8px', fontSize: '13px', color: '#fff', fontFamily: 'var(--font-display)', outline: 'none' }}
                 />
                 <button
                   onClick={saveBalance}
