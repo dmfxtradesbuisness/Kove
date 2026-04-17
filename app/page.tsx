@@ -21,7 +21,7 @@ function useParallax() {
   const [pos, setPos] = useState({ x: 0, y: 0 })
   useEffect(() => {
     const h = (e: MouseEvent) =>
-      setPos({ x: (e.clientX / window.innerWidth - 0.5) * 30, y: (e.clientY / window.innerHeight - 0.5) * 20 })
+      setPos({ x: (e.clientX / window.innerWidth - 0.5) * 20, y: (e.clientY / window.innerHeight - 0.5) * 14 })
     window.addEventListener('mousemove', h)
     return () => window.removeEventListener('mousemove', h)
   }, [])
@@ -64,7 +64,7 @@ const FEATURES = [
     icon: Brain,
     label: 'AI Intelligence',
     tag: 'PRO',
-    tagColor: '#7B6CF5',
+    tagColor: '#2563EB',
     title: 'Why you\'re losing. Exactly.',
     body: 'AI reads your entire trade history and tells you what\'s actually destroying your consistency. Behavioral patterns, emotional triggers, time-of-day leakage — named precisely.',
   },
@@ -109,8 +109,8 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', h)
   }, [])
 
-  const BG = '#080808'
-  const PURPLE = '#7B6CF5'
+  const BG   = '#000000'
+  const BLUE = '#2563EB'
 
   return (
     <div style={{ background: BG, color: '#fff', minHeight: '100vh', overflowX: 'hidden' }}>
@@ -119,7 +119,7 @@ export default function LandingPage() {
       <nav
         className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
         style={{
-          background: scrolled ? 'rgba(8,8,8,0.95)' : 'rgba(8,8,8,0.4)',
+          background: scrolled ? 'rgba(0,0,0,0.97)' : 'rgba(0,0,0,0.4)',
           borderBottom: scrolled ? '1px solid rgba(255,255,255,0.07)' : '1px solid transparent',
           backdropFilter: 'blur(20px)',
         }}
@@ -140,13 +140,15 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-3">
             <Link href="/signup"
-              className="hidden md:flex items-center justify-center h-9 px-5 rounded-full text-sm font-semibold"
-              style={{ background: PURPLE, color: '#fff', fontFamily: 'var(--font-display)', boxShadow: '0 0 20px rgba(123,108,245,0.4)' }}
+              className="hidden md:flex items-center justify-center h-9 px-5 rounded-full text-sm font-semibold transition-all"
+              style={{ background: BLUE, color: '#fff', fontFamily: 'var(--font-display)', boxShadow: '0 0 20px rgba(37,99,235,0.4)' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#3B82F6' }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = BLUE }}
             >
               Start free
             </Link>
             <Link href="/login"
-              className="hidden md:flex items-center justify-center h-9 px-5 rounded-full text-sm font-medium"
+              className="hidden md:flex items-center justify-center h-9 px-5 rounded-full text-sm font-medium transition-all"
               style={{ color: 'rgba(255,255,255,0.6)', fontFamily: 'var(--font-display)', border: '1px solid rgba(255,255,255,0.12)' }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.25)'; (e.currentTarget as HTMLElement).style.color = '#fff' }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.12)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)' }}
@@ -158,34 +160,123 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ── */}
-      <section style={{ position: 'relative', height: '100vh', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
-        {/* Grid */}
-        <div className="pointer-events-none" style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.035) 1px,transparent 1px)', backgroundSize: '80px 80px' }} />
+      <section style={{ position: 'relative', height: '100vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 
-        {/* Orb */}
-        <div className="orb-drift" style={{ position: 'absolute', left: '-8%', top: '50%', transform: `translate(${parallax.x * 0.4}px, calc(-52% + ${parallax.y * 0.4}px))`, width: 'min(80vw, 820px)', height: 'min(80vw, 820px)', borderRadius: '50%', background: 'radial-gradient(circle at 42% 42%, rgba(145,92,255,0.95) 0%, rgba(110,55,230,0.78) 15%, rgba(80,35,190,0.58) 32%, rgba(50,18,130,0.32) 52%, rgba(22,8,70,0.12) 68%, transparent 82%)', filter: 'blur(22px)' }} />
-        <div className="pulse-slow" style={{ position: 'absolute', left: '4%', top: '50%', transform: `translate(${parallax.x * 0.2}px, calc(-50% + ${parallax.y * 0.2}px))`, width: 'min(28vw, 280px)', height: 'min(28vw, 280px)', borderRadius: '50%', background: 'radial-gradient(circle, rgba(180,145,255,0.75) 0%, rgba(140,90,255,0.35) 45%, transparent 72%)', filter: 'blur(55px)' }} />
+        {/* Orb — centered, animated with easing */}
+        <div className="orb-drift" style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          width: 'min(90vw, 900px)',
+          height: 'min(90vw, 900px)',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle at 42% 42%, rgba(37,99,235,0.9) 0%, rgba(29,78,216,0.7) 18%, rgba(17,50,170,0.45) 36%, rgba(10,25,100,0.22) 56%, transparent 76%)',
+          filter: 'blur(28px)',
+          pointerEvents: 'none',
+          transform: `translate(calc(-50% + ${parallax.x * 0.3}px), calc(-50% + ${parallax.y * 0.3}px))`,
+        }} />
 
-        {/* Hero text */}
-        <div style={{ position: 'relative', zIndex: 10, paddingLeft: 'max(2.5rem, 5vw)', paddingBottom: '3rem' }}>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(5.5rem, 14vw, 13rem)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 0.88, margin: 0 }}>
-            <span style={{ display: 'block', color: '#ffffff' }}>Kove</span>
-            <span style={{ display: 'block', color: PURPLE, textShadow: '0 0 80px rgba(123,108,245,0.6)' }}>FX</span>
-          </h1>
-          <p style={{ marginTop: '2rem', color: 'rgba(255,255,255,0.5)', fontSize: 'clamp(0.875rem, 1.6vw, 1.1rem)', fontFamily: 'var(--font-body)', fontWeight: 300, letterSpacing: '0.005em', maxWidth: '440px', lineHeight: 1.6 }}>
+        {/* Inner bright core — pulsing with easing */}
+        <div className="pulse-slow" style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          width: 'min(30vw, 320px)',
+          height: 'min(30vw, 320px)',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(96,165,250,0.65) 0%, rgba(37,99,235,0.28) 45%, transparent 72%)',
+          filter: 'blur(50px)',
+          pointerEvents: 'none',
+          transform: `translate(calc(-50% + ${parallax.x * 0.15}px), calc(-50% + ${parallax.y * 0.15}px))`,
+        }} />
+
+        {/* Hero content — centered */}
+        <div style={{ position: 'relative', zIndex: 10, textAlign: 'center', paddingBottom: '3rem', paddingLeft: '1.5rem', paddingRight: '1.5rem' }}>
+
+          {/* Logo — floating with glow animation */}
+          <div className="logo-float logo-glow-pulse" style={{ marginBottom: '2.5rem', display: 'inline-block' }}>
+            <h1 style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(5rem, 13vw, 12rem)',
+              fontWeight: 800,
+              letterSpacing: '-0.04em',
+              lineHeight: 0.88,
+              margin: 0,
+            }}>
+              <span style={{
+                display: 'block',
+                color: '#ffffff',
+                textShadow: '0 -1px 0 rgba(255,255,255,0.12), 0 2px 4px rgba(0,0,0,0.9), 0 8px 24px rgba(0,0,0,0.7)',
+              }}>
+                Kove
+              </span>
+              <span style={{
+                display: 'block',
+                background: 'linear-gradient(180deg, #60A5FA 0%, #2563EB 50%, #1D4ED8 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                textShadow: 'none',
+                filter: 'drop-shadow(0 4px 16px rgba(37,99,235,0.6)) drop-shadow(0 0 40px rgba(37,99,235,0.3))',
+              }}>
+                FX
+              </span>
+            </h1>
+          </div>
+
+          <p style={{
+            marginTop: '0',
+            marginBottom: '2.5rem',
+            color: 'rgba(255,255,255,0.48)',
+            fontSize: 'clamp(0.875rem, 1.6vw, 1.05rem)',
+            fontFamily: 'var(--font-body)',
+            fontWeight: 300,
+            letterSpacing: '0.005em',
+            maxWidth: '440px',
+            margin: '0 auto 2.5rem',
+            lineHeight: 1.65,
+          }}>
             Stop guessing why you&apos;re losing trades.<br />
             See exactly what&apos;s destroying your consistency.
           </p>
-          <div className="flex items-center gap-3 mt-8">
+
+          <div className="flex items-center justify-center gap-3 flex-wrap">
             <Link href="/signup"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 28px', borderRadius: 999, background: PURPLE, color: '#fff', fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 600, textDecoration: 'none', boxShadow: '0 0 40px rgba(123,108,245,0.45)', letterSpacing: '-0.01em' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.03)' }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)' }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '13px 28px',
+                borderRadius: 999,
+                background: BLUE,
+                color: '#fff',
+                fontFamily: 'var(--font-display)',
+                fontSize: 15,
+                fontWeight: 600,
+                textDecoration: 'none',
+                boxShadow: '0 0 40px rgba(37,99,235,0.45)',
+                letterSpacing: '-0.01em',
+                transition: 'all 0.2s cubic-bezier(0.22,1,0.36,1)',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.04)'; (e.currentTarget as HTMLElement).style.background = '#3B82F6' }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLElement).style.background = BLUE }}
             >
               Start free <ArrowRight className="w-4 h-4" />
             </Link>
             <a href="#pricing"
-              style={{ display: 'inline-flex', alignItems: 'center', padding: '13px 24px', borderRadius: 999, color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 500, textDecoration: 'none', border: '1px solid rgba(255,255,255,0.1)' }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '13px 24px',
+                borderRadius: 999,
+                color: 'rgba(255,255,255,0.5)',
+                fontFamily: 'var(--font-display)',
+                fontSize: 14,
+                fontWeight: 500,
+                textDecoration: 'none',
+                border: '1px solid rgba(255,255,255,0.1)',
+                transition: 'all 0.2s',
+              }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#fff'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.22)' }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)'; (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)' }}
             >
@@ -196,7 +287,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── TICKER ── */}
-      <div style={{ background: '#0a0a0a', borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden', height: '40px', display: 'flex', alignItems: 'center' }}>
+      <div style={{ background: '#040404', borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden', height: '40px', display: 'flex', alignItems: 'center' }}>
         <div className="ticker-track flex items-center gap-12" style={{ whiteSpace: 'nowrap' }}>
           {tickers.map((t, i) => (
             <div key={i} className="flex items-center gap-2 shrink-0">
@@ -212,7 +303,7 @@ export default function LandingPage() {
       <section className="py-24 md:py-28">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <div className="reveal">
-            <p className="page-label mb-4" style={{ color: PURPLE }}>The problem</p>
+            <p className="page-label mb-4" style={{ color: BLUE }}>The problem</p>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem, 4vw, 3rem)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.15, color: '#fff', marginBottom: '1.5rem' }}>
               You already know you&apos;re making mistakes.<br />
               <span style={{ color: 'rgba(255,255,255,0.35)' }}>You just don&apos;t know which ones.</span>
@@ -225,10 +316,10 @@ export default function LandingPage() {
       </section>
 
       {/* ── FEATURES ── */}
-      <section id="features" className="py-12 md:py-16" style={{ background: '#0a0a0a' }}>
+      <section id="features" className="py-12 md:py-16" style={{ background: '#040404' }}>
         <div className="max-w-6xl mx-auto px-6">
           <div className="reveal mb-14">
-            <p className="page-label mb-3" style={{ color: PURPLE }}>How it works</p>
+            <p className="page-label mb-3" style={{ color: BLUE }}>How it works</p>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 4.5vw, 3.2rem)', fontWeight: 700, letterSpacing: '-0.03em', color: '#fff', maxWidth: 600, lineHeight: 1.1 }}>
               Starter tracks data.<br />Pro understands it.
             </h2>
@@ -237,15 +328,22 @@ export default function LandingPage() {
             {FEATURES.map(({ icon: Icon, label, tag, tagColor, title, body }, i) => (
               <div key={label}
                 className={`reveal reveal-delay-${i + 1} transition-all duration-300`}
-                style={{ background: tag === 'PRO' ? 'linear-gradient(145deg,#141030,#0f0b25)' : '#0d0d0d', border: `1px solid ${tag === 'PRO' ? 'rgba(123,108,245,0.3)' : 'rgba(255,255,255,0.06)'}`, borderRadius: 12, padding: 28, position: 'relative', boxShadow: tag === 'PRO' ? '0 0 40px rgba(123,108,245,0.1)' : 'none' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = tag === 'PRO' ? 'rgba(123,108,245,0.5)' : 'rgba(255,255,255,0.12)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = tag === 'PRO' ? 'rgba(123,108,245,0.3)' : 'rgba(255,255,255,0.06)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}
+                style={{
+                  background: tag === 'PRO' ? 'linear-gradient(145deg,#050d1a,#030b18)' : '#060606',
+                  border: `1px solid ${tag === 'PRO' ? 'rgba(37,99,235,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                  borderRadius: 12,
+                  padding: 28,
+                  position: 'relative',
+                  boxShadow: tag === 'PRO' ? '0 0 40px rgba(37,99,235,0.1)' : 'none',
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = tag === 'PRO' ? 'rgba(37,99,235,0.5)' : 'rgba(255,255,255,0.12)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = tag === 'PRO' ? 'rgba(37,99,235,0.3)' : 'rgba(255,255,255,0.06)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}
               >
-                <div style={{ position: 'absolute', top: 16, right: 16, background: tag === 'PRO' ? PURPLE : 'rgba(255,255,255,0.08)', color: '#fff', fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-display)', padding: '3px 8px', borderRadius: 999, letterSpacing: '0.1em' }}>{tag}</div>
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-5" style={{ background: 'rgba(123,108,245,0.1)', border: '1px solid rgba(123,108,245,0.2)' }}>
-                  <Icon className="w-4 h-4" style={{ color: PURPLE }} />
+                <div style={{ position: 'absolute', top: 16, right: 16, background: tag === 'PRO' ? BLUE : 'rgba(255,255,255,0.08)', color: '#fff', fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-display)', padding: '3px 8px', borderRadius: 999, letterSpacing: '0.1em' }}>{tag}</div>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-5" style={{ background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.2)' }}>
+                  <Icon className="w-4 h-4" style={{ color: '#3B82F6' }} />
                 </div>
-                <p style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 600, color: 'rgba(123,108,245,0.7)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 8 }}>{label}</p>
+                <p style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 600, color: 'rgba(59,130,246,0.7)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 8 }}>{label}</p>
                 <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', fontWeight: 700, color: '#fff', letterSpacing: '-0.02em', marginBottom: 10, lineHeight: 1.3 }}>{title}</h3>
                 <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.38)', lineHeight: 1.7 }}>{body}</p>
               </div>
@@ -254,12 +352,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── PRO WOW MOMENT (what you actually see) ── */}
+      {/* ── PRO WOW MOMENT ── */}
       <section className="py-24 md:py-32 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(123,108,245,0.08) 0%, transparent 70%)' }} />
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(37,99,235,0.07) 0%, transparent 70%)' }} />
         <div className="max-w-5xl mx-auto px-6 relative z-10">
           <div className="reveal text-center mb-14">
-            <p className="page-label mb-3" style={{ color: PURPLE }}>Pro Intelligence</p>
+            <p className="page-label mb-3" style={{ color: BLUE }}>Pro Intelligence</p>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#fff' }}>
               This is what Pro shows you<br />
               <span style={{ color: 'rgba(255,255,255,0.35)' }}>on day one.</span>
@@ -269,11 +367,11 @@ export default function LandingPage() {
             {PRO_INSIGHTS.map((ins, i) => (
               <div key={i}
                 className={`reveal reveal-delay-${i + 1}`}
-                style={{ background: 'linear-gradient(145deg,#111028,#0d0b22)', border: '1px solid rgba(123,108,245,0.2)', borderRadius: 16, padding: '24px 28px', display: 'flex', alignItems: 'center', gap: 20 }}
+                style={{ background: 'linear-gradient(145deg,#040e1e,#020c18)', border: '1px solid rgba(37,99,235,0.2)', borderRadius: 16, padding: '24px 28px', display: 'flex', alignItems: 'center', gap: 20 }}
               >
                 <span style={{ fontSize: 32, flexShrink: 0 }}>{ins.icon}</span>
                 <div>
-                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 700, color: 'rgba(123,108,245,0.7)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4 }}>{ins.stat}</p>
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 700, color: 'rgba(59,130,246,0.7)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4 }}>{ins.stat}</p>
                   <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', fontWeight: 700, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.3 }}>{ins.value}</p>
                 </div>
               </div>
@@ -286,10 +384,10 @@ export default function LandingPage() {
       </section>
 
       {/* ── PRICING ── */}
-      <section id="pricing" className="py-24 md:py-32" style={{ background: '#0a0a0a' }}>
+      <section id="pricing" className="py-24 md:py-32" style={{ background: '#040404' }}>
         <div className="max-w-5xl mx-auto px-6">
           <div className="reveal text-center mb-14">
-            <p className="page-label mb-3" style={{ color: PURPLE }}>Pricing</p>
+            <p className="page-label mb-3" style={{ color: BLUE }}>Pricing</p>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
               The difference between random trading<br />and consistent performance.
             </h2>
@@ -300,7 +398,7 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-2 gap-5 max-w-3xl mx-auto">
             {/* Starter */}
-            <div className="reveal" style={{ background: '#0d0d0d', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: 32 }}>
+            <div className="reveal" style={{ background: '#060606', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: 32 }}>
               <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 999, padding: '4px 12px', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-display)', color: 'rgba(255,255,255,0.45)', letterSpacing: '0.1em', marginBottom: 16 }}>STARTER</div>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, marginBottom: 6 }}>
                 <span style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1 }}>$0</span>
@@ -327,11 +425,11 @@ export default function LandingPage() {
             </div>
 
             {/* Pro */}
-            <div className="reveal reveal-delay-1" style={{ background: 'linear-gradient(145deg,#141030 0%,#0f0b25 100%)', border: '1px solid rgba(123,108,245,0.35)', borderRadius: 16, padding: 32, position: 'relative', overflow: 'hidden', boxShadow: '0 0 60px rgba(123,108,245,0.15)' }}>
+            <div className="reveal reveal-delay-1" style={{ background: 'linear-gradient(145deg,#050d1a 0%,#030b18 100%)', border: '1px solid rgba(37,99,235,0.35)', borderRadius: 16, padding: 32, position: 'relative', overflow: 'hidden', boxShadow: '0 0 60px rgba(37,99,235,0.14)' }}>
               {/* Glow */}
-              <div style={{ position: 'absolute', top: -40, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(123,108,245,0.25) 0%, transparent 70%)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', top: -40, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37,99,235,0.22) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
-              <div style={{ display: 'inline-block', background: 'rgba(123,108,245,0.2)', border: '1px solid rgba(123,108,245,0.4)', borderRadius: 999, padding: '4px 12px', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-display)', color: '#a89cff', letterSpacing: '0.1em', marginBottom: 16 }}>PRO</div>
+              <div style={{ display: 'inline-block', background: 'rgba(37,99,235,0.2)', border: '1px solid rgba(37,99,235,0.4)', borderRadius: 999, padding: '4px 12px', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-display)', color: '#93C5FD', letterSpacing: '0.1em', marginBottom: 16 }}>PRO</div>
 
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 6 }}>
                 <span style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1 }}>$19</span>
@@ -344,11 +442,11 @@ export default function LandingPage() {
 
               <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 24, lineHeight: 1.5 }}>Turn inconsistent traders into disciplined, data-aware performers.</p>
 
-              <div style={{ borderTop: '1px solid rgba(123,108,245,0.15)', paddingTop: 20, marginBottom: 24 }}>
+              <div style={{ borderTop: '1px solid rgba(37,99,235,0.15)', paddingTop: 20, marginBottom: 24 }}>
                 {PRO_FEATURES.map((f) => (
                   <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 11 }}>
-                    <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'rgba(123,108,245,0.2)', border: '1px solid rgba(123,108,245,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Check className="w-2.5 h-2.5" style={{ color: '#9D8FFF' }} />
+                    <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'rgba(37,99,235,0.2)', border: '1px solid rgba(37,99,235,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Check className="w-2.5 h-2.5" style={{ color: '#93C5FD' }} />
                     </div>
                     <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', fontFamily: 'var(--font-body)' }}>{f}</span>
                   </div>
@@ -356,9 +454,9 @@ export default function LandingPage() {
               </div>
 
               <Link href="/signup"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', height: 48, borderRadius: 10, background: 'linear-gradient(135deg,#7B6CF5,#5C4ED4)', color: '#fff', fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700, textDecoration: 'none', boxShadow: '0 0 30px rgba(123,108,245,0.4)', transition: 'all 0.15s', letterSpacing: '-0.01em' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.02)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 40px rgba(123,108,245,0.55)' }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 30px rgba(123,108,245,0.4)' }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', height: 48, borderRadius: 10, background: 'linear-gradient(135deg,#2563EB,#1D4ED8)', color: '#fff', fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700, textDecoration: 'none', boxShadow: '0 0 30px rgba(37,99,235,0.4)', transition: 'all 0.15s', letterSpacing: '-0.01em' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.02)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 40px rgba(37,99,235,0.55)' }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 30px rgba(37,99,235,0.4)' }}
               >
                 Start Pro — $19/month <ArrowRight className="w-4 h-4" />
               </Link>
@@ -369,10 +467,10 @@ export default function LandingPage() {
       </section>
 
       {/* ── FAQ ── */}
-      <section id="faq" className="py-24 md:py-32" style={{ background: '#0a0a0a' }}>
+      <section id="faq" className="py-24 md:py-32">
         <div className="max-w-3xl mx-auto px-6">
           <div className="reveal text-center mb-14">
-            <p className="page-label mb-3" style={{ color: '#7B6CF5' }}>FAQ</p>
+            <p className="page-label mb-3" style={{ color: BLUE }}>FAQ</p>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 700, letterSpacing: '-0.03em', color: '#fff', lineHeight: 1.1 }}>
               Everything you need to know.
             </h2>
@@ -426,7 +524,7 @@ export default function LandingPage() {
                   style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '20px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                 >
                   <span style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 500, color: '#fff', lineHeight: 1.4 }}>{item.q}</span>
-                  <span style={{ flexShrink: 0, fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 300, color: openFaq === i ? '#7B6CF5' : 'rgba(255,255,255,0.35)', lineHeight: 1, transition: 'color 0.15s' }}>
+                  <span style={{ flexShrink: 0, fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 300, color: openFaq === i ? BLUE : 'rgba(255,255,255,0.35)', lineHeight: 1, transition: 'color 0.15s' }}>
                     {openFaq === i ? '−' : '+'}
                   </span>
                 </button>
@@ -442,8 +540,8 @@ export default function LandingPage() {
       </section>
 
       {/* ── OUTCOME CTA ── */}
-      <section className="py-24 md:py-32 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(123,108,245,0.1) 0%, transparent 70%)' }} />
+      <section className="py-24 md:py-32 relative overflow-hidden" style={{ background: '#040404' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(37,99,235,0.09) 0%, transparent 70%)' }} />
         <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
           <div className="reveal">
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 700, letterSpacing: '-0.03em', marginBottom: '1.25rem', lineHeight: 1.1 }}>
@@ -454,9 +552,9 @@ export default function LandingPage() {
             </p>
             <div className="flex items-center justify-center gap-4 flex-wrap">
               <Link href="/signup"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 36px', borderRadius: 999, background: PURPLE, color: '#fff', fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 600, textDecoration: 'none', boxShadow: '0 0 40px rgba(123,108,245,0.4)', letterSpacing: '-0.01em', transition: 'all 0.2s' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.04)' }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 36px', borderRadius: 999, background: BLUE, color: '#fff', fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 600, textDecoration: 'none', boxShadow: '0 0 40px rgba(37,99,235,0.4)', letterSpacing: '-0.01em', transition: 'all 0.2s cubic-bezier(0.22,1,0.36,1)' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.04)'; (e.currentTarget as HTMLElement).style.background = '#3B82F6' }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLElement).style.background = BLUE }}
               >
                 Start free account <ArrowRight className="w-4 h-4" />
               </Link>
@@ -478,8 +576,8 @@ export default function LandingPage() {
           <KoveWordmark height={22} />
           <span style={{ fontFamily: 'var(--font-display)', fontSize: '12px', color: 'rgba(255,255,255,0.25)' }}>by DMFX · {new Date().getFullYear()}</span>
         </div>
-        <div className="flex items-center gap-6">
-          {[['Features', '#features'], ['Pricing', '#pricing'], ['Sign up', '/signup'], ['Log in', '/login']].map(([l, h]) => (
+        <div className="flex items-center gap-6 flex-wrap justify-center">
+          {[['Features', '#features'], ['Pricing', '#pricing'], ['Sign up', '/signup'], ['Log in', '/login'], ['Terms', '/terms']].map(([l, h]) => (
             <a key={l} href={h} style={{ fontFamily: 'var(--font-display)', fontSize: '12px', color: 'rgba(255,255,255,0.22)', transition: 'color 0.15s', textDecoration: 'none' }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)' }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.22)' }}

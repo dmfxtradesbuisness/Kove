@@ -13,7 +13,8 @@
       "mcp__f5b591cc-cec7-43c2-b34a-e5d5575f56b6__apply_migration",
       "mcp__f5b591cc-cec7-43c2-b34a-e5d5575f56b6__list_projects",
       "Bash(npx tsc:*)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(xargs sed:*)"
     ]
   }
 }

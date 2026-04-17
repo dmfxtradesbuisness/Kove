@@ -455,7 +455,7 @@ function AccountContent() {
           className="w-full lg:w-[380px] lg:flex-shrink-0 flex flex-col gap-4"
           style={{
             background: 'linear-gradient(160deg,#1a1640 0%,#0f0d2a 100%)',
-            border: '1px solid rgba(108,93,211,0.2)',
+            border: '1px solid rgba(29,78,216,0.2)',
             borderRadius: 20,
             padding: 24,
           }}
@@ -467,8 +467,8 @@ function AccountContent() {
               <div
                 className="w-24 h-24 rounded-full flex items-center justify-center overflow-hidden cursor-pointer"
                 style={{
-                  background: avatarUrl ? 'transparent' : 'linear-gradient(135deg,#6C5DD3 0%,#8B7CF8 100%)',
-                  border: '2px solid rgba(108,93,211,0.3)',
+                  background: avatarUrl ? 'transparent' : 'linear-gradient(135deg,#1D4ED8 0%,#3B82F6 100%)',
+                  border: '2px solid rgba(29,78,216,0.3)',
                 }}
                 onClick={() => fileInputRef.current?.click()}
               >
@@ -513,7 +513,7 @@ function AccountContent() {
                   onClick={saveName}
                   disabled={nameSaving}
                   className="w-7 h-7 rounded-lg flex items-center justify-center"
-                  style={{ background: 'rgba(108,93,211,0.2)', color: '#8B7CF8' }}
+                  style={{ background: 'rgba(29,78,216,0.2)', color: '#3B82F6' }}
                 >
                   {nameSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
                 </button>
@@ -533,7 +533,7 @@ function AccountContent() {
                 <button
                   onClick={() => setEditingName(true)}
                   className="w-6 h-6 rounded-md flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity"
-                  style={{ color: '#8B7CF8' }}
+                  style={{ color: '#3B82F6' }}
                 >
                   <Pencil className="w-3 h-3" />
                 </button>
@@ -549,11 +549,11 @@ function AccountContent() {
                 href="/stats?tab=leaderboard"
                 className="flex items-center gap-1.5 px-3 py-1 rounded-full transition-all hover:opacity-80"
                 style={{
-                  background: 'rgba(108,93,211,0.15)',
-                  border: '1px solid rgba(108,93,211,0.3)',
+                  background: 'rgba(29,78,216,0.15)',
+                  border: '1px solid rgba(29,78,216,0.3)',
                   fontSize: 11,
                   fontWeight: 600,
-                  color: '#8B7CF8',
+                  color: '#3B82F6',
                   fontFamily: 'var(--font-display)',
                 }}
               >
@@ -651,7 +651,7 @@ function AccountContent() {
           <div
             className="w-full flex flex-col justify-between p-6"
             style={{
-              background: 'linear-gradient(135deg,#5C4ED4 0%,#7B6CF5 60%,#6060C8 100%)',
+              background: 'linear-gradient(135deg,#1E40AF 0%,#2563EB 60%,#6060C8 100%)',
               borderRadius: 20,
               minHeight: 170,
             }}
@@ -682,7 +682,7 @@ function AccountContent() {
                     onClick={handleManage}
                     disabled={portalLoading}
                     className="flex items-center gap-2 px-4 h-9 rounded-xl text-xs font-semibold transition-all"
-                    style={{ background: '#fff', color: '#5C4ED4' }}
+                    style={{ background: '#fff', color: '#1E40AF' }}
                   >
                     {portalLoading && <Loader2 className="w-3 h-3 animate-spin" />}
                     Manage Billing
@@ -714,10 +714,10 @@ function AccountContent() {
                     onClick={handleUpgrade}
                     disabled={checkoutLoading}
                     className="flex items-center gap-2 px-4 h-9 rounded-xl text-xs font-semibold"
-                    style={{ background: '#fff', color: '#5C4ED4' }}
+                    style={{ background: '#fff', color: '#1E40AF' }}
                   >
                     {checkoutLoading && <Loader2 className="w-3 h-3 animate-spin" />}
-                    <Sparkles className="w-3 h-3" style={{ color: '#5C4ED4' }} />
+                    <Sparkles className="w-3 h-3" style={{ color: '#1E40AF' }} />
                     Upgrade — $19/mo
                   </button>
                 </div>
@@ -742,7 +742,7 @@ function AccountContent() {
               {myPosts.length === 0 ? (
                 <div className="flex flex-col gap-2 py-4 items-center text-center">
                   <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)' }}>No posts yet</p>
-                  <Link href="/community" style={{ fontSize: 11, color: '#8B7CF8', fontWeight: 600 }}>
+                  <Link href="/community" style={{ fontSize: 11, color: '#3B82F6', fontWeight: 600 }}>
                     Go to Community →
                   </Link>
                 </div>

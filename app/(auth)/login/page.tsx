@@ -7,7 +7,6 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { KoveWordmark } from '@/components/KoveLogo'
 import { createClient } from '@/lib/supabase/client'
 
-// ─── OAuth provider buttons ───────────────────────────────────────────────────
 function GoogleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -15,14 +14,6 @@ function GoogleIcon() {
       <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" fill="#34A853"/>
       <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z" fill="#FBBC05"/>
       <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58Z" fill="#EA4335"/>
-    </svg>
-  )
-}
-
-function AppleIcon() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 814 1000" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-      <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105.3-57.8-155.5-127.4C46 405.8 0 310.6 0 219.9c0-145.2 99.9-224.5 196.2-224.5 51.6 0 99.3 34 133.5 34 32.7 0 84.6-36.3 145.3-36.3 22.4 0 108.2 1.9 172.5 82.8zm-250.1-167.4c31.6-37.5 54.3-89.6 54.3-141.9 0-7.1-.6-14.3-1.9-20.1-51.6 1.9-113.3 34.7-150.2 75.2-28.5 32.7-55.1 84.8-55.1 138.2 0 7.7 1.3 15.4 1.9 17.9 3.2.6 8.4 1.3 13.6 1.3 46.2 0 103.7-31.4 137.4-70.6z"/>
     </svg>
   )
 }
@@ -47,7 +38,7 @@ export default function LoginPage() {
   const [password,     setPassword]     = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading,      setLoading]      = useState(false)
-  const [oauthLoading, setOauthLoading] = useState<'google' | 'apple' | null>(null)
+  const [oauthLoading, setOauthLoading] = useState(false)
   const [error,        setError]        = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
@@ -60,21 +51,20 @@ export default function LoginPage() {
     router.refresh()
   }
 
-  async function handleOAuth(provider: 'google' | 'apple') {
-    setOauthLoading(provider)
+  async function handleGoogleOAuth() {
+    setOauthLoading(true)
     setError('')
     const { error } = await supabase.auth.signInWithOAuth({
-      provider,
+      provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
-        queryParams: provider === 'google' ? { access_type: 'offline', prompt: 'consent' } : undefined,
+        queryParams: { access_type: 'offline', prompt: 'consent' },
       },
     })
     if (error) {
       setError(error.message)
-      setOauthLoading(null)
+      setOauthLoading(false)
     }
-    // On success Supabase redirects the browser — no need to setLoading(false)
   }
 
   return (
@@ -105,52 +95,27 @@ export default function LoginPage() {
 
       <div className="px-8 pt-5 pb-8 flex flex-col gap-4">
 
-        {/* ── OAuth buttons ── */}
-        <div className="flex flex-col gap-2.5">
-          {/* Google */}
-          <button
-            onClick={() => handleOAuth('google')}
-            disabled={!!oauthLoading || loading}
-            className="flex items-center justify-center gap-3 w-full h-11 rounded-xl font-semibold text-sm transition-all"
-            style={{
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: 'rgba(255,255,255,0.88)',
-              fontFamily: 'var(--font-display)',
-              cursor: oauthLoading ? 'not-allowed' : 'pointer',
-              opacity: oauthLoading && oauthLoading !== 'google' ? 0.5 : 1,
-            }}
-            onMouseEnter={(e) => { if (!oauthLoading) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)' }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)' }}
-          >
-            {oauthLoading === 'google'
-              ? <Loader2 className="w-4 h-4 animate-spin" />
-              : <GoogleIcon />}
-            Continue with Google
-          </button>
-
-          {/* Apple */}
-          <button
-            onClick={() => handleOAuth('apple')}
-            disabled={!!oauthLoading || loading}
-            className="flex items-center justify-center gap-3 w-full h-11 rounded-xl font-semibold text-sm transition-all"
-            style={{
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: 'rgba(255,255,255,0.88)',
-              fontFamily: 'var(--font-display)',
-              cursor: oauthLoading ? 'not-allowed' : 'pointer',
-              opacity: oauthLoading && oauthLoading !== 'apple' ? 0.5 : 1,
-            }}
-            onMouseEnter={(e) => { if (!oauthLoading) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)' }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)' }}
-          >
-            {oauthLoading === 'apple'
-              ? <Loader2 className="w-4 h-4 animate-spin" />
-              : <AppleIcon />}
-            Continue with Apple
-          </button>
-        </div>
+        {/* ── Google OAuth ── */}
+        <button
+          onClick={handleGoogleOAuth}
+          disabled={oauthLoading || loading}
+          className="flex items-center justify-center gap-3 w-full h-11 rounded-xl font-semibold text-sm transition-all"
+          style={{
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            color: 'rgba(255,255,255,0.88)',
+            fontFamily: 'var(--font-display)',
+            cursor: oauthLoading ? 'not-allowed' : 'pointer',
+            opacity: oauthLoading ? 0.7 : 1,
+          }}
+          onMouseEnter={(e) => { if (!oauthLoading) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.1)' }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)' }}
+        >
+          {oauthLoading
+            ? <Loader2 className="w-4 h-4 animate-spin" />
+            : <GoogleIcon />}
+          Continue with Google
+        </button>
 
         <OAuthDivider />
 
@@ -176,7 +141,7 @@ export default function LoginPage() {
                 href="/forgot-password"
                 className="text-[11px] transition-colors"
                 style={{ fontFamily: 'var(--font-display)', color: 'rgba(255,255,255,0.3)' }}
-                onMouseEnter={(e) => { ;(e.currentTarget as HTMLElement).style.color = '#8B7CF8' }}
+                onMouseEnter={(e) => { ;(e.currentTarget as HTMLElement).style.color = '#3B82F6' }}
                 onMouseLeave={(e) => { ;(e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.3)' }}
               >
                 Forgot password?
@@ -210,7 +175,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          <button type="submit" disabled={loading || !!oauthLoading} className="btn-blue gap-2 w-full">
+          <button type="submit" disabled={loading || oauthLoading} className="btn-blue gap-2 w-full">
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             Sign in with email
           </button>
@@ -218,9 +183,9 @@ export default function LoginPage() {
 
         <div className="text-center text-xs" style={{ fontFamily: 'var(--font-body)', color: 'rgba(255,255,255,0.25)' }}>
           No account?{' '}
-          <Link href="/signup" className="transition-colors" style={{ color: '#8B7CF8' }}
-            onMouseEnter={(e) => { ;(e.currentTarget as HTMLElement).style.color = '#a89bff' }}
-            onMouseLeave={(e) => { ;(e.currentTarget as HTMLElement).style.color = '#8B7CF8' }}>
+          <Link href="/signup" className="transition-colors" style={{ color: '#3B82F6' }}
+            onMouseEnter={(e) => { ;(e.currentTarget as HTMLElement).style.color = '#60A5FA' }}
+            onMouseLeave={(e) => { ;(e.currentTarget as HTMLElement).style.color = '#3B82F6' }}>
             Create one free
           </Link>
         </div>
