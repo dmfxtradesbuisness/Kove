@@ -71,13 +71,20 @@ export async function POST(
       return NextResponse.json({ error: 'type is required' }, { status: 400 })
     }
 
-    // Normalize pair (EURUSD → EUR/USD for common 6-char forex pairs)
-    const pairStr = (pair as string).toUpperCase()
-    const normalizedPair = pairStr.includes('/')
-      ? pairStr
-      : pairStr.length === 6
-        ? `${pairStr.slice(0, 3)}/${pairStr.slice(3)}`
-        : pairStr
+    // Normalize pair — strip futures contract month suffix, keep well-known futures as-is
+    const FUTURES_SYMBOLS = ['NQ','ES','MNQ','MES','RTY','YM','CL','GC','SI','NG','ZB','ZN','ZF','ZT','6E','6J','6B','6A','6C','BTC','ETH','NKD','ZC','ZW','ZS']
+    const pairRaw = (pair as string).trim().toUpperCase()
+      .replace(/\s+\d{2}-\d{2}$/, '')   // "NQ 03-25" → "NQ"
+      .replace(/\s+[A-Z]{3}\d{2,4}$/, '') // "NQ MAR25" → "NQ"
+      .replace(/\s/g, '')
+    const isFutures = FUTURES_SYMBOLS.some((f) => pairRaw === f || pairRaw.startsWith(f + '@') || pairRaw.startsWith(f + '1'))
+    const normalizedPair = pairRaw.includes('/')
+      ? pairRaw
+      : isFutures
+        ? pairRaw.replace(/[@]\w+$/, '')   // strip exchange suffix if any
+        : pairRaw.length === 6 && /^[A-Z]+$/.test(pairRaw)
+          ? `${pairRaw.slice(0, 3)}/${pairRaw.slice(3)}`
+          : pairRaw
 
     // Normalize type
     const typeStr = (type as string).toUpperCase()
