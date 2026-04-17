@@ -3,11 +3,11 @@
 import { useId } from 'react'
 
 /**
- * KoveFX "K" brand mark — 3 diagonal parallelogram bars forming a geometric K.
- * Matches the brand kit's emblem design.
+ * KoveFX "K" brand mark — 3 diagonal parallelogram bars with blue/cyan gradient glow.
  */
 export default function KoveLogo({ size = 32, className = '' }: { size?: number; className?: string }) {
   const uid    = useId().replace(/:/g, '')
+  const gradId = `kgrad-${uid}`
   const glowId = `kglow-${uid}`
 
   return (
@@ -21,8 +21,14 @@ export default function KoveLogo({ size = 32, className = '' }: { size?: number;
       aria-label="Kove"
     >
       <defs>
-        <filter id={glowId} x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="1.5" result="blur" />
+        <linearGradient id={gradId} x1="0" y1="0" x2="70" y2="80" gradientUnits="userSpaceOnUse">
+          <stop offset="0%"  stopColor="#EAF4FF" />
+          <stop offset="35%" stopColor="#6DB4FF" />
+          <stop offset="70%" stopColor="#1E6EFF" />
+          <stop offset="100%" stopColor="#0A3FCC" />
+        </linearGradient>
+        <filter id={glowId} x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="2.2" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
@@ -30,37 +36,33 @@ export default function KoveLogo({ size = 32, className = '' }: { size?: number;
         </filter>
       </defs>
       <g filter={`url(#${glowId})`}>
-        {/* Spine — full-height diagonal bar */}
-        <polygon points="7,72 21,72 27,8 13,8" fill="white" />
-        {/* Upper arm */}
-        <polygon points="37,46 51,46 57,8 43,8" fill="white" />
-        {/* Lower arm */}
-        <polygon points="37,74 51,74 57,50 43,50" fill="white" />
+        <polygon points="7,72 21,72 27,8 13,8"   fill={`url(#${gradId})`} />
+        <polygon points="37,46 51,46 57,8 43,8"  fill={`url(#${gradId})`} />
+        <polygon points="37,74 51,74 57,50 43,50" fill={`url(#${gradId})`} />
       </g>
     </svg>
   )
 }
 
 /**
- * KoveFX horizontal wordmark lockup:
- * [K mark] | [KOVE text]
- * Matches the brand kit's "Secondary Logo — Wordmark Lockup".
+ * KoveFX horizontal wordmark lockup: [K mark] + [KOVE text]
+ * Thin, wide-tracked KOVE with gradient K.
  */
 export function KoveWordmark({ height = 36, className = '' }: { height?: number; className?: string }) {
   const uid    = useId().replace(/:/g, '')
+  const gradId = `wgrad-${uid}`
   const glowId = `wglow-${uid}`
 
-  // K mark is 70×80 viewbox → rendered at height * (70/80)
-  const iconH  = height
-  const iconW  = Math.round(height * 0.875)   // 70/80
-  const scale  = height / 80
+  // K mark scaling (source viewbox 70×80)
+  const iconW = Math.round(height * 0.875)
+  const scale = height / 80
 
-  const divX   = iconW + Math.round(height * 0.45)
-  const textX  = divX + Math.round(height * 0.38)
-  const fs     = Math.round(height * 0.68)    // font-size
-  const ls     = Math.round(fs * 0.18)        // letter-spacing
-  // Approximate "KOVE" text width (4 chars × ~0.7em + trailing spacing)
-  const textW  = Math.round(fs * 4 * 0.62 + ls * 4)
+  const gap    = Math.round(height * 0.42)
+  const textX  = iconW + gap
+  const fs     = Math.round(height * 0.58)          // font-size for KOVE
+  const ls     = Math.round(fs * 0.34)              // wide letter-spacing
+  // Approximate "KOVE" width (4 chars × ~0.62em + 3 gaps of ls)
+  const textW  = Math.round(fs * 4 * 0.62 + ls * 3.5)
   const totalW = textX + textW
 
   return (
@@ -74,8 +76,14 @@ export function KoveWordmark({ height = 36, className = '' }: { height?: number;
       aria-label="KoveFX"
     >
       <defs>
-        <filter id={glowId} x="-10%" y="-10%" width="120%" height="120%">
-          <feGaussianBlur stdDeviation="0.8" result="blur" />
+        <linearGradient id={gradId} x1="0" y1="0" x2="70" y2="80" gradientUnits="userSpaceOnUse">
+          <stop offset="0%"  stopColor="#EAF4FF" />
+          <stop offset="35%" stopColor="#6DB4FF" />
+          <stop offset="70%" stopColor="#1E6EFF" />
+          <stop offset="100%" stopColor="#0A3FCC" />
+        </linearGradient>
+        <filter id={glowId} x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="1.4" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
@@ -83,30 +91,22 @@ export function KoveWordmark({ height = 36, className = '' }: { height?: number;
         </filter>
       </defs>
 
-      {/* ── K mark (scaled) ── */}
+      {/* ── K mark (scaled, gradient) ── */}
       <g transform={`scale(${scale})`} filter={`url(#${glowId})`}>
-        <polygon points="7,72 21,72 27,8 13,8" fill="white" />
-        <polygon points="37,46 51,46 57,8 43,8" fill="white" />
-        <polygon points="37,74 51,74 57,50 43,50" fill="white" />
+        <polygon points="7,72 21,72 27,8 13,8"    fill={`url(#${gradId})`} />
+        <polygon points="37,46 51,46 57,8 43,8"   fill={`url(#${gradId})`} />
+        <polygon points="37,74 51,74 57,50 43,50" fill={`url(#${gradId})`} />
       </g>
 
-      {/* ── Thin vertical divider ── */}
-      <line
-        x1={divX} y1={height * 0.14}
-        x2={divX} y2={height * 0.86}
-        stroke="rgba(255,255,255,0.28)"
-        strokeWidth="1"
-      />
-
-      {/* ── KOVE wordmark text ── */}
+      {/* ── KOVE wordmark — thin, wide-tracked ── */}
       <text
         x={textX}
-        y={height * 0.76}
+        y={height * 0.72}
         fontFamily="Inter, system-ui, sans-serif"
-        fontWeight="800"
+        fontWeight="300"
         fontSize={fs}
         letterSpacing={ls}
-        fill="white"
+        fill="#ffffff"
         style={{ fontFamily: 'var(--font-display)' }}
       >
         KOVE

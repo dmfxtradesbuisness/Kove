@@ -199,19 +199,20 @@ export default function LandingPage() {
 
               <Link href="/login" style={{
                 display:'inline-flex', alignItems:'center',
-                padding: '9px 20px',
+                padding: '9px 22px',
                 borderRadius: 999,
-                background: 'transparent',
-                color: 'rgba(255,255,255,0.75)',
+                background: '#fff',
+                color: '#000',
                 fontFamily: 'var(--font-display)',
                 fontSize: 13,
-                fontWeight: 500,
+                fontWeight: 600,
                 textDecoration: 'none',
-                border: '1px solid rgba(255,255,255,0.25)',
+                border: '1px solid rgba(255,255,255,0.9)',
                 transition: 'all 0.18s',
+                letterSpacing: '-0.01em',
               }}
-              onMouseEnter={(e)=>{ (e.currentTarget as HTMLElement).style.borderColor='rgba(255,255,255,0.55)'; (e.currentTarget as HTMLElement).style.color='#fff' }}
-              onMouseLeave={(e)=>{ (e.currentTarget as HTMLElement).style.borderColor='rgba(255,255,255,0.25)'; (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.75)' }}
+              onMouseEnter={(e)=>{ (e.currentTarget as HTMLElement).style.background='#e8f0ff'; (e.currentTarget as HTMLElement).style.transform='scale(1.03)' }}
+              onMouseLeave={(e)=>{ (e.currentTarget as HTMLElement).style.background='#fff'; (e.currentTarget as HTMLElement).style.transform='scale(1)' }}
               >
                 Sign In
               </Link>
