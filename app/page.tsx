@@ -1,12 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { BarChart2, BookOpen, Brain, ArrowRight, Check } from 'lucide-react'
-import KoveLogo, { KoveWordmark } from '@/components/KoveLogo'
+import { KoveWordmark } from '@/components/KoveLogo'
 import NeonCurves from '@/components/NeonCurves'
 
-/* ─── Scroll-reveal hook ──────────────────────────────────────────────────── */
 function useReveal() {
   useEffect(() => {
     const els = document.querySelectorAll('.reveal')
@@ -19,49 +18,17 @@ function useReveal() {
   }, [])
 }
 
-/* ─── Data ────────────────────────────────────────────────────────────────── */
 const TICKER = [
-  { pair: 'EUR/USD', price: '1.0854', change: '+0.12%', up: true },
-  { pair: 'GBP/USD', price: '1.2634', change: '-0.08%', up: false },
-  { pair: 'XAU/USD', price: '2,345.10', change: '+0.54%', up: true },
-  { pair: 'USD/JPY', price: '149.22',  change: '+0.31%', up: true },
-  { pair: 'BTC/USD', price: '68,210',  change: '+1.24%', up: true },
-  { pair: 'GBP/JPY', price: '192.34',  change: '-0.19%', up: false },
-  { pair: 'NAS100',  price: '18,420',  change: '+0.44%', up: true },
-  { pair: 'ETH/USD', price: '3,412',   change: '+0.91%', up: true },
-  { pair: 'USD/CHF', price: '0.9012',  change: '-0.22%', up: false },
-  { pair: 'AUD/USD', price: '0.6482',  change: '+0.07%', up: true },
-]
-
-const FEATURES = [
-  {
-    icon: BookOpen,
-    label: 'Starter',
-    tag: 'FREE',
-    title: 'Log everything. Miss nothing.',
-    body: 'Entry, exit, SL, TP, lot size, P&L, pair, notes. Built fast so it never interrupts your session. Unlimited trades, forever free.',
-  },
-  {
-    icon: BarChart2,
-    label: 'Performance Data',
-    tag: 'FREE',
-    title: 'The truth about your trading.',
-    body: 'Win rate, equity curve, P&L breakdown, streak tracking. Raw data with zero interpretation. You see the numbers — Starter stops there.',
-  },
-  {
-    icon: Brain,
-    label: 'AI Intelligence',
-    tag: 'PRO',
-    title: "Why you're losing. Exactly.",
-    body: "AI reads your entire trade history and tells you what's actually destroying your consistency. Behavioral patterns, emotional triggers, time-of-day leakage — named precisely.",
-  },
-]
-
-const PRO_INSIGHTS = [
-  { stat: '#1 Issue',       value: 'Revenge trading after losses',      icon: '⚠️' },
-  { stat: 'Friday Effect',  value: 'You lose 62% more on Fridays',      icon: '📉' },
-  { stat: 'Tilt Pattern',   value: 'Win rate drops 18% after 3 losses', icon: '🧠' },
-  { stat: 'Best Setup',     value: 'Morning breakout — 71% win rate',   icon: '🎯' },
+  { pair: 'EUR/USD', price: '1.0854',   change: '+0.12%', up: true  },
+  { pair: 'GBP/USD', price: '1.2634',   change: '-0.08%', up: false },
+  { pair: 'XAU/USD', price: '2,345.10', change: '+0.54%', up: true  },
+  { pair: 'USD/JPY', price: '149.22',   change: '+0.31%', up: true  },
+  { pair: 'BTC/USD', price: '68,210',   change: '+1.24%', up: true  },
+  { pair: 'GBP/JPY', price: '192.34',   change: '-0.19%', up: false },
+  { pair: 'NAS100',  price: '18,420',   change: '+0.44%', up: true  },
+  { pair: 'ETH/USD', price: '3,412',    change: '+0.91%', up: true  },
+  { pair: 'USD/CHF', price: '0.9012',   change: '-0.22%', up: false },
+  { pair: 'AUD/USD', price: '0.6482',   change: '+0.07%', up: true  },
 ]
 
 const FREE_FEATURES = [
@@ -83,10 +50,16 @@ const PRO_FEATURES = [
   'Personalized improvement plan',
 ]
 
-/* ─── Component ───────────────────────────────────────────────────────────── */
+const PRO_INSIGHTS = [
+  { stat: '#1 Issue',      value: 'Revenge trading after losses',      icon: '⚠️' },
+  { stat: 'Friday Effect', value: 'You lose 62% more on Fridays',      icon: '📉' },
+  { stat: 'Tilt Pattern',  value: 'Win rate drops 18% after 3 losses', icon: '🧠' },
+  { stat: 'Best Setup',    value: 'Morning breakout — 71% win rate',   icon: '🎯' },
+]
+
 export default function LandingPage() {
   useReveal()
-  const [tickers] = useState([...TICKER, ...TICKER])
+  const [tickers]  = useState([...TICKER, ...TICKER])
   const [scrolled, setScrolled] = useState(false)
   const [openFaq,  setOpenFaq]  = useState<number | null>(null)
 
@@ -96,470 +69,387 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', h)
   }, [])
 
-  /* accent colours — blue to match brand kit aesthetic */
-  const BLUE  = '#1E64FF'
-  const BLUE2 = '#3B82F6'
-
   return (
-    <div style={{ background: '#000', color: '#fff', minHeight: '100vh', overflowX: 'hidden' }}>
+    <>
+      <style>{`
+        @keyframes lineUp {
+          from { opacity: 0; transform: translateY(22px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .hl { opacity: 0; animation: lineUp 0.7s cubic-bezier(0.22,1,0.36,1) forwards; }
+        .hl-1 { animation-delay: 0.08s; }
+        .hl-2 { animation-delay: 0.18s; }
+        .hl-3 { animation-delay: 0.30s; }
+        .hl-4 { animation-delay: 0.44s; }
+        .hl-5 { animation-delay: 0.56s; }
+        .nc { opacity: 0; animation: lineUp 1s cubic-bezier(0.22,1,0.36,1) 0.05s forwards; }
+      `}</style>
 
-      {/* ══════════════════ NAV ══════════════════ */}
-      <nav
-        className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
-        style={{
-          background: scrolled ? 'rgba(0,0,0,0.96)' : 'rgba(0,0,0,0)',
-          borderBottom: scrolled ? '1px solid rgba(255,255,255,0.07)' : '1px solid transparent',
-          backdropFilter: scrolled ? 'blur(20px)' : 'none',
-        }}
-      >
-        <div className="max-w-[1400px] mx-auto px-6 h-[60px] flex items-center">
+      <div style={{ background: '#000', color: '#fff', minHeight: '100vh', overflowX: 'hidden' }}>
+
+        {/* ── NAV ── */}
+        <nav style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
+          height: 52,
+          display: 'flex', alignItems: 'center',
+          padding: '0 28px',
+          background: scrolled ? 'rgba(0,0,0,0.92)' : 'transparent',
+          backdropFilter: scrolled ? 'blur(18px)' : 'none',
+          borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : 'none',
+          transition: 'background 0.3s, border-color 0.3s',
+        }}>
           {/* Brand */}
-          <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <KoveWordmark height={30} />
+          <Link href="/" style={{ display:'flex', alignItems:'center', textDecoration:'none', flexShrink: 0 }}>
+            <KoveWordmark height={28} />
           </Link>
 
-          {/* Center links */}
-          <div className="hidden md:flex items-center gap-10 mx-auto">
-            {['Pricing', 'Features', 'FAQ'].map((l) => (
-              <a
-                key={l}
-                href={`#${l.toLowerCase()}`}
-                style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', transition: 'color 0.15s' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#fff' }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.5)' }}
-              >
-                {l}
-              </a>
+          {/* Center nav */}
+          <div style={{ display:'flex', alignItems:'center', gap: 36, margin: '0 auto' }}>
+            {['Pricing','Features','FAQ'].map((l) => (
+              <a key={l} href={`#${l.toLowerCase()}`} style={{
+                fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 400,
+                color: 'rgba(255,255,255,0.5)', textDecoration:'none', transition:'color 0.15s',
+              }}
+              onMouseEnter={(e)=>{(e.currentTarget as HTMLElement).style.color='#fff'}}
+              onMouseLeave={(e)=>{(e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.5)'}}
+              >{l}</a>
             ))}
           </div>
 
-          {/* Right CTA */}
-          <div className="hidden md:flex items-center gap-3 ml-auto">
-            <Link href="/login"
-              style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.55)', textDecoration: 'none', padding: '8px 18px', transition: 'color 0.15s' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#fff' }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)' }}
-            >
-              Sign In
-            </Link>
-            <Link href="/signup"
-              style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 600, color: '#fff', textDecoration: 'none', padding: '8px 20px', borderRadius: 6, background: BLUE, boxShadow: '0 0 22px rgba(30,100,255,0.45)', transition: 'all 0.18s' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = BLUE2; (e.currentTarget as HTMLElement).style.transform = 'scale(1.03)' }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = BLUE; (e.currentTarget as HTMLElement).style.transform = 'scale(1)' }}
-            >
-              Get Started
-            </Link>
+          {/* Spacer to balance brand on left */}
+          <div style={{ flexShrink: 0, width: 120 }} />
+        </nav>
+
+        {/* ── HERO ── */}
+        <section style={{ position: 'relative', height: '100vh', minHeight: 560, overflow: 'hidden', background: '#000' }}>
+
+          {/* Neon curves — full hero, behind text */}
+          <div className="nc" style={{ position:'absolute', inset:0, zIndex:1 }}>
+            <NeonCurves className="w-full h-full" />
           </div>
-        </div>
-      </nav>
 
-      {/* ══════════════════ HERO ══════════════════ */}
-      <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+          {/* Text content — left side */}
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 2,
+            display: 'flex', flexDirection: 'column', justifyContent: 'center',
+            paddingLeft: 'max(28px, 5vw)', paddingTop: 52,
+            maxWidth: 520,
+          }}>
 
-        {/* Left — headline content */}
-        <div
-          className="relative z-10 flex flex-col"
-          style={{ paddingLeft: 'max(2rem, 6vw)', paddingRight: '2rem', paddingTop: '80px', paddingBottom: '80px', maxWidth: '54vw', minWidth: 320 }}
-        >
-          {/* Eyebrow */}
-          <div
-            className="hero-line"
-            style={{ animationDelay: '0.05s', display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 28 }}
-          >
-            <span style={{
-              display: 'inline-block',
-              background: 'rgba(30,100,255,0.12)',
-              border: '1px solid rgba(30,100,255,0.3)',
-              borderRadius: 999,
-              padding: '5px 14px',
+            {/* Heading line 1 */}
+            <h1 className="hl hl-1" style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 11,
-              fontWeight: 600,
-              color: '#60A5FA',
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
+              fontSize: 'clamp(26px, 3.6vw, 42px)',
+              fontWeight: 700,
+              letterSpacing: '-0.025em',
+              lineHeight: 1.15,
+              margin: 0,
+              color: '#fff',
             }}>
-              AI-Powered Trading Journal
-            </span>
-          </div>
+              A Powerful Trade Journal,
+            </h1>
 
-          {/* Main heading */}
-          <h1
-            className="hero-line"
-            style={{
-              animationDelay: '0.15s',
+            {/* Heading line 2 */}
+            <h1 className="hl hl-2" style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(2.6rem, 5.5vw, 5rem)',
-              fontWeight: 800,
-              letterSpacing: '-0.04em',
-              lineHeight: 1.06,
-              margin: '0 0 10px',
-            }}
-          >
-            A Powerful Trade Journal,
-          </h1>
-          <h1
-            className="hero-line"
-            style={{
-              animationDelay: '0.25s',
-              fontFamily: 'var(--font-display)',
-              fontSize: 'clamp(2.6rem, 5.5vw, 5rem)',
-              fontWeight: 800,
-              letterSpacing: '-0.04em',
-              lineHeight: 1.06,
-              margin: '0 0 32px',
-              color: 'rgba(255,255,255,0.9)',
-            }}
-          >
-            Powered by <span style={{ color: BLUE2 }}>AI</span>
-          </h1>
+              fontSize: 'clamp(26px, 3.6vw, 42px)',
+              fontWeight: 700,
+              letterSpacing: '-0.025em',
+              lineHeight: 1.15,
+              margin: '0 0 16px',
+              color: '#fff',
+            }}>
+              Powered by AI
+            </h1>
 
-          {/* Subheadline */}
-          <p
-            className="hero-line"
-            style={{
-              animationDelay: '0.38s',
+            {/* Subtext */}
+            <p className="hl hl-3" style={{
               fontFamily: 'var(--font-body)',
-              fontSize: 'clamp(0.9rem, 1.5vw, 1.05rem)',
-              color: 'rgba(255,255,255,0.42)',
-              lineHeight: 1.7,
-              maxWidth: 440,
+              fontSize: 13,
               fontWeight: 300,
-              margin: '0 0 44px',
-            }}
-          >
-            The AI trading journal that actually helps you improve.
-            Stop guessing why you&apos;re losing — see exactly what&apos;s destroying your consistency.
-          </p>
+              color: 'rgba(255,255,255,0.45)',
+              lineHeight: 1.6,
+              margin: '0 0 28px',
+              maxWidth: 340,
+            }}>
+              The Ai Trading Journal That actually Helps You Improve
+            </p>
 
-          {/* CTAs */}
-          <div className="hero-line flex items-center gap-4 flex-wrap" style={{ animationDelay: '0.52s' }}>
-            <Link href="/signup"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                padding: '13px 28px', borderRadius: 8,
-                background: '#fff', color: '#000',
-                fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700,
-                textDecoration: 'none', letterSpacing: '-0.01em',
-                boxShadow: '0 0 0 1px rgba(255,255,255,0.08)',
-                transition: 'all 0.18s cubic-bezier(0.22,1,0.36,1)',
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.04)'; (e.currentTarget as HTMLElement).style.background = '#e8f0ff' }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLElement).style.background = '#fff' }}
-            >
-              Explore KovePro <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link href="/login"
-              style={{
-                display: 'inline-flex', alignItems: 'center',
-                padding: '13px 24px', borderRadius: 8,
-                background: 'transparent',
-                border: '1px solid rgba(255,255,255,0.14)',
-                color: 'rgba(255,255,255,0.6)',
-                fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600,
+            {/* Buttons */}
+            <div className="hl hl-4" style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+              <Link href="/signup" style={{
+                display:'inline-flex', alignItems:'center',
+                padding: '9px 20px',
+                borderRadius: 999,
+                background: '#fff',
+                color: '#000',
+                fontFamily: 'var(--font-display)',
+                fontSize: 13,
+                fontWeight: 600,
                 textDecoration: 'none',
+                border: '1px solid rgba(255,255,255,0.9)',
+                transition: 'all 0.18s',
+                letterSpacing: '-0.01em',
+              }}
+              onMouseEnter={(e)=>{ (e.currentTarget as HTMLElement).style.background='#e8f0ff'; (e.currentTarget as HTMLElement).style.transform='scale(1.03)' }}
+              onMouseLeave={(e)=>{ (e.currentTarget as HTMLElement).style.background='#fff'; (e.currentTarget as HTMLElement).style.transform='scale(1)' }}
+              >
+                Explore KovePro
+              </Link>
+
+              <Link href="/login" style={{
+                display:'inline-flex', alignItems:'center',
+                padding: '9px 20px',
+                borderRadius: 999,
+                background: 'transparent',
+                color: 'rgba(255,255,255,0.75)',
+                fontFamily: 'var(--font-display)',
+                fontSize: 13,
+                fontWeight: 500,
+                textDecoration: 'none',
+                border: '1px solid rgba(255,255,255,0.25)',
                 transition: 'all 0.18s',
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.3)'; (e.currentTarget as HTMLElement).style.color = '#fff' }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.14)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)' }}
-            >
-              Sign In
-            </Link>
+              onMouseEnter={(e)=>{ (e.currentTarget as HTMLElement).style.borderColor='rgba(255,255,255,0.55)'; (e.currentTarget as HTMLElement).style.color='#fff' }}
+              onMouseLeave={(e)=>{ (e.currentTarget as HTMLElement).style.borderColor='rgba(255,255,255,0.25)'; (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.75)' }}
+              >
+                Sign In
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* ── TICKER ── */}
+        <div style={{ background:'#050505', borderTop:'1px solid rgba(255,255,255,0.05)', borderBottom:'1px solid rgba(255,255,255,0.05)', overflow:'hidden', height:40, display:'flex', alignItems:'center' }}>
+          <div className="ticker-track" style={{ display:'flex', alignItems:'center', gap:48, whiteSpace:'nowrap' }}>
+            {tickers.map((t, i) => (
+              <div key={i} style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+                <span style={{ fontFamily:'var(--font-display)', fontSize:11, color:'rgba(255,255,255,0.5)', fontWeight:600 }}>{t.pair}</span>
+                <span style={{ fontFamily:'var(--font-body)',   fontSize:11, color:'rgba(255,255,255,0.28)' }}>{t.price}</span>
+                <span style={{ fontFamily:'var(--font-display)', fontSize:10, color: t.up ? '#34D399':'#F87171', fontWeight:600 }}>{t.change}</span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Right — animated neon curves */}
-        <div
-          className="hero-curves"
-          style={{ position: 'absolute', top: 0, right: 0, width: '58%', height: '100%', pointerEvents: 'none' }}
-        >
-          <NeonCurves className="w-full h-full" />
-        </div>
-      </section>
-
-      {/* ══════════════════ TICKER ══════════════════ */}
-      <div style={{ background: '#050505', borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden', height: '40px', display: 'flex', alignItems: 'center' }}>
-        <div className="ticker-track flex items-center gap-12" style={{ whiteSpace: 'nowrap' }}>
-          {tickers.map((t, i) => (
-            <div key={i} className="flex items-center gap-2 shrink-0">
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{t.pair}</span>
-              <span style={{ fontFamily: 'var(--font-body)',   fontSize: 11, color: 'rgba(255,255,255,0.28)' }}>{t.price}</span>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: 10, color: t.up ? '#34D399' : '#F87171', fontWeight: 600 }}>{t.change}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ══════════════════ PROBLEM STATEMENT ══════════════════ */}
-      <section className="py-24 md:py-28">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <div className="reveal">
-            <p className="page-label mb-4" style={{ color: BLUE2 }}>The problem</p>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem, 4vw, 3rem)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.15, color: '#fff', marginBottom: '1.5rem' }}>
+        {/* ── PROBLEM ── */}
+        <section style={{ padding:'96px 24px' }}>
+          <div style={{ maxWidth:760, margin:'0 auto', textAlign:'center' }} className="reveal">
+            <p style={{ fontFamily:'var(--font-display)', fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.14em', color:'rgba(255,255,255,0.3)', marginBottom:16 }}>The problem</p>
+            <h2 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(1.7rem,3.8vw,2.8rem)', fontWeight:700, letterSpacing:'-0.03em', lineHeight:1.15, marginBottom:24 }}>
               You already know you&apos;re making mistakes.<br />
-              <span style={{ color: 'rgba(255,255,255,0.3)' }}>You just don&apos;t know which ones.</span>
+              <span style={{ color:'rgba(255,255,255,0.28)' }}>You just don&apos;t know which ones.</span>
             </h2>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'rgba(255,255,255,0.38)', lineHeight: 1.75, maxWidth: 560, margin: '0 auto' }}>
+            <p style={{ fontFamily:'var(--font-body)', fontSize:14, color:'rgba(255,255,255,0.38)', lineHeight:1.75, maxWidth:520, margin:'0 auto' }}>
               Most traders log trades but never understand them. You see the numbers — but not the behavioral patterns behind them.
               The revenge trades, the Friday slippage, the tilt spirals. KoveFX makes those visible.
             </p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ══════════════════ FEATURES ══════════════════ */}
-      <section id="features" className="py-12 md:py-16" style={{ background: '#060606' }}>
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="reveal mb-14">
-            <p className="page-label mb-3" style={{ color: BLUE2 }}>How it works</p>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 4.5vw, 3.2rem)', fontWeight: 700, letterSpacing: '-0.03em', color: '#fff', maxWidth: 600, lineHeight: 1.1 }}>
-              Starter tracks data.<br />Pro understands it.
-            </h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-4">
-            {FEATURES.map(({ icon: Icon, label, tag, title, body }, i) => (
-              <div
-                key={label}
-                className={`reveal reveal-delay-${i + 1} transition-all duration-300`}
-                style={{
-                  background: tag === 'PRO' ? 'linear-gradient(145deg,#050d1e,#030c18)' : '#0a0a0a',
-                  border: `1px solid ${tag === 'PRO' ? 'rgba(30,100,255,0.25)' : 'rgba(255,255,255,0.06)'}`,
-                  borderRadius: 12, padding: 28, position: 'relative',
-                  boxShadow: tag === 'PRO' ? '0 0 40px rgba(30,100,255,0.08)' : 'none',
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = tag === 'PRO' ? 'rgba(30,100,255,0.5)' : 'rgba(255,255,255,0.12)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-3px)' }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = tag === 'PRO' ? 'rgba(30,100,255,0.25)' : 'rgba(255,255,255,0.06)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}
-              >
-                <div style={{ position: 'absolute', top: 16, right: 16, background: tag === 'PRO' ? BLUE : 'rgba(255,255,255,0.07)', color: '#fff', fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-display)', padding: '3px 8px', borderRadius: 999, letterSpacing: '0.1em' }}>{tag}</div>
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-5" style={{ background: 'rgba(30,100,255,0.1)', border: '1px solid rgba(30,100,255,0.2)' }}>
-                  <Icon className="w-4 h-4" style={{ color: BLUE2 }} />
-                </div>
-                <p style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 600, color: 'rgba(59,130,246,0.7)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 8 }}>{label}</p>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', fontWeight: 700, color: '#fff', letterSpacing: '-0.02em', marginBottom: 10, lineHeight: 1.3 }}>{title}</h3>
-                <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.38)', lineHeight: 1.7 }}>{body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════ PRO INSIGHTS ══════════════════ */}
-      <section className="py-24 md:py-32 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(30,100,255,0.07) 0%, transparent 70%)' }} />
-        <div className="max-w-5xl mx-auto px-6 relative z-10">
-          <div className="reveal text-center mb-14">
-            <p className="page-label mb-3" style={{ color: BLUE2 }}>Pro Intelligence</p>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#fff' }}>
-              This is what Pro shows you<br />
-              <span style={{ color: 'rgba(255,255,255,0.3)' }}>on day one.</span>
-            </h2>
-          </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            {PRO_INSIGHTS.map((ins, i) => (
-              <div
-                key={i}
-                className={`reveal reveal-delay-${i + 1}`}
-                style={{ background: 'linear-gradient(145deg,#050d1e,#030c18)', border: '1px solid rgba(30,100,255,0.18)', borderRadius: 16, padding: '24px 28px', display: 'flex', alignItems: 'center', gap: 20, transition: 'all 0.2s' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(30,100,255,0.4)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(30,100,255,0.18)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}
-              >
-                <span style={{ fontSize: 32, flexShrink: 0 }}>{ins.icon}</span>
-                <div>
-                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 700, color: 'rgba(59,130,246,0.7)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4 }}>{ins.stat}</p>
-                  <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', fontWeight: 700, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.3 }}>{ins.value}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <p className="text-center mt-8 reveal" style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.28)' }}>
-            Generated from your actual trade history. Not generic advice.
-          </p>
-        </div>
-      </section>
-
-      {/* ══════════════════ PRICING ══════════════════ */}
-      <section id="pricing" className="py-24 md:py-32" style={{ background: '#060606' }}>
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="reveal text-center mb-14">
-            <p className="page-label mb-3" style={{ color: BLUE2 }}>Pricing</p>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 700, letterSpacing: '-0.03em' }}>
-              The difference between random trading<br />and consistent performance.
-            </h2>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'rgba(255,255,255,0.35)', marginTop: 12 }}>
-              Starter is free forever. Pro is where the intelligence lives.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-5 max-w-3xl mx-auto">
-            {/* Starter */}
-            <div className="reveal" style={{ background: '#0a0a0a', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: 32 }}>
-              <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 999, padding: '4px 12px', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-display)', color: 'rgba(255,255,255,0.45)', letterSpacing: '0.1em', marginBottom: 16 }}>STARTER</div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, marginBottom: 6 }}>
-                <span style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1 }}>$0</span>
-                <span style={{ color: 'rgba(255,255,255,0.28)', fontSize: 14, marginBottom: 6 }}>/month</span>
-              </div>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 24, lineHeight: 1.5 }}>Track everything. Zero intelligence layer.</p>
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 20, marginBottom: 24 }}>
-                {FREE_FEATURES.map((f) => (
-                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 11 }}>
-                    <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'rgba(255,255,255,0.25)' }} />
-                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-body)' }}>{f}</span>
-                  </div>
-                ))}
-              </div>
-              <Link href="/signup"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: 46, borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, textDecoration: 'none', transition: 'all 0.15s' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.22)'; (e.currentTarget as HTMLElement).style.color = '#fff' }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)' }}
-              >
-                Start free — no card needed
-              </Link>
+        {/* ── FEATURES ── */}
+        <section id="features" style={{ padding:'64px 24px', background:'#060606' }}>
+          <div style={{ maxWidth:1100, margin:'0 auto' }}>
+            <div className="reveal" style={{ marginBottom:56 }}>
+              <p style={{ fontFamily:'var(--font-display)', fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.14em', color:'rgba(255,255,255,0.3)', marginBottom:12 }}>How it works</p>
+              <h2 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(1.8rem,4vw,3rem)', fontWeight:700, letterSpacing:'-0.03em', lineHeight:1.1 }}>
+                Starter tracks data.<br />Pro understands it.
+              </h2>
             </div>
-
-            {/* Pro */}
-            <div className="reveal reveal-delay-1" style={{ background: 'linear-gradient(145deg,#050d1e 0%,#030c18 100%)', border: '1px solid rgba(30,100,255,0.3)', borderRadius: 16, padding: 32, position: 'relative', overflow: 'hidden', boxShadow: '0 0 60px rgba(30,100,255,0.12)' }}>
-              <div style={{ position: 'absolute', top: -40, right: -40, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(30,100,255,0.2) 0%, transparent 70%)', pointerEvents: 'none' }} />
-              <div style={{ display: 'inline-block', background: 'rgba(30,100,255,0.15)', border: '1px solid rgba(30,100,255,0.35)', borderRadius: 999, padding: '4px 12px', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-display)', color: '#93C5FD', letterSpacing: '0.1em', marginBottom: 16 }}>PRO</div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 6 }}>
-                <span style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1 }}>$19</span>
-                <div style={{ marginBottom: 6 }}>
-                  <span style={{ display: 'block', fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.35)', textDecoration: 'line-through', lineHeight: 1 }}>$29/mo</span>
-                  <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>/month</span>
-                </div>
-                <div style={{ marginBottom: 8, marginLeft: 4, background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.25)', borderRadius: 6, padding: '2px 8px', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-display)', color: '#34d399' }}>SAVE 35%</div>
-              </div>
-              <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 24, lineHeight: 1.5 }}>Turn inconsistent traders into disciplined, data-aware performers.</p>
-              <div style={{ borderTop: '1px solid rgba(30,100,255,0.12)', paddingTop: 20, marginBottom: 24 }}>
-                {PRO_FEATURES.map((f) => (
-                  <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 11 }}>
-                    <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'rgba(30,100,255,0.18)', border: '1px solid rgba(30,100,255,0.38)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Check className="w-2.5 h-2.5" style={{ color: '#93C5FD' }} />
-                    </div>
-                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', fontFamily: 'var(--font-body)' }}>{f}</span>
-                  </div>
-                ))}
-              </div>
-              <Link href="/signup"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', height: 48, borderRadius: 10, background: `linear-gradient(135deg,${BLUE},#1D4ED8)`, color: '#fff', fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700, textDecoration: 'none', boxShadow: '0 0 30px rgba(30,100,255,0.38)', transition: 'all 0.15s', letterSpacing: '-0.01em' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.02)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 42px rgba(30,100,255,0.55)' }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 30px rgba(30,100,255,0.38)' }}
-              >
-                Start Pro — $19/month <ArrowRight className="w-4 h-4" />
-              </Link>
-              <p style={{ textAlign: 'center', marginTop: 10, fontFamily: 'var(--font-body)', fontSize: 11, color: 'rgba(255,255,255,0.22)' }}>Cancel anytime · 7-day money back guarantee</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════ FAQ ══════════════════ */}
-      <section id="faq" className="py-24 md:py-32">
-        <div className="max-w-3xl mx-auto px-6">
-          <div className="reveal text-center mb-14">
-            <p className="page-label mb-3" style={{ color: BLUE2 }}>FAQ</p>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 700, letterSpacing: '-0.03em', color: '#fff', lineHeight: 1.1 }}>
-              Everything you need to know.
-            </h2>
-          </div>
-          <div className="reveal">
-            {[
-              { q: 'How do I log a trade?', a: 'Go to the Trade Journal from the sidebar. Tap the + button, fill in the pair, entry/exit, stop loss, take profit, lot size, and any notes. P&L calculates automatically for closed trades.' },
-              { q: "What's the Discipline Score?", a: 'The Discipline Score (0–100) grades your trading behavior across four categories: stop loss usage, win rate, overtrading frequency, and revenge trading patterns. It updates every time you log a trade.' },
-              { q: 'How does Win Rate work?', a: "Win rate only starts calculating after you've logged at least 10 closed trades. This prevents meaningless percentages from a small sample size." },
-              { q: 'What is the Goals tab?', a: 'Set monthly targets for P&L, win rate, and max drawdown. KoveFX tracks progress with visual rings and milestone checklists so you always know where you stand.' },
-              { q: "What's in the Economic Calendar?", a: "The News tab shows this week's high-impact market events — CPI, NFP, FOMC, PPI, GDP, and more. Filter by impact level or by currency." },
-              { q: 'What is the Community tab?', a: "Share trade setups, wins, losses, and market reactions with other traders. Follow people, react to posts, and see a curated feed." },
-              { q: 'Is my data private?', a: 'Yes. Your trades, journal entries, and statistics are private by default. Only your Community posts are visible to others — and only when you choose to post.' },
-              { q: 'Do I need a credit card to start?', a: 'No. Starter is completely free forever with no card required. Pro ($19/month) unlocks the full AI intelligence layer.' },
-              { q: "What's the difference between Starter and Pro?", a: 'Starter gives you unlimited trade logging, full history, and basic stats. Pro adds behavioral AI analysis, discipline scoring, pattern detection, and personalized insights.' },
-            ].map((item, i) => (
-              <div key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '20px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:16 }}>
+              {[
+                { icon: BookOpen, label:'Starter',          tag:'FREE', title:'Log everything. Miss nothing.',  body:"Entry, exit, SL, TP, lot size, P&L, pair, notes. Built fast so it never interrupts your session. Unlimited trades, forever free." },
+                { icon: BarChart2, label:'Performance Data', tag:'FREE', title:'The truth about your trading.',  body:"Win rate, equity curve, P&L breakdown, streak tracking. Raw data with zero interpretation. You see the numbers — Starter stops there." },
+                { icon: Brain,    label:'AI Intelligence',  tag:'PRO',  title:"Why you're losing. Exactly.",    body:"AI reads your entire trade history and tells you what's destroying your consistency. Behavioral patterns, emotional triggers, time-of-day leakage — named precisely." },
+              ].map(({ icon: Icon, label, tag, title, body }, i) => (
+                <div key={label}
+                  className={`reveal reveal-delay-${i+1}`}
+                  style={{ background: tag==='PRO'?'linear-gradient(145deg,#050d1e,#030c18)':'#0a0a0a', border:`1px solid ${tag==='PRO'?'rgba(30,100,255,0.22)':'rgba(255,255,255,0.06)'}`, borderRadius:12, padding:28, position:'relative', transition:'all 0.2s' }}
+                  onMouseEnter={(e)=>{ (e.currentTarget as HTMLElement).style.borderColor=tag==='PRO'?'rgba(30,100,255,0.48)':'rgba(255,255,255,0.12)'; (e.currentTarget as HTMLElement).style.transform='translateY(-3px)' }}
+                  onMouseLeave={(e)=>{ (e.currentTarget as HTMLElement).style.borderColor=tag==='PRO'?'rgba(30,100,255,0.22)':'rgba(255,255,255,0.06)'; (e.currentTarget as HTMLElement).style.transform='translateY(0)' }}
                 >
-                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 500, color: '#fff', lineHeight: 1.4 }}>{item.q}</span>
-                  <span style={{ flexShrink: 0, fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 300, color: openFaq === i ? BLUE2 : 'rgba(255,255,255,0.35)', lineHeight: 1, transition: 'color 0.15s' }}>
-                    {openFaq === i ? '−' : '+'}
-                  </span>
-                </button>
-                {openFaq === i && (
-                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.7, paddingBottom: 20, margin: 0 }}>
-                    {item.a}
-                  </p>
-                )}
-              </div>
-            ))}
+                  <span style={{ position:'absolute', top:14, right:14, background:tag==='PRO'?'#1E64FF':'rgba(255,255,255,0.07)', color:'#fff', fontSize:9, fontWeight:700, fontFamily:'var(--font-display)', padding:'3px 8px', borderRadius:999, letterSpacing:'0.1em' }}>{tag}</span>
+                  <div style={{ width:38, height:38, borderRadius:9, background:'rgba(30,100,255,0.1)', border:'1px solid rgba(30,100,255,0.2)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:18 }}>
+                    <Icon style={{ width:16, height:16, color:'#60A5FA' }} />
+                  </div>
+                  <p style={{ fontFamily:'var(--font-display)', fontSize:9, fontWeight:700, color:'rgba(96,165,250,0.65)', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:8 }}>{label}</p>
+                  <h3 style={{ fontFamily:'var(--font-display)', fontSize:'1rem', fontWeight:700, color:'#fff', letterSpacing:'-0.02em', marginBottom:10, lineHeight:1.3 }}>{title}</h3>
+                  <p style={{ fontFamily:'var(--font-body)', fontSize:13, color:'rgba(255,255,255,0.38)', lineHeight:1.7 }}>{body}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ══════════════════ CTA ══════════════════ */}
-      <section className="py-24 md:py-32 relative overflow-hidden" style={{ background: '#060606' }}>
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(30,100,255,0.08) 0%, transparent 70%)' }} />
-        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-          <div className="reveal">
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 700, letterSpacing: '-0.03em', marginBottom: '1.25rem', lineHeight: 1.1 }}>
+        {/* ── PRO INSIGHTS ── */}
+        <section style={{ padding:'96px 24px', position:'relative', overflow:'hidden' }}>
+          <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(30,100,255,0.06) 0%, transparent 70%)', pointerEvents:'none' }} />
+          <div style={{ maxWidth:960, margin:'0 auto', position:'relative', zIndex:1 }}>
+            <div className="reveal" style={{ textAlign:'center', marginBottom:56 }}>
+              <p style={{ fontFamily:'var(--font-display)', fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.14em', color:'rgba(255,255,255,0.3)', marginBottom:12 }}>Pro Intelligence</p>
+              <h2 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(1.8rem,3.8vw,2.8rem)', fontWeight:700, letterSpacing:'-0.03em', lineHeight:1.1 }}>
+                This is what Pro shows you<br /><span style={{ color:'rgba(255,255,255,0.28)' }}>on day one.</span>
+              </h2>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))', gap:14 }}>
+              {PRO_INSIGHTS.map((ins, i) => (
+                <div key={i} className={`reveal reveal-delay-${i+1}`}
+                  style={{ background:'linear-gradient(145deg,#050d1e,#030c18)', border:'1px solid rgba(30,100,255,0.16)', borderRadius:14, padding:'22px 26px', display:'flex', alignItems:'center', gap:18, transition:'all 0.2s' }}
+                  onMouseEnter={(e)=>{ (e.currentTarget as HTMLElement).style.borderColor='rgba(30,100,255,0.38)'; (e.currentTarget as HTMLElement).style.transform='translateY(-2px)' }}
+                  onMouseLeave={(e)=>{ (e.currentTarget as HTMLElement).style.borderColor='rgba(30,100,255,0.16)'; (e.currentTarget as HTMLElement).style.transform='translateY(0)' }}
+                >
+                  <span style={{ fontSize:30, flexShrink:0 }}>{ins.icon}</span>
+                  <div>
+                    <p style={{ fontFamily:'var(--font-display)', fontSize:9, fontWeight:700, color:'rgba(96,165,250,0.65)', textTransform:'uppercase', letterSpacing:'0.12em', marginBottom:4 }}>{ins.stat}</p>
+                    <p style={{ fontFamily:'var(--font-display)', fontSize:'1rem', fontWeight:700, color:'#fff', letterSpacing:'-0.02em' }}>{ins.value}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── PRICING ── */}
+        <section id="pricing" style={{ padding:'96px 24px', background:'#060606' }}>
+          <div style={{ maxWidth:900, margin:'0 auto' }}>
+            <div className="reveal" style={{ textAlign:'center', marginBottom:56 }}>
+              <p style={{ fontFamily:'var(--font-display)', fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.14em', color:'rgba(255,255,255,0.3)', marginBottom:12 }}>Pricing</p>
+              <h2 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(1.8rem,3.8vw,2.8rem)', fontWeight:700, letterSpacing:'-0.03em' }}>
+                Starter is free forever.<br />Pro is where the intelligence lives.
+              </h2>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))', gap:16, maxWidth:720, margin:'0 auto' }}>
+              {/* Starter */}
+              <div className="reveal" style={{ background:'#0a0a0a', border:'1px solid rgba(255,255,255,0.07)', borderRadius:16, padding:32 }}>
+                <div style={{ display:'inline-block', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:999, padding:'3px 11px', fontSize:9, fontWeight:700, fontFamily:'var(--font-display)', color:'rgba(255,255,255,0.4)', letterSpacing:'0.1em', marginBottom:16 }}>STARTER</div>
+                <div style={{ display:'flex', alignItems:'flex-end', gap:4, marginBottom:6 }}>
+                  <span style={{ fontFamily:'var(--font-display)', fontSize:'2.8rem', fontWeight:800, color:'#fff', letterSpacing:'-0.04em', lineHeight:1 }}>$0</span>
+                  <span style={{ color:'rgba(255,255,255,0.28)', fontSize:13, marginBottom:5 }}>/month</span>
+                </div>
+                <p style={{ fontFamily:'var(--font-body)', fontSize:13, color:'rgba(255,255,255,0.28)', marginBottom:24, lineHeight:1.5 }}>Track everything. Zero intelligence layer.</p>
+                <div style={{ borderTop:'1px solid rgba(255,255,255,0.06)', paddingTop:18, marginBottom:24 }}>
+                  {FREE_FEATURES.map((f)=>(
+                    <div key={f} style={{ display:'flex', alignItems:'center', gap:9, marginBottom:10 }}>
+                      <Check style={{ width:13, height:13, flexShrink:0, color:'rgba(255,255,255,0.22)' }} />
+                      <span style={{ fontSize:13, color:'rgba(255,255,255,0.42)', fontFamily:'var(--font-body)' }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+                <Link href="/signup" style={{ display:'flex', alignItems:'center', justifyContent:'center', width:'100%', height:44, borderRadius:9, border:'1px solid rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.5)', fontFamily:'var(--font-display)', fontSize:13, fontWeight:600, textDecoration:'none', transition:'all 0.15s' }}
+                  onMouseEnter={(e)=>{ (e.currentTarget as HTMLElement).style.borderColor='rgba(255,255,255,0.22)'; (e.currentTarget as HTMLElement).style.color='#fff' }}
+                  onMouseLeave={(e)=>{ (e.currentTarget as HTMLElement).style.borderColor='rgba(255,255,255,0.1)'; (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.5)' }}
+                >Start free — no card needed</Link>
+              </div>
+
+              {/* Pro */}
+              <div className="reveal reveal-delay-1" style={{ background:'linear-gradient(145deg,#050d1e,#030c18)', border:'1px solid rgba(30,100,255,0.28)', borderRadius:16, padding:32, position:'relative', overflow:'hidden', boxShadow:'0 0 50px rgba(30,100,255,0.1)' }}>
+                <div style={{ position:'absolute', top:-36, right:-36, width:160, height:160, borderRadius:'50%', background:'radial-gradient(circle, rgba(30,100,255,0.18) 0%, transparent 70%)', pointerEvents:'none' }} />
+                <div style={{ display:'inline-block', background:'rgba(30,100,255,0.15)', border:'1px solid rgba(30,100,255,0.32)', borderRadius:999, padding:'3px 11px', fontSize:9, fontWeight:700, fontFamily:'var(--font-display)', color:'#93C5FD', letterSpacing:'0.1em', marginBottom:16 }}>PRO</div>
+                <div style={{ display:'flex', alignItems:'flex-end', gap:8, marginBottom:6 }}>
+                  <span style={{ fontFamily:'var(--font-display)', fontSize:'2.8rem', fontWeight:800, color:'#fff', letterSpacing:'-0.04em', lineHeight:1 }}>$19</span>
+                  <div style={{ marginBottom:5 }}>
+                    <span style={{ display:'block', fontFamily:'var(--font-body)', fontSize:12, color:'rgba(255,255,255,0.32)', textDecoration:'line-through', lineHeight:1 }}>$29/mo</span>
+                    <span style={{ fontFamily:'var(--font-body)', fontSize:12, color:'rgba(255,255,255,0.32)' }}>/month</span>
+                  </div>
+                  <div style={{ marginBottom:6, marginLeft:4, background:'rgba(52,211,153,0.1)', border:'1px solid rgba(52,211,153,0.22)', borderRadius:5, padding:'2px 7px', fontSize:9, fontWeight:700, fontFamily:'var(--font-display)', color:'#34d399' }}>SAVE 35%</div>
+                </div>
+                <p style={{ fontFamily:'var(--font-body)', fontSize:13, color:'rgba(255,255,255,0.38)', marginBottom:24, lineHeight:1.5 }}>Turn inconsistent traders into disciplined, data-aware performers.</p>
+                <div style={{ borderTop:'1px solid rgba(30,100,255,0.1)', paddingTop:18, marginBottom:24 }}>
+                  {PRO_FEATURES.map((f)=>(
+                    <div key={f} style={{ display:'flex', alignItems:'center', gap:9, marginBottom:10 }}>
+                      <div style={{ width:15, height:15, borderRadius:'50%', background:'rgba(30,100,255,0.18)', border:'1px solid rgba(30,100,255,0.35)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                        <Check style={{ width:9, height:9, color:'#93C5FD' }} />
+                      </div>
+                      <span style={{ fontSize:13, color:'rgba(255,255,255,0.62)', fontFamily:'var(--font-body)' }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+                <Link href="/signup" style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:7, width:'100%', height:46, borderRadius:9, background:'linear-gradient(135deg,#1E64FF,#1D4ED8)', color:'#fff', fontFamily:'var(--font-display)', fontSize:13, fontWeight:700, textDecoration:'none', boxShadow:'0 0 28px rgba(30,100,255,0.35)', transition:'all 0.15s', letterSpacing:'-0.01em' }}
+                  onMouseEnter={(e)=>{ (e.currentTarget as HTMLElement).style.transform='scale(1.02)'; (e.currentTarget as HTMLElement).style.boxShadow='0 0 38px rgba(30,100,255,0.52)' }}
+                  onMouseLeave={(e)=>{ (e.currentTarget as HTMLElement).style.transform='scale(1)'; (e.currentTarget as HTMLElement).style.boxShadow='0 0 28px rgba(30,100,255,0.35)' }}
+                >
+                  Start Pro — $19/month <ArrowRight style={{ width:15, height:15 }} />
+                </Link>
+                <p style={{ textAlign:'center', marginTop:10, fontFamily:'var(--font-body)', fontSize:11, color:'rgba(255,255,255,0.2)' }}>Cancel anytime · 7-day money back guarantee</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── FAQ ── */}
+        <section id="faq" style={{ padding:'96px 24px' }}>
+          <div style={{ maxWidth:700, margin:'0 auto' }}>
+            <div className="reveal" style={{ textAlign:'center', marginBottom:56 }}>
+              <p style={{ fontFamily:'var(--font-display)', fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.14em', color:'rgba(255,255,255,0.3)', marginBottom:12 }}>FAQ</p>
+              <h2 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(1.8rem,3.8vw,2.8rem)', fontWeight:700, letterSpacing:'-0.03em', lineHeight:1.1 }}>Everything you need to know.</h2>
+            </div>
+            <div className="reveal">
+              {[
+                { q:'How do I log a trade?', a:'Go to the Trade Journal from the sidebar. Tap the + button, fill in the pair, entry/exit, stop loss, take profit, lot size, and any notes. P&L calculates automatically for closed trades.' },
+                { q:"What's the Discipline Score?", a:'The Discipline Score (0–100) grades your trading behavior across four categories: stop loss usage, win rate, overtrading frequency, and revenge trading patterns. It updates every time you log a trade.' },
+                { q:'How does Win Rate work?', a:"Win rate only starts calculating after you've logged at least 10 closed trades. This prevents meaningless percentages from a small sample size." },
+                { q:'What is the Goals tab?', a:'Set monthly targets for P&L, win rate, and max drawdown. KoveFX tracks progress with visual rings and milestone checklists so you always know where you stand.' },
+                { q:'Is my data private?', a:'Yes. Your trades, journal entries, and statistics are private by default. Only your Community posts are visible to others — and only when you choose to post.' },
+                { q:'Do I need a credit card to start?', a:'No. Starter is completely free forever with no card required. Pro ($19/month) unlocks the full AI intelligence layer.' },
+                { q:"What's the difference between Starter and Pro?", a:'Starter gives you unlimited trade logging, full history, and basic stats. Pro adds behavioral AI analysis, discipline scoring, pattern detection, and personalized insights.' },
+              ].map((item, i) => (
+                <div key={i} style={{ borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
+                  <button
+                    onClick={()=> setOpenFaq(openFaq===i ? null : i)}
+                    style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', gap:16, padding:'18px 0', background:'none', border:'none', cursor:'pointer', textAlign:'left' }}
+                  >
+                    <span style={{ fontFamily:'var(--font-display)', fontSize:14, fontWeight:500, color:'#fff', lineHeight:1.4 }}>{item.q}</span>
+                    <span style={{ flexShrink:0, fontSize:18, fontWeight:300, color: openFaq===i ? '#60A5FA':'rgba(255,255,255,0.32)', lineHeight:1, transition:'color 0.15s' }}>{openFaq===i?'−':'+'}</span>
+                  </button>
+                  {openFaq===i && (
+                    <p style={{ fontFamily:'var(--font-body)', fontSize:13, color:'rgba(255,255,255,0.42)', lineHeight:1.7, paddingBottom:18, margin:0 }}>{item.a}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── CTA ── */}
+        <section style={{ padding:'96px 24px', background:'#060606', position:'relative', overflow:'hidden' }}>
+          <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse 55% 45% at 50% 50%, rgba(30,100,255,0.07) 0%, transparent 70%)', pointerEvents:'none' }} />
+          <div style={{ maxWidth:700, margin:'0 auto', textAlign:'center', position:'relative', zIndex:1 }} className="reveal">
+            <h2 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(1.8rem,4vw,3rem)', fontWeight:700, letterSpacing:'-0.03em', marginBottom:18, lineHeight:1.1 }}>
               Fix the habits costing you money.
             </h2>
-            <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '1rem', fontFamily: 'var(--font-body)', maxWidth: 480, margin: '0 auto 2.5rem' }}>
+            <p style={{ fontFamily:'var(--font-body)', fontSize:14, color:'rgba(255,255,255,0.36)', maxWidth:420, margin:'0 auto 36px', lineHeight:1.7 }}>
               KoveFX Pro is the difference between random trading and consistent, disciplined performance.
             </p>
-            <div className="flex items-center justify-center gap-4 flex-wrap">
-              <Link href="/signup"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 36px', borderRadius: 8, background: '#fff', color: '#000', fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, textDecoration: 'none', letterSpacing: '-0.01em', transition: 'all 0.2s cubic-bezier(0.22,1,0.36,1)' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.04)'; (e.currentTarget as HTMLElement).style.background = '#e8f0ff' }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLElement).style.background = '#fff' }}
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:14, flexWrap:'wrap' }}>
+              <Link href="/signup" style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'11px 28px', borderRadius:999, background:'#fff', color:'#000', fontFamily:'var(--font-display)', fontSize:14, fontWeight:700, textDecoration:'none', transition:'all 0.18s' }}
+                onMouseEnter={(e)=>{ (e.currentTarget as HTMLElement).style.transform='scale(1.04)'; (e.currentTarget as HTMLElement).style.background='#e8f0ff' }}
+                onMouseLeave={(e)=>{ (e.currentTarget as HTMLElement).style.transform='scale(1)'; (e.currentTarget as HTMLElement).style.background='#fff' }}
               >
-                Start free account <ArrowRight className="w-4 h-4" />
+                Start free account <ArrowRight style={{ width:15, height:15 }} />
               </Link>
-              <Link href="/signup"
-                style={{ display: 'inline-flex', alignItems: 'center', fontFamily: 'var(--font-display)', fontSize: 14, color: 'rgba(255,255,255,0.4)', textDecoration: 'none', padding: '14px 8px', transition: 'color 0.15s' }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.7)' }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)' }}
-              >
-                Or go Pro from day one →
-              </Link>
+              <Link href="/signup" style={{ fontFamily:'var(--font-display)', fontSize:13, color:'rgba(255,255,255,0.38)', textDecoration:'none', transition:'color 0.15s' }}
+                onMouseEnter={(e)=>{ (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.65)' }}
+                onMouseLeave={(e)=>{ (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.38)' }}
+              >Or go Pro from day one →</Link>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ══════════════════ FOOTER ══════════════════ */}
-      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-        <div className="flex items-center gap-3">
-          <KoveWordmark height={22} />
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: '12px', color: 'rgba(255,255,255,0.25)' }}>by DMFX · {new Date().getFullYear()}</span>
-        </div>
-        <div className="flex items-center gap-6 flex-wrap justify-center">
-          {[['Features', '#features'], ['Pricing', '#pricing'], ['Sign up', '/signup'], ['Log in', '/login'], ['Terms', '/terms']].map(([l, h]) => (
-            <a key={l} href={h}
-              style={{ fontFamily: 'var(--font-display)', fontSize: '12px', color: 'rgba(255,255,255,0.22)', transition: 'color 0.15s', textDecoration: 'none' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.55)' }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.22)' }}
-            >{l}</a>
-          ))}
-        </div>
-      </footer>
+        {/* ── FOOTER ── */}
+        <footer style={{ borderTop:'1px solid rgba(255,255,255,0.05)', padding:'28px 24px', display:'flex', flexDirection:'column', alignItems:'center', gap:14 }}>
+          <KoveWordmark height={20} />
+          <div style={{ display:'flex', alignItems:'center', gap:24, flexWrap:'wrap', justifyContent:'center' }}>
+            {[['Features','#features'],['Pricing','#pricing'],['Sign up','/signup'],['Log in','/login'],['Terms','/terms']].map(([l,h])=>(
+              <a key={l} href={h} style={{ fontFamily:'var(--font-display)', fontSize:11, color:'rgba(255,255,255,0.2)', transition:'color 0.15s', textDecoration:'none' }}
+                onMouseEnter={(e)=>{ (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.5)' }}
+                onMouseLeave={(e)=>{ (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.2)' }}
+              >{l}</a>
+            ))}
+          </div>
+          <span style={{ fontFamily:'var(--font-display)', fontSize:11, color:'rgba(255,255,255,0.15)' }}>© {new Date().getFullYear()} KoveFX by DMFX</span>
+        </footer>
 
-      {/* ══════════════════ HERO ANIMATION STYLES ══════════════════ */}
-      <style>{`
-        .hero-line {
-          opacity: 0;
-          transform: translateY(28px);
-          animation: heroLineIn 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-        }
-        .hero-curves {
-          opacity: 0;
-          animation: heroCurvesIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
-        }
-        @keyframes heroLineIn {
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes heroCurvesIn {
-          to { opacity: 1; }
-        }
-      `}</style>
-    </div>
+      </div>
+    </>
   )
 }

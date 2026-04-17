@@ -2,11 +2,6 @@
 
 import { useEffect, useRef } from 'react'
 
-/**
- * Animated blue neon light-ribbon effect.
- * Two flowing bezier curves rendered on canvas with a tube/glow look.
- * Control points oscillate sinusoidally — curves warp and breathe continuously.
- */
 export default function NeonCurves({ className = '' }: { className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -14,14 +9,12 @@ export default function NeonCurves({ className = '' }: { className?: string }) {
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')!
-
     let raf = 0
-    let t   = 0
+    let t = 0
 
-    /* ── Size the canvas to its CSS dimensions at device pixel ratio ── */
     const resize = () => {
-      const { width, height } = canvas.getBoundingClientRect()
       const dpr = window.devicePixelRatio || 1
+      const { width, height } = canvas.getBoundingClientRect()
       canvas.width  = width  * dpr
       canvas.height = height * dpr
       ctx.scale(dpr, dpr)
@@ -30,33 +23,33 @@ export default function NeonCurves({ className = '' }: { className?: string }) {
     const ro = new ResizeObserver(resize)
     ro.observe(canvas)
 
-    /* ── Draw one bezier curve with layered glow (tube effect) ── */
-    function drawTube(
-      p0x: number, p0y: number,
-      cp1x: number, cp1y: number,
-      cp2x: number, cp2y: number,
-      p3x: number, p3y: number,
-      hue: number,
+    function tube(
+      x0: number, y0: number,
+      cx1: number, cy1: number,
+      cx2: number, cy2: number,
+      x1: number, y1: number,
     ) {
-      const layers = [
-        { w: 44, a: 0.022, blur: 55 },
-        { w: 28, a: 0.055, blur: 35 },
-        { w: 14, a: 0.13,  blur: 20 },
-        { w:  6, a: 0.38,  blur: 10 },
-        { w:  2, a: 0.85,  blur:  4 },
-        { w:  1, a: 1.0,   blur:  2 },
-      ]
-      layers.forEach(({ w, a, blur }) => {
-        ctx.beginPath()
-        ctx.moveTo(p0x, p0y)
-        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p3x, p3y)
-        ctx.lineWidth   = w
-        ctx.lineCap     = 'round'
-        ctx.strokeStyle = `hsla(${hue}, 100%, 65%, ${a})`
-        ctx.shadowColor = `hsl(${hue}, 100%, 60%)`
-        ctx.shadowBlur  = blur
-        ctx.stroke()
-      })
+      // Outer bloom
+      ctx.beginPath(); ctx.moveTo(x0,y0); ctx.bezierCurveTo(cx1,cy1,cx2,cy2,x1,y1)
+      ctx.lineWidth = 80; ctx.strokeStyle = 'rgba(20,80,255,0.025)'; ctx.shadowBlur = 0; ctx.stroke()
+
+      ctx.beginPath(); ctx.moveTo(x0,y0); ctx.bezierCurveTo(cx1,cy1,cx2,cy2,x1,y1)
+      ctx.lineWidth = 45; ctx.strokeStyle = 'rgba(30,110,255,0.055)'; ctx.shadowColor = '#1E6EFF'; ctx.shadowBlur = 40; ctx.stroke()
+
+      ctx.beginPath(); ctx.moveTo(x0,y0); ctx.bezierCurveTo(cx1,cy1,cx2,cy2,x1,y1)
+      ctx.lineWidth = 22; ctx.strokeStyle = 'rgba(40,130,255,0.13)'; ctx.shadowBlur = 22; ctx.stroke()
+
+      // Mid glow
+      ctx.beginPath(); ctx.moveTo(x0,y0); ctx.bezierCurveTo(cx1,cy1,cx2,cy2,x1,y1)
+      ctx.lineWidth = 10; ctx.strokeStyle = 'rgba(70,150,255,0.32)'; ctx.shadowBlur = 14; ctx.stroke()
+
+      // Core
+      ctx.beginPath(); ctx.moveTo(x0,y0); ctx.bezierCurveTo(cx1,cy1,cx2,cy2,x1,y1)
+      ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(160,210,255,0.85)'; ctx.shadowColor = '#90C8FF'; ctx.shadowBlur = 8; ctx.stroke()
+
+      // Bright spine
+      ctx.beginPath(); ctx.moveTo(x0,y0); ctx.bezierCurveTo(cx1,cy1,cx2,cy2,x1,y1)
+      ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(230,245,255,0.95)'; ctx.shadowBlur = 4; ctx.stroke()
     }
 
     function frame() {
@@ -64,50 +57,41 @@ export default function NeonCurves({ className = '' }: { className?: string }) {
       const W = canvas.getBoundingClientRect().width
       const H = canvas.getBoundingClientRect().height
       ctx.clearRect(0, 0, W, H)
+      ctx.lineCap = 'round'
 
-      t += 0.005
+      t += 0.0035
 
-      // ── Curve A (primary — vivid blue, upper sweep) ──────────────────
-      const a_p0x  = W * 0.0
-      const a_p0y  = H * (0.38 + Math.sin(t * 0.7)  * 0.08)
-      const a_cp1x = W * (0.28 + Math.sin(t * 0.5)  * 0.12)
-      const a_cp1y = H * (0.05 + Math.cos(t * 0.65) * 0.14)
-      const a_cp2x = W * (0.62 + Math.cos(t * 0.45) * 0.10)
-      const a_cp2y = H * (0.78 + Math.sin(t * 0.55) * 0.12)
-      const a_p3x  = W * 1.0
-      const a_p3y  = H * (0.50 + Math.cos(t * 0.6)  * 0.10)
+      // Two flowing S-curves that sweep from lower area up-right
+      // Curve A (outer)
+      const a_x0  = W * (0.90 + Math.sin(t * 0.4) * 0.03)
+      const a_y0  = H * (0.92 + Math.cos(t * 0.5) * 0.03)
+      const a_cx1 = W * (0.05 + Math.sin(t * 0.35) * 0.06)
+      const a_cy1 = H * (0.72 + Math.cos(t * 0.45) * 0.05)
+      const a_cx2 = W * (0.88 + Math.cos(t * 0.3) * 0.05)
+      const a_cy2 = H * (0.06 + Math.sin(t * 0.4) * 0.05)
+      const a_x1  = W * (1.02 + Math.sin(t * 0.38) * 0.02)
+      const a_y1  = H * (0.18 + Math.cos(t * 0.42) * 0.04)
 
-      // ── Curve B (secondary — cyan-blue, lower sweep) ──────────────────
-      const b_p0x  = W * 0.0
-      const b_p0y  = H * (0.62 + Math.cos(t * 0.6)  * 0.07)
-      const b_cp1x = W * (0.32 + Math.cos(t * 0.4)  * 0.14)
-      const b_cp1y = H * (0.90 + Math.sin(t * 0.5)  * 0.07)
-      const b_cp2x = W * (0.58 + Math.sin(t * 0.55) * 0.09)
-      const b_cp2y = H * (0.10 + Math.cos(t * 0.45) * 0.14)
-      const b_p3x  = W * 1.0
-      const b_p3y  = H * (0.45 + Math.sin(t * 0.68) * 0.09)
+      // Curve B (inner, runs parallel to A, slightly offset)
+      const b_x0  = W * (0.84 + Math.sin(t * 0.4  + 0.4) * 0.03)
+      const b_y0  = H * (0.99 + Math.cos(t * 0.5  + 0.4) * 0.01)
+      const b_cx1 = W * (0.0  + Math.sin(t * 0.35 + 0.4) * 0.05)
+      const b_cy1 = H * (0.78 + Math.cos(t * 0.45 + 0.4) * 0.05)
+      const b_cx2 = W * (0.80 + Math.cos(t * 0.3  + 0.4) * 0.05)
+      const b_cy2 = H * (0.12 + Math.sin(t * 0.4  + 0.4) * 0.05)
+      const b_x1  = W * (0.97 + Math.sin(t * 0.38 + 0.4) * 0.02)
+      const b_y1  = H * (0.26 + Math.cos(t * 0.42 + 0.4) * 0.04)
 
-      drawTube(a_p0x, a_p0y, a_cp1x, a_cp1y, a_cp2x, a_cp2y, a_p3x, a_p3y, 218)
-      drawTube(b_p0x, b_p0y, b_cp1x, b_cp1y, b_cp2x, b_cp2y, b_p3x, b_p3y, 200)
+      tube(a_x0, a_y0, a_cx1, a_cy1, a_cx2, a_cy2, a_x1, a_y1)
+      tube(b_x0, b_y0, b_cx1, b_cy1, b_cx2, b_cy2, b_x1, b_y1)
 
-      ctx.shadowBlur  = 0
-      ctx.globalAlpha = 1
-
+      ctx.shadowBlur = 0
       raf = requestAnimationFrame(frame)
     }
 
     raf = requestAnimationFrame(frame)
-    return () => {
-      cancelAnimationFrame(raf)
-      ro.disconnect()
-    }
+    return () => { cancelAnimationFrame(raf); ro.disconnect() }
   }, [])
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className={className}
-      style={{ width: '100%', height: '100%', display: 'block' }}
-    />
-  )
+  return <canvas ref={canvasRef} className={className} style={{ width: '100%', height: '100%', display: 'block' }} />
 }
