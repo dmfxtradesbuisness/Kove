@@ -143,14 +143,44 @@ export default function AIPage() {
   useEffect(() => {
     async function init() {
       try {
-        const [subRes, tradesRes] = await Promise.all([
+        const [subRes, tradesRes, checkRes] = await Promise.all([
           fetch('/api/stripe/subscription-status'),
           fetch('/api/trades'),
+          fetch('/api/ai/daily-check'),
         ])
         const subData    = await subRes.json()
         const tradesData = await tradesRes.json()
+        const checkData  = checkRes.ok ? await checkRes.json() : null
         setSubscribed(subData.active === true)
         if (tradesData.trades) setTrades(tradesData.trades)
+
+        // Auto-inject proactive insights as first AI message if alerts exist
+        if (subData.active === true && checkData?.alerts?.length > 0) {
+          const alerts: { message: string; severity: string }[] = checkData.alerts
+          const dangerAlerts  = alerts.filter((a) => a.severity === 'danger')
+          const warnAlerts    = alerts.filter((a) => a.severity === 'warning')
+          const infoAlerts    = alerts.filter((a) => a.severity === 'info')
+
+          let intro = ''
+          if (dangerAlerts.length > 0) {
+            intro = `🚨 **Stop and read this.**\n\n`
+          } else if (warnAlerts.length > 0) {
+            intro = `⚠️ **Heads up — I noticed something.**\n\n`
+          } else {
+            intro = `📊 **Today's session check-in:**\n\n`
+          }
+
+          const body = alerts.map((a) => `- ${a.message}`).join('\n')
+          const footer = checkData.todayCount > 0
+            ? `\n\nYou've taken **${checkData.todayCount} trade${checkData.todayCount !== 1 ? 's' : ''}** today${checkData.winRateToday !== null ? ` with a ${checkData.winRateToday}% win rate` : ''}. Ask me anything — I'm here to help you trade better, not just more.`
+            : `\n\nNo trades logged yet today. How are you planning your session?`
+
+          setMessages([{
+            id: uid(),
+            role: 'assistant',
+            text: intro + body + footer,
+          }])
+        }
       } catch {
         setSubscribed(false)
       } finally {

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Loader2, TrendingUp, ShieldAlert, Target, Sparkles, Lock, ChevronRight, Settings2 } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Loader2, TrendingUp, ShieldAlert, Target, Sparkles, Lock, ChevronRight, Settings2, Flame, Trophy, Zap } from 'lucide-react'
 
 interface Goals {
   monthly_pnl_target: number | null
@@ -9,7 +9,65 @@ interface Goals {
   max_drawdown_target: number | null
   notes: string | null
 }
-interface Trade { pnl: number | null; created_at: string }
+interface Trade { pnl: number | null; outcome: string | null; stop_loss: number | null; created_at: string }
+
+// ─── Analytics helpers (sourced from stats page) ──────────────────────────────
+function calcDisciplineScore(trades: Trade[]): { score: number; breakdown: { label: string; pts: number; max: number; tip: string }[] } {
+  const closed = trades.filter((t) => t.pnl !== null)
+  if (closed.length === 0) return { score: 0, breakdown: [] }
+  const withSL = trades.filter((t) => t.stop_loss !== null && Number(t.stop_loss) > 0).length
+  const slRate = trades.length > 0 ? withSL / trades.length : 0
+  const slPts = Math.round(slRate * 25)
+  const wins = closed.filter((t) => (t.pnl ?? 0) > 0).length
+  const winRate = closed.length > 0 ? wins / closed.length : 0
+  const wrPts = Math.round(Math.min(1, winRate / 0.6) * 25)
+  const daySet = new Set(trades.map((t) => new Date(t.created_at).toDateString()))
+  const avgPerDay = daySet.size > 0 ? trades.length / daySet.size : 0
+  const otPts = avgPerDay <= 2 ? 25 : avgPerDay <= 3 ? 20 : avgPerDay <= 4 ? 13 : avgPerDay <= 5 ? 6 : 0
+  const sorted = [...closed].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+  let revengeTrades = 0
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = sorted[i - 1], curr = sorted[i]
+    const gap = (new Date(curr.created_at).getTime() - new Date(prev.created_at).getTime()) / 60000
+    if ((prev.pnl ?? 0) < 0 && gap <= 30) revengeTrades++
+  }
+  const revengeRate = closed.length > 1 ? revengeTrades / (closed.length - 1) : 0
+  const rvPts = Math.round(Math.max(0, 1 - revengeRate * 2) * 25)
+  const score = slPts + wrPts + otPts + rvPts
+  return {
+    score,
+    breakdown: [
+      { label: 'Risk Management', pts: slPts, max: 25, tip: `${Math.round(slRate * 100)}% of trades have a stop loss` },
+      { label: 'Win Rate',        pts: wrPts, max: 25, tip: `${Math.round(winRate * 100)}% win rate` },
+      { label: 'Overtrading',     pts: otPts, max: 25, tip: `${avgPerDay.toFixed(1)} trades/day avg` },
+      { label: 'Discipline',      pts: rvPts, max: 25, tip: `${revengeTrades} potential revenge trade${revengeTrades !== 1 ? 's' : ''}` },
+    ],
+  }
+}
+
+function calcStreaks(trades: Trade[]) {
+  const closed = [...trades].filter((t) => t.pnl !== null)
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+  let currentStreak = 0, bestStreak = 0, temp = 0
+  for (let i = closed.length - 1; i >= 0; i--) {
+    if ((closed[i].pnl ?? 0) > 0) { currentStreak++; } else break
+  }
+  for (const t of closed) {
+    if ((t.pnl ?? 0) > 0) { temp++; if (temp > bestStreak) bestStreak = temp; } else temp = 0
+  }
+  // Green day streak
+  const byDay: Record<string, number> = {}
+  for (const t of closed) {
+    const d = new Date(t.created_at).toDateString()
+    byDay[d] = (byDay[d] ?? 0) + (t.pnl ?? 0)
+  }
+  const sortedDays = Object.entries(byDay).sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
+  let greenDayStreak = 0
+  for (let i = sortedDays.length - 1; i >= 0; i--) {
+    if (sortedDays[i][1] > 0) greenDayStreak++; else break
+  }
+  return { currentStreak, bestStreak, greenDayStreak }
+}
 
 // ─── Multi-ring donut ─────────────────────────────────────────────────────────
 function MultiRing({ rings }: { rings: { pct: number; color: string; r: number; stroke: number }[] }) {
@@ -280,6 +338,12 @@ export default function GoalsPage() {
 
   let peak = 0, maxDD = 0, running = 0
   monthClosed.forEach((t) => { running += t.pnl ?? 0; if (running > peak) peak = running; const dd = peak - running; if (dd > maxDD) maxDD = dd })
+
+  // Discipline + streaks (computed from all trades)
+  const { score: discScore, breakdown: discBreakdown } = useMemo(() => calcDisciplineScore(trades), [trades])
+  const { currentStreak, bestStreak, greenDayStreak } = useMemo(() => calcStreaks(trades), [trades])
+  const discScoreColor = discScore >= 75 ? '#34d399' : discScore >= 50 ? '#fbbf24' : '#f87171'
+  const discScoreLabel = discScore >= 75 ? 'Excellent' : discScore >= 60 ? 'Good' : discScore >= 40 ? 'Fair' : 'Needs Work'
 
   if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-5 h-5 rounded-full animate-spin" style={{ border: '2px solid rgba(255,255,255,0.08)', borderTopColor: 'rgba(77,144,255,0.6)' }} /></div>
   if (loadError) return <div className="flex items-center justify-center min-h-[60vh]"><p style={{ color: '#f87171', fontSize: 13 }}>{loadError}</p></div>
@@ -598,6 +662,87 @@ export default function GoalsPage() {
             <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', borderLeft: '3px solid rgba(30,110,255,0.5)', borderRadius: 16, padding: '18px 22px' }}>
               <p style={{ fontSize: 10, fontWeight: 700, color: '#4D90FF', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Trading Rules</p>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-body)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{goals.notes}</p>
+            </div>
+          )}
+
+          {/* ── Streaks ── */}
+          {trades.length > 0 && (
+            <div>
+              <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Win Streaks</p>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: 'Current', value: currentStreak, unit: 'W', icon: Flame, iconColor: '#fb923c', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.15)' },
+                  { label: 'Best Ever', value: bestStreak, unit: 'W', icon: Trophy, iconColor: '#fbbf24', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.15)' },
+                  { label: 'Green Days', value: greenDayStreak, unit: 'd', icon: TrendingUp, iconColor: '#34d399', bg: 'rgba(52,211,153,0.08)', border: 'rgba(52,211,153,0.15)' },
+                ].map(({ label, value, unit, icon: Icon, iconColor, bg, border }) => (
+                  <div key={label} style={{ background: '#111', border: `1px solid rgba(255,255,255,0.07)`, borderRadius: 16, padding: '18px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 10, background: bg, border: `1px solid ${border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon style={{ width: 14, height: 14, color: iconColor }} />
+                    </div>
+                    <div>
+                      <p style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 900, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em' }}>
+                        {value}<span style={{ fontSize: 14, fontWeight: 400, color: 'rgba(255,255,255,0.3)', marginLeft: 2 }}>{unit}</span>
+                      </p>
+                      <p style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 6 }}>{label}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Discipline Score ── */}
+          {trades.length >= 5 && (
+            <div>
+              <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Discipline Score</p>
+              <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', borderLeft: `3px solid ${discScoreColor}`, borderRadius: 16, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+                {/* Score header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{ position: 'relative', width: 64, height: 64, flexShrink: 0 }}>
+                    <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke={discScoreColor} strokeWidth="3" strokeLinecap="round"
+                        strokeDasharray={`${discScore} 100`}
+                        style={{ transition: 'stroke-dasharray 1s cubic-bezier(0.22,1,0.36,1)' }}
+                      />
+                    </svg>
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Zap style={{ width: 16, height: 16, color: discScoreColor }} />
+                    </div>
+                  </div>
+                  <div>
+                    <p style={{ fontFamily: 'var(--font-display)', fontSize: 40, fontWeight: 900, color: discScoreColor, lineHeight: 1, letterSpacing: '-0.03em' }}>{discScore}</p>
+                    <p style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 4 }}>out of 100 · {discScoreLabel}</p>
+                  </div>
+                </div>
+                {/* Breakdown */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {discBreakdown.map((item) => {
+                    const pct = (item.pts / item.max) * 100
+                    const barColor = pct >= 75 ? '#34d399' : pct >= 50 ? '#fbbf24' : '#f87171'
+                    return (
+                      <div key={item.label}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: '#fff', fontFamily: 'var(--font-display)' }}>{item.label}</span>
+                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-body)' }}>{item.pts}/{item.max}pts · {item.tip}</span>
+                        </div>
+                        <div style={{ width: '100%', height: 5, background: 'rgba(255,255,255,0.05)', borderRadius: 999, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 999, transition: 'width 0.9s cubic-bezier(0.22,1,0.36,1)' }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                {/* Tips */}
+                {discBreakdown.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 4, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                    {discBreakdown[0]?.pts < 20 && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-body)' }}>📍 Set a stop loss on every trade — biggest risk management habit.</p>}
+                    {discBreakdown[2]?.pts < 20 && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-body)' }}>🧘 Averaging {discBreakdown[2]?.tip} — quality over quantity always wins.</p>}
+                    {discBreakdown[3]?.pts < 20 && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-body)' }}>⏸️ Take a 30-minute break after a loss before your next trade.</p>}
+                    {discScore >= 75 && <p style={{ fontSize: 12, color: '#34d399', fontFamily: 'var(--font-body)' }}>🔥 Excellent discipline. Keep following your rules.</p>}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

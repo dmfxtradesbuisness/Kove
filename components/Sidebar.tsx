@@ -20,8 +20,7 @@ const NAV_ITEMS = [
   { href: '/goals',     label: 'Goals',       icon: Target,   pro: true  },
   { href: '/gallery',   label: 'Gallery',     icon: Images    },
   { href: '/ai',        label: 'AI Insights', icon: Sparkles, pro: true  },
-  { href: '/community', label: 'Community',   icon: Users2    },
-  { href: '/news',      label: 'News',        icon: Newspaper },
+  { href: '/news',      label: 'Market Events', icon: Newspaper },
 ]
 
 const JOURNAL_COLORS = [

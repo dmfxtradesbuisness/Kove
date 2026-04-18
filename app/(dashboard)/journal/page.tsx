@@ -7,6 +7,7 @@ import TradeForm from '@/components/TradeForm'
 import TradeTable from '@/components/TradeTable'
 import type { Trade } from '@/lib/types'
 import { useJournal } from '@/lib/journal-context'
+import AiDailyBanner from '@/components/AiDailyBanner'
 
 // ─── Upgrade Wow Moment Modal ─────────────────────────────────────────────────
 const WOW_INSIGHTS = [
@@ -627,6 +628,11 @@ export default function JournalPage() {
             K
           </div>
         </div>
+      </div>
+
+      {/* ── AI Daily Banner ── */}
+      <div className="pt-3 pb-1">
+        <AiDailyBanner />
       </div>
 
       {/* ── Body ── */}

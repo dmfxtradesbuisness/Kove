@@ -3,11 +3,10 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useJournal } from '@/lib/journal-context'
 import {
-  TrendingUp, TrendingDown, Activity, DollarSign, Target,
-  BarChart2, Zap, Flame, Trophy, Calendar,
+  TrendingUp, TrendingDown, Activity, DollarSign,
+  BarChart2, Calendar,
 } from 'lucide-react'
 import type { Trade } from '@/lib/types'
-import { ProGate } from '@/components/ProGate'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Period = '1D' | '1W' | '1M' | '3M' | '1Y' | 'ALL'
@@ -374,37 +373,20 @@ export default function StatsPage() {
   const { activeJournalId } = useJournal()
   const [allTrades, setAllTrades] = useState<Trade[]>([])
   const [loading, setLoading] = useState(true)
-  const [subscribed, setSubscribed] = useState<boolean | null>(null)
   const [period, setPeriod] = useState<Period>('ALL')
-  const [tab, setTab] = useState<'overview' | 'discipline' | 'streaks' | 'wrap' | 'leaderboard'>('overview')
-  const [leaderboard, setLeaderboard] = useState<{ rank: number; label: string; winRate: number; totalPnl: number; totalTrades: number; isYou: boolean }[]>([])
-  const [lbLoading, setLbLoading] = useState(false)
-  const [userRank, setUserRank] = useState<number | null>(null)
+  const [tab, setTab] = useState<'overview' | 'wrap'>('overview')
 
   const loadTrades = useCallback(() => {
     const tradesUrl = activeJournalId
       ? `/api/trades?journal_id=${activeJournalId}`
       : '/api/trades'
-    Promise.all([
-      fetch(tradesUrl).then((r) => r.json()),
-      fetch('/api/stripe/subscription-status').then((r) => r.json()),
-    ]).then(([tradesData, subData]) => {
-      if (tradesData.trades) setAllTrades(tradesData.trades)
-      setSubscribed(subData.active === true)
-    }).finally(() => setLoading(false))
+    fetch(tradesUrl)
+      .then((r) => r.json())
+      .then((data) => { if (data.trades) setAllTrades(data.trades) })
+      .finally(() => setLoading(false))
   }, [activeJournalId])
 
   useEffect(() => { loadTrades() }, [loadTrades])
-
-  useEffect(() => {
-    if (tab === 'leaderboard' && leaderboard.length === 0) {
-      setLbLoading(true)
-      fetch('/api/leaderboard')
-        .then((r) => r.json())
-        .then((d) => { setLeaderboard(d.leaderboard ?? []); setUserRank(d.userRank) })
-        .finally(() => setLbLoading(false))
-    }
-  }, [tab, leaderboard.length])
 
   const trades = useMemo(() => filterByPeriod(allTrades, period), [allTrades, period])
   const closedTrades = trades.filter((t) => t.pnl !== null)
@@ -416,8 +398,6 @@ export default function StatsPage() {
   const avgLoss = losses.length > 0 ? Math.abs(losses.reduce((s, t) => s + (t.pnl ?? 0), 0) / losses.length) : 0
   const profitFactor = avgLoss > 0 ? avgWin / avgLoss : 0
 
-  const { score: discScore, breakdown } = useMemo(() => calcDisciplineScore(allTrades), [allTrades])
-  const { currentStreak, bestStreak, greenDayStreak } = useMemo(() => calcStreaks(allTrades), [allTrades])
   const { thisMonth, lastMonth } = useMemo(() => calcPerformanceWrap(allTrades), [allTrades])
   const weeklyWrap = useMemo(() => calcWeeklyWrap(allTrades), [allTrades])
 
@@ -447,9 +427,6 @@ export default function StatsPage() {
     </div>
   )
 
-  const scoreColor = discScore >= 75 ? 'text-emerald-400' : discScore >= 50 ? 'text-yellow-400' : 'text-red-400'
-  const scoreLabel = discScore >= 75 ? 'Excellent' : discScore >= 60 ? 'Good' : discScore >= 40 ? 'Fair' : 'Needs Work'
-
   return (
     <div className="px-4 md:px-8 pt-6 md:pt-10 pb-10">
       <style>{`
@@ -476,10 +453,7 @@ export default function StatsPage() {
       <div className="flex items-center gap-1 mb-5 bg-[#0a0a0a] border border-white/[0.05] rounded-2xl p-1 w-full overflow-x-auto scroll-smooth-mobile">
         {([
           { key: 'overview', label: 'Overview', icon: BarChart2 },
-          { key: 'discipline', label: 'Discipline', icon: Zap },
-          { key: 'streaks', label: 'Streaks', icon: Flame },
-          { key: 'wrap', label: 'Wrap', icon: Calendar },
-          { key: 'leaderboard', label: 'Leaderboard', icon: Trophy },
+          { key: 'wrap',     label: 'Wrap',     icon: Calendar  },
         ] as const).map(({ key, label, icon: Icon }) => (
           <button
             key={key}
@@ -590,111 +564,6 @@ export default function StatsPage() {
         </>
       )}
 
-      {/* ── DISCIPLINE ── */}
-      {tab === 'discipline' && subscribed === false && (
-        <ProGate
-          title="Behavioral Analysis"
-          description="Your discipline score, revenge trading detection, overtrading alerts, and pattern breakdown — all Pro intelligence."
-          compact={false}
-        />
-      )}
-      {tab === 'discipline' && subscribed === true && (
-        <div className="flex flex-col gap-4 max-w-2xl">
-          {/* Score card */}
-          <div className="dash-card p-7">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="text-[10px] font-medium text-[#444] uppercase tracking-widest mb-1">Overall Score</p>
-                <p className={`text-6xl font-black tracking-tight ${scoreColor}`}>{discScore}</p>
-                <p className="text-xs text-[#444] font-light mt-1">out of 100 · {scoreLabel}</p>
-              </div>
-              <div className="relative w-20 h-20">
-                <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
-                  <circle cx="18" cy="18" r="15.9" fill="none"
-                    stroke={discScore >= 75 ? '#10b981' : discScore >= 50 ? '#eab308' : '#ef4444'}
-                    strokeWidth="3" strokeLinecap="round"
-                    strokeDasharray={`${discScore} 100`}
-                    style={{ transition: 'stroke-dasharray 1s ease' }}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Zap className={`w-5 h-5 ${scoreColor}`} />
-                </div>
-              </div>
-            </div>
-
-            {/* Breakdown bars */}
-            <div className="flex flex-col gap-4">
-              {breakdown.map((item) => (
-                <div key={item.label}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-medium text-white">{item.label}</span>
-                    <span className="text-xs text-[#444] font-light">{item.pts}/{item.max}pts · {item.tip}</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-700 ${item.pts / item.max >= 0.75 ? 'bg-emerald-500' : item.pts / item.max >= 0.5 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                      style={{ width: `${(item.pts / item.max) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Tips */}
-          <div className="dash-card p-6">
-            <p className="text-[10px] font-medium text-[#444] uppercase tracking-widest mb-4">How to improve</p>
-            <div className="flex flex-col gap-3">
-              {breakdown[0]?.pts < 20 && <p className="text-sm text-[#888] font-light">📍 Set a stop loss on every trade — it&apos;s the single biggest risk management habit.</p>}
-              {breakdown[2]?.pts < 20 && <p className="text-sm text-[#888] font-light">🧘 You&apos;re averaging more than 3 trades/day — quality over quantity always wins.</p>}
-              {breakdown[3]?.pts < 20 && <p className="text-sm text-[#888] font-light">⏸️ Take a 30-minute break after a loss before entering another trade.</p>}
-              {breakdown[1]?.pts < 20 && <p className="text-sm text-[#888] font-light">🎯 Focus on high probability setups only — a 50%+ win rate is the baseline target.</p>}
-              {discScore >= 75 && <p className="text-sm text-emerald-400 font-light">🔥 Excellent discipline! Keep following your rules consistently.</p>}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── STREAKS ── */}
-      {tab === 'streaks' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl">
-          <div className="dash-card p-7 flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-orange-500/10 border border-orange-500/20 rounded-2xl flex items-center justify-center">
-                <Flame className="w-4 h-4 text-orange-400/70" />
-              </div>
-              <p className="text-xs font-medium text-[#444] uppercase tracking-widest">Current Streak</p>
-            </div>
-            <p className="text-5xl font-black text-white">{currentStreak}<span className="text-xl text-[#444] font-light ml-1">W</span></p>
-            <p className="text-xs text-[#444] font-light">Consecutive wins right now</p>
-          </div>
-
-          <div className="dash-card p-7 flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-yellow-500/10 border border-yellow-500/20 rounded-2xl flex items-center justify-center">
-                <Trophy className="w-4 h-4 text-yellow-400/70" />
-              </div>
-              <p className="text-xs font-medium text-[#444] uppercase tracking-widest">Best Ever</p>
-            </div>
-            <p className="text-5xl font-black text-white">{bestStreak}<span className="text-xl text-[#444] font-light ml-1">W</span></p>
-            <p className="text-xs text-[#444] font-light">Longest win streak all time</p>
-          </div>
-
-          <div className="dash-card p-7 flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 text-emerald-400/70" />
-              </div>
-              <p className="text-xs font-medium text-[#444] uppercase tracking-widest">Green Days</p>
-            </div>
-            <p className="text-5xl font-black text-white">{greenDayStreak}<span className="text-xl text-[#444] font-light ml-1">d</span></p>
-            <p className="text-xs text-[#444] font-light">Consecutive profitable days</p>
-          </div>
-        </div>
-      )}
-
       {/* ── WRAP ── */}
       {tab === 'wrap' && (
         <div className="flex flex-col gap-4 max-w-2xl">
@@ -775,60 +644,6 @@ export default function StatsPage() {
         </div>
       )}
 
-      {/* ── LEADERBOARD ── */}
-      {tab === 'leaderboard' && (
-        <div className="max-w-lg">
-          {userRank && (
-            <div className="flex items-center gap-3 bg-violet-500/8 border border-violet-500/15 rounded-2xl px-5 py-4 mb-4 text-violet-400 text-sm font-light">
-              <Trophy className="w-4 h-4 flex-shrink-0" />
-              You are ranked <span className="font-bold text-white ml-1 mr-1">#{userRank}</span> on the leaderboard
-            </div>
-          )}
-
-          <div className="dash-card overflow-hidden">
-            <div className="px-6 py-5 border-b border-white/[0.05]">
-              <h2 className="text-sm font-bold text-white">Global Leaderboard</h2>
-              <p className="text-[10px] text-[#444] font-light mt-0.5">Ranked by win rate · min 5 closed trades · anonymous</p>
-            </div>
-
-            {lbLoading ? (
-              <div className="py-16 flex items-center justify-center">
-                <div className="w-5 h-5 border-2 border-white/10 border-t-white/40 rounded-full animate-spin" />
-              </div>
-            ) : leaderboard.length === 0 ? (
-              <div className="py-16 text-center">
-                <Trophy className="w-8 h-8 text-[#222] mx-auto mb-3" />
-                <p className="text-[#444] text-sm font-light">No traders qualify yet — need 5+ closed trades.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-white/[0.04]">
-                {leaderboard.map((entry) => (
-                  <div key={entry.rank} className={`px-6 py-4 flex items-center justify-between ${entry.isYou ? 'bg-violet-500/[0.04]' : ''}`}>
-                    <div className="flex items-center gap-4">
-                      <span className={`text-sm font-black w-6 text-center ${entry.rank <= 3 ? 'text-yellow-400' : 'text-[#444]'}`}>
-                        {entry.rank <= 3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : `#${entry.rank}`}
-                      </span>
-                      <div>
-                        <p className="text-sm font-semibold text-white">
-                          {entry.label}
-                          {entry.isYou && <span className="ml-2 text-[10px] text-violet-400 font-bold bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 rounded-full">YOU</span>}
-                        </p>
-                        <p className="text-xs text-[#444] font-light mt-0.5">{entry.totalTrades} trades</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-white">{entry.winRate}%</p>
-                      <p className={`text-xs font-medium ${entry.totalPnl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                        {entry.totalPnl >= 0 ? '+' : ''}${entry.totalPnl.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       <p className="text-center text-[11px] font-light mt-10" style={{ color: 'var(--text-4)', fontFamily: 'var(--font-display)', letterSpacing: '0.04em' }}>KoveFX</p>
     </div>
