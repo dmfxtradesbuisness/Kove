@@ -455,7 +455,7 @@ function AccountContent() {
           className="w-full lg:w-[380px] lg:flex-shrink-0 flex flex-col gap-4"
           style={{
             background: 'linear-gradient(160deg,#1a1640 0%,#0f0d2a 100%)',
-            border: '1px solid rgba(108,93,211,0.2)',
+            border: '1px solid rgba(30,110,255,0.2)',
             borderRadius: 20,
             padding: 24,
           }}
@@ -467,8 +467,8 @@ function AccountContent() {
               <div
                 className="w-24 h-24 rounded-full flex items-center justify-center overflow-hidden cursor-pointer"
                 style={{
-                  background: avatarUrl ? 'transparent' : 'linear-gradient(135deg,#6C5DD3 0%,#8B7CF8 100%)',
-                  border: '2px solid rgba(108,93,211,0.3)',
+                  background: avatarUrl ? 'transparent' : 'linear-gradient(135deg,#1E6EFF 0%,#4D90FF 100%)',
+                  border: '2px solid rgba(30,110,255,0.3)',
                 }}
                 onClick={() => fileInputRef.current?.click()}
               >
@@ -513,7 +513,7 @@ function AccountContent() {
                   onClick={saveName}
                   disabled={nameSaving}
                   className="w-7 h-7 rounded-lg flex items-center justify-center"
-                  style={{ background: 'rgba(108,93,211,0.2)', color: '#8B7CF8' }}
+                  style={{ background: 'rgba(30,110,255,0.2)', color: '#4D90FF' }}
                 >
                   {nameSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
                 </button>
@@ -533,7 +533,7 @@ function AccountContent() {
                 <button
                   onClick={() => setEditingName(true)}
                   className="w-6 h-6 rounded-md flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity"
-                  style={{ color: '#8B7CF8' }}
+                  style={{ color: '#4D90FF' }}
                 >
                   <Pencil className="w-3 h-3" />
                 </button>
@@ -549,11 +549,11 @@ function AccountContent() {
                 href="/stats?tab=leaderboard"
                 className="flex items-center gap-1.5 px-3 py-1 rounded-full transition-all hover:opacity-80"
                 style={{
-                  background: 'rgba(108,93,211,0.15)',
-                  border: '1px solid rgba(108,93,211,0.3)',
+                  background: 'rgba(30,110,255,0.15)',
+                  border: '1px solid rgba(30,110,255,0.3)',
                   fontSize: 11,
                   fontWeight: 600,
-                  color: '#8B7CF8',
+                  color: '#4D90FF',
                   fontFamily: 'var(--font-display)',
                 }}
               >
@@ -577,7 +577,7 @@ function AccountContent() {
               />
               <div className="flex items-center justify-between">
                 <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>{bioValue.length}/150</span>
-                {bioSaving && <span style={{ fontSize: 10, color: 'rgba(139,124,248,0.6)' }}>Saving...</span>}
+                {bioSaving && <span style={{ fontSize: 10, color: 'rgba(77,144,255,0.6)' }}>Saving...</span>}
               </div>
             </div>
           </InnerCard>
@@ -742,7 +742,7 @@ function AccountContent() {
               {myPosts.length === 0 ? (
                 <div className="flex flex-col gap-2 py-4 items-center text-center">
                   <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)' }}>No posts yet</p>
-                  <Link href="/community" style={{ fontSize: 11, color: '#8B7CF8', fontWeight: 600 }}>
+                  <Link href="/community" style={{ fontSize: 11, color: '#4D90FF', fontWeight: 600 }}>
                     Go to Community →
                   </Link>
                 </div>

@@ -15,7 +15,8 @@
       "Bash(npx tsc:*)",
       "Bash(npx next:*)",
       "Bash(xargs sed:*)",
-      "WebFetch(domain:supabase.com)"
+      "WebFetch(domain:supabase.com)",
+      "Bash(xargs grep:*)"
     ]
   }
 }

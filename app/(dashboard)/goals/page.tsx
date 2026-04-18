@@ -141,7 +141,7 @@ function DetailCard({
     reached           ? { bg: 'rgba(52,211,153,0.15)', color: '#34d399', border: 'rgba(52,211,153,0.3)' }
     : warning && pct >= 80 ? { bg: 'rgba(239,68,68,0.12)',   color: '#f87171', border: 'rgba(239,68,68,0.3)'  }
     : pct >= 50        ? { bg: 'rgba(52,211,153,0.1)',   color: '#6ee7b7', border: 'rgba(52,211,153,0.2)' }
-    :                    { bg: 'rgba(108,93,211,0.12)',  color: '#a78bfa', border: 'rgba(108,93,211,0.25)' }
+    :                    { bg: 'rgba(30,110,255,0.12)',  color: '#a78bfa', border: 'rgba(30,110,255,0.25)' }
 
   return (
     <div style={{
@@ -279,7 +279,7 @@ export default function GoalsPage() {
   let peak = 0, maxDD = 0, running = 0
   monthClosed.forEach((t) => { running += t.pnl ?? 0; if (running > peak) peak = running; const dd = peak - running; if (dd > maxDD) maxDD = dd })
 
-  if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-5 h-5 rounded-full animate-spin" style={{ border: '2px solid rgba(255,255,255,0.08)', borderTopColor: 'rgba(139,124,248,0.6)' }} /></div>
+  if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-5 h-5 rounded-full animate-spin" style={{ border: '2px solid rgba(255,255,255,0.08)', borderTopColor: 'rgba(77,144,255,0.6)' }} /></div>
   if (loadError) return <div className="flex items-center justify-center min-h-[60vh]"><p style={{ color: '#f87171', fontSize: 13 }}>{loadError}</p></div>
 
   if (!subscription?.active) {
@@ -291,16 +291,16 @@ export default function GoalsPage() {
             {/* Illustration */}
             <div style={{ margin: '0 auto 28px', position: 'relative', width: 96, height: 96 }}>
               <svg width="96" height="96" viewBox="0 0 96 96" fill="none">
-                <circle cx="48" cy="48" r="44" stroke="rgba(108,93,211,0.15)" strokeWidth="3" />
-                <circle cx="48" cy="48" r="44" stroke="rgba(108,93,211,0.6)" strokeWidth="3" strokeLinecap="round" strokeDasharray="90 186" style={{ transform: 'rotate(-90deg)', transformOrigin: '48px 48px' }} />
+                <circle cx="48" cy="48" r="44" stroke="rgba(30,110,255,0.15)" strokeWidth="3" />
+                <circle cx="48" cy="48" r="44" stroke="rgba(30,110,255,0.6)" strokeWidth="3" strokeLinecap="round" strokeDasharray="90 186" style={{ transform: 'rotate(-90deg)', transformOrigin: '48px 48px' }} />
                 <circle cx="48" cy="48" r="32" stroke="rgba(52,211,153,0.15)" strokeWidth="3" />
                 <circle cx="48" cy="48" r="32" stroke="rgba(52,211,153,0.6)" strokeWidth="3" strokeLinecap="round" strokeDasharray="60 141" style={{ transform: 'rotate(-90deg)', transformOrigin: '48px 48px' }} />
                 <circle cx="48" cy="48" r="20" stroke="rgba(251,191,36,0.15)" strokeWidth="3" />
                 <circle cx="48" cy="48" r="20" stroke="rgba(251,191,36,0.6)" strokeWidth="3" strokeLinecap="round" strokeDasharray="40 86" style={{ transform: 'rotate(-90deg)', transformOrigin: '48px 48px' }} />
-                <circle cx="48" cy="48" r="5" fill="rgba(108,93,211,0.5)" />
+                <circle cx="48" cy="48" r="5" fill="rgba(30,110,255,0.5)" />
               </svg>
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Lock style={{ width: 18, height: 18, color: '#8B7CF8' }} />
+                <Lock style={{ width: 18, height: 18, color: '#4D90FF' }} />
               </div>
             </div>
             <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, color: '#fff', marginBottom: 10, letterSpacing: '-0.02em' }}>Goals &amp; Milestones</h2>
@@ -370,20 +370,20 @@ export default function GoalsPage() {
       sub:    goals?.monthly_pnl_target ? `$${monthPnl.toFixed(0)} / $${Number(goals.monthly_pnl_target).toFixed(0)}` : 'Not set',
       pct:    pnlPct,
       badge:  pnlPct >= 100 ? 'REACHED' : pnlPct >= 50 ? 'ON TRACK' : 'IN PROGRESS',
-      badgeBg: pnlPct >= 100 ? 'rgba(52,211,153,0.2)' : pnlPct >= 50 ? 'rgba(52,211,153,0.1)' : 'rgba(108,93,211,0.12)',
+      badgeBg: pnlPct >= 100 ? 'rgba(52,211,153,0.2)' : pnlPct >= 50 ? 'rgba(52,211,153,0.1)' : 'rgba(30,110,255,0.12)',
       badgeColor: pnlPct >= 100 ? '#34d399' : pnlPct >= 50 ? '#6ee7b7' : '#a78bfa',
       enabled: !!goals?.monthly_pnl_target,
     },
     {
       key:   'wr' as const,
       icon:  Target,
-      accent: '#8B7CF8',
-      color:  '#8B7CF8',
+      accent: '#4D90FF',
+      color:  '#4D90FF',
       label:  'Win Rate',
       sub:    goals?.win_rate_target ? `${monthWinRate}% / ${Number(goals.win_rate_target).toFixed(0)}%` : 'Not set',
       pct:    wrPct,
       badge:  wrPct >= 100 ? 'REACHED' : wrPct >= 50 ? 'ON TRACK' : 'IN PROGRESS',
-      badgeBg: wrPct >= 100 ? 'rgba(52,211,153,0.2)' : 'rgba(108,93,211,0.12)',
+      badgeBg: wrPct >= 100 ? 'rgba(52,211,153,0.2)' : 'rgba(30,110,255,0.12)',
       badgeColor: wrPct >= 100 ? '#34d399' : '#a78bfa',
       enabled: !!goals?.win_rate_target,
     },
@@ -414,7 +414,7 @@ export default function GoalsPage() {
         </div>
         <button
           onClick={() => setShowForm(v => !v)}
-          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 12, background: showForm ? 'rgba(108,93,211,0.15)' : 'rgba(255,255,255,0.05)', border: showForm ? '1px solid rgba(108,93,211,0.3)' : '1px solid rgba(255,255,255,0.08)', color: showForm ? '#8B7CF8' : 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-display)', cursor: 'pointer', transition: 'all 0.15s' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 12, background: showForm ? 'rgba(30,110,255,0.15)' : 'rgba(255,255,255,0.05)', border: showForm ? '1px solid rgba(30,110,255,0.3)' : '1px solid rgba(255,255,255,0.08)', color: showForm ? '#4D90FF' : 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-display)', cursor: 'pointer', transition: 'all 0.15s' }}
         >
           <Settings2 style={{ width: 13, height: 13 }} /> Set Targets
         </button>
@@ -434,8 +434,8 @@ export default function GoalsPage() {
                 <input type="number" step="any" value={form.monthly_pnl_target} onChange={(e) => setForm(p => ({ ...p, monthly_pnl_target: e.target.value }))} placeholder="e.g. 1000" className="input" style={{ borderColor: 'rgba(52,211,153,0.2)' }} />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="label" style={{ color: '#8B7CF8' }}>Win Rate (%)</label>
-                <input type="number" step="any" min="1" max="100" value={form.win_rate_target} onChange={(e) => setForm(p => ({ ...p, win_rate_target: e.target.value }))} placeholder="e.g. 60" className="input" style={{ borderColor: 'rgba(139,124,248,0.2)' }} />
+                <label className="label" style={{ color: '#4D90FF' }}>Win Rate (%)</label>
+                <input type="number" step="any" min="1" max="100" value={form.win_rate_target} onChange={(e) => setForm(p => ({ ...p, win_rate_target: e.target.value }))} placeholder="e.g. 60" className="input" style={{ borderColor: 'rgba(77,144,255,0.2)' }} />
               </div>
               <div className="flex flex-col gap-2">
                 <label className="label" style={{ color: '#f97316' }}>Max Drawdown ($)</label>
@@ -463,7 +463,7 @@ export default function GoalsPage() {
         <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 24, padding: '52px 36px', textAlign: 'center', maxWidth: 440 }}>
           <div style={{ margin: '0 auto 24px', position: 'relative', width: 88, height: 88 }}>
             <svg width="88" height="88" viewBox="0 0 88 88" fill="none">
-              <circle cx="44" cy="44" r="40" stroke="rgba(108,93,211,0.12)" strokeWidth="3" strokeDasharray="6 6" />
+              <circle cx="44" cy="44" r="40" stroke="rgba(30,110,255,0.12)" strokeWidth="3" strokeDasharray="6 6" />
               <circle cx="44" cy="44" r="28" stroke="rgba(52,211,153,0.12)" strokeWidth="3" strokeDasharray="6 6" />
               <circle cx="44" cy="44" r="16" stroke="rgba(251,191,36,0.12)" strokeWidth="3" strokeDasharray="6 6" />
             </svg>
@@ -495,7 +495,7 @@ export default function GoalsPage() {
                 <div style={{ position: 'relative', flexShrink: 0 }}>
                   <MultiRing rings={[
                     { pct: goals?.monthly_pnl_target ? pnlPct : 0, color: '#34d399', r: 78, stroke: 11 },
-                    { pct: goals?.win_rate_target     ? wrPct  : 0, color: '#8B7CF8', r: 60, stroke: 11 },
+                    { pct: goals?.win_rate_target     ? wrPct  : 0, color: '#4D90FF', r: 60, stroke: 11 },
                     { pct: goals?.max_drawdown_target ? Math.max(0, 100 - ddPct) : 0, color: '#f97316', r: 42, stroke: 11 },
                   ]} />
                   {/* Center text */}
@@ -565,10 +565,10 @@ export default function GoalsPage() {
             )}
             {activeGoal === 'wr' && goals?.win_rate_target && (
               <DetailCard
-                accent="#8B7CF8" icon={Target} label="Win Rate Target"
+                accent="#4D90FF" icon={Target} label="Win Rate Target"
                 currentLabel="Current Win Rate" current={`${monthWinRate}%`}
                 targetLabel="Target" target={`${Number(goals.win_rate_target).toFixed(0)}%`}
-                pct={wrPct} color="#8B7CF8" reached={monthWinRate >= goals.win_rate_target}
+                pct={wrPct} color="#4D90FF" reached={monthWinRate >= goals.win_rate_target}
                 milestones={wrMilestones()}
               />
             )}
@@ -584,7 +584,7 @@ export default function GoalsPage() {
             {!active.enabled && (
               <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', borderTop: 'none', borderRadius: '0 0 20px 20px', padding: '40px 24px', textAlign: 'center' }}>
                 <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 13, fontFamily: 'var(--font-body)' }}>No target set for this goal.</p>
-                <button onClick={() => setShowForm(true)} style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#8B7CF8', fontFamily: 'var(--font-display)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>
+                <button onClick={() => setShowForm(true)} style={{ marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#4D90FF', fontFamily: 'var(--font-display)', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>
                   Set target <ChevronRight style={{ width: 13, height: 13 }} />
                 </button>
               </div>
@@ -593,8 +593,8 @@ export default function GoalsPage() {
 
           {/* ── Rules ── */}
           {goals?.notes && (
-            <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', borderLeft: '3px solid rgba(108,93,211,0.5)', borderRadius: 16, padding: '18px 22px' }}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: '#8B7CF8', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Trading Rules</p>
+            <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', borderLeft: '3px solid rgba(30,110,255,0.5)', borderRadius: 16, padding: '18px 22px' }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#4D90FF', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Trading Rules</p>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-body)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{goals.notes}</p>
             </div>
           )}

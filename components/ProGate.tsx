@@ -47,7 +47,7 @@ export function ProGate({ title = 'Pro Intelligence', description = 'Upgrade to 
     return (
       <div style={{ background: 'linear-gradient(145deg,#0f0d28,#0c0a20)', border: '1px solid rgba(123,108,245,0.25)', borderRadius: 16, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
         <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(123,108,245,0.15)', border: '1px solid rgba(123,108,245,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <Lock className="w-4 h-4" style={{ color: '#8B7CF8' }} />
+          <Lock className="w-4 h-4" style={{ color: '#4D90FF' }} />
         </div>
         <div style={{ flex: 1 }}>
           <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, color: '#fff', marginBottom: 2 }}>{title}</p>
@@ -71,7 +71,7 @@ export function ProGate({ title = 'Pro Intelligence', description = 'Upgrade to 
 
         {/* Lock icon */}
         <div style={{ width: 56, height: 56, borderRadius: 18, background: 'rgba(123,108,245,0.12)', border: '1px solid rgba(123,108,245,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>
-          <Lock className="w-6 h-6" style={{ color: '#8B7CF8' }} />
+          <Lock className="w-6 h-6" style={{ color: '#4D90FF' }} />
         </div>
 
         <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 'clamp(1.5rem,3vw,2rem)', color: '#fff', letterSpacing: '-0.02em', marginBottom: 12, lineHeight: 1.2 }}>

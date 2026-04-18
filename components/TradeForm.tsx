@@ -329,9 +329,9 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
               className="flex items-center justify-center gap-2.5 w-full rounded-2xl text-sm font-semibold transition-all duration-150"
               style={{
                 height: 52,
-                background: scanning ? 'rgba(108,93,211,0.08)' : 'rgba(108,93,211,0.1)',
-                border: '1px dashed rgba(108,93,211,0.35)',
-                color: scanning ? 'rgba(139,124,248,0.5)' : '#8B7CF8',
+                background: scanning ? 'rgba(30,110,255,0.08)' : 'rgba(30,110,255,0.1)',
+                border: '1px dashed rgba(30,110,255,0.35)',
+                color: scanning ? 'rgba(77,144,255,0.5)' : '#4D90FF',
                 cursor: scanning ? 'not-allowed' : 'pointer',
               }}
             >

@@ -49,7 +49,7 @@ function renderMarkdown(text: string) {
         position: 'relative',
       }}>
         {isBullet && (
-          <span style={{ position: 'absolute', left: 2, top: 0, color: 'rgba(139,124,248,0.8)', fontSize: 10 }}>•</span>
+          <span style={{ position: 'absolute', left: 2, top: 0, color: 'rgba(77,144,255,0.8)', fontSize: 10 }}>•</span>
         )}
         {rendered}
       </div>
@@ -76,8 +76,8 @@ function Bubble({ msg }: { msg: Message }) {
         <div
           style={{
             width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-            background: 'linear-gradient(135deg,rgba(108,93,211,0.8),rgba(60,40,140,0.9))',
-            border: '1px solid rgba(108,93,211,0.3)',
+            background: 'linear-gradient(135deg,rgba(30,110,255,0.8),rgba(60,40,140,0.9))',
+            border: '1px solid rgba(30,110,255,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             marginRight: 10, marginTop: 4,
           }}
@@ -100,7 +100,7 @@ function Bubble({ msg }: { msg: Message }) {
           backdropFilter: 'blur(12px)',
           border: isUser
             ? '1px solid rgba(255,255,255,0.15)'
-            : '1px solid rgba(108,93,211,0.2)',
+            : '1px solid rgba(30,110,255,0.2)',
           boxShadow: isUser
             ? '0 2px 16px rgba(0,0,0,0.3)'
             : '0 4px 28px rgba(40,24,100,0.3)',
@@ -233,7 +233,7 @@ export default function AIPage() {
     return (
       <div className="flex items-center justify-center" style={{ height: '100%', minHeight: '60vh' }}>
         <div className="w-5 h-5 border-2 rounded-full animate-spin"
-          style={{ borderColor: 'rgba(255,255,255,0.08)', borderTopColor: 'rgba(139,124,248,0.5)' }} />
+          style={{ borderColor: 'rgba(255,255,255,0.08)', borderTopColor: 'rgba(77,144,255,0.5)' }} />
       </div>
     )
   }
@@ -277,8 +277,8 @@ export default function AIPage() {
           >
             <div style={{
               width: 52, height: 52, borderRadius: 16,
-              background: 'rgba(108,93,211,0.12)',
-              border: '1px solid rgba(108,93,211,0.2)',
+              background: 'rgba(30,110,255,0.12)',
+              border: '1px solid rgba(30,110,255,0.2)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               marginBottom: 4,
             }}>
@@ -322,7 +322,7 @@ export default function AIPage() {
               className="mb-3 flex items-center gap-2 animate-fade-in"
               style={{
                 background: 'rgba(20,16,50,0.92)',
-                border: '1px solid rgba(108,93,211,0.25)',
+                border: '1px solid rgba(30,110,255,0.25)',
                 borderRadius: 14,
                 padding: '8px 14px',
                 backdropFilter: 'blur(12px)',
@@ -367,7 +367,7 @@ export default function AIPage() {
                   style={{
                     background: 'rgba(70,55,165,0.45)',
                     color: 'rgba(210,200,255,0.85)',
-                    border: '1px solid rgba(108,93,211,0.3)',
+                    border: '1px solid rgba(30,110,255,0.3)',
                     fontFamily: 'var(--font-display)',
                     cursor: 'pointer',
                     backdropFilter: 'blur(8px)',
@@ -415,7 +415,7 @@ export default function AIPage() {
                   lineHeight: '1.55',
                   maxHeight: 130,
                   overflow: 'auto',
-                  caretColor: '#8B7CF8',
+                  caretColor: '#4D90FF',
                   fontSize: 13.5,
                 }}
               />
@@ -431,8 +431,8 @@ export default function AIPage() {
                   style={{
                     width: 32, height: 32, borderRadius: 10,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: showTradeBar ? '#8B7CF8' : 'rgba(255,255,255,0.32)',
-                    background: showTradeBar ? 'rgba(108,93,211,0.15)' : 'none',
+                    color: showTradeBar ? '#4D90FF' : 'rgba(255,255,255,0.32)',
+                    background: showTradeBar ? 'rgba(30,110,255,0.15)' : 'none',
                     border: 'none', cursor: 'pointer',
                     transition: 'all 0.15s',
                   }}
@@ -462,10 +462,10 @@ export default function AIPage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     background: input.trim() && !sending
                       ? 'linear-gradient(135deg,#7B6CF5,#5C4ED4)'
-                      : 'rgba(108,93,211,0.3)',
+                      : 'rgba(30,110,255,0.3)',
                     border: 'none',
                     cursor: !input.trim() || sending ? 'not-allowed' : 'pointer',
-                    boxShadow: input.trim() && !sending ? '0 0 18px rgba(108,93,211,0.5)' : 'none',
+                    boxShadow: input.trim() && !sending ? '0 0 18px rgba(30,110,255,0.5)' : 'none',
                     transition: 'all 0.18s',
                     opacity: !input.trim() && !sending ? 0.5 : 1,
                   }}

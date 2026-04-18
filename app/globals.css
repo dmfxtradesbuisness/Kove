@@ -11,9 +11,9 @@
     --surface-3: #1a1a1a;
     --border:    rgba(255,255,255,0.07);
     --border-hi: rgba(255,255,255,0.12);
-    --accent:    #6C5DD3;
-    --accent-hi: #8B7CF8;
-    --accent-glow: rgba(108,93,211,0.35);
+    --accent:    #1E6EFF;
+    --accent-hi: #4D90FF;
+    --accent-glow: rgba(30,110,255,0.35);
     --text-1:    #FFFFFF;
     --text-2:    #888888;
     --text-3:    #555555;
@@ -52,7 +52,7 @@
   }
 
   ::selection {
-    background-color: rgba(108,93,211,0.3);
+    background-color: rgba(30,110,255,0.3);
     color: #fff;
   }
 
@@ -82,9 +82,9 @@
     @apply active:scale-[0.985] text-white font-semibold px-5 py-2.5 rounded-lg transition-all duration-150 text-sm min-h-[44px] flex items-center justify-center select-none;
     background: var(--accent);
     font-family: var(--font-display);
-    box-shadow: 0 0 20px rgba(108,93,211,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+    box-shadow: 0 0 20px rgba(30,110,255,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
   }
-  .btn-blue:hover:not(:disabled) { background: var(--accent-hi); box-shadow: 0 0 28px rgba(108,93,211,0.5); }
+  .btn-blue:hover:not(:disabled) { background: var(--accent-hi); box-shadow: 0 0 28px rgba(30,110,255,0.5); }
   .btn-blue:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .btn-secondary {
@@ -142,9 +142,9 @@
     @apply focus:outline-none;
   }
   .input:focus {
-    border-color: rgba(108,93,211,0.5);
+    border-color: rgba(30,110,255,0.5);
     background: rgba(255,255,255,0.06);
-    box-shadow: 0 0 0 3px rgba(108,93,211,0.12);
+    box-shadow: 0 0 0 3px rgba(30,110,255,0.12);
   }
 
   .label {
@@ -159,7 +159,7 @@
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 14px;
     width: 100%;
-    box-shadow: 0 0 0 1px rgba(108,93,211,0.1), 0 32px 80px rgba(0,0,0,0.9), 0 8px 24px rgba(0,0,0,0.6);
+    box-shadow: 0 0 0 1px rgba(30,110,255,0.1), 0 32px 80px rgba(0,0,0,0.9), 0 8px 24px rgba(0,0,0,0.6);
   }
 
   /* ── Page headers ── */
