@@ -1,6 +1,15 @@
+export interface Journal {
+  id: string
+  user_id: string
+  name: string
+  color: string
+  created_at: string
+}
+
 export interface Trade {
   id: string
   user_id: string
+  journal_id: string | null
   pair: string
   type: 'BUY' | 'SELL'
   outcome: 'win' | 'loss' | 'breakeven' | null

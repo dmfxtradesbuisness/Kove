@@ -6,6 +6,7 @@ import Link from 'next/link'
 import TradeForm from '@/components/TradeForm'
 import TradeTable from '@/components/TradeTable'
 import type { Trade } from '@/lib/types'
+import { useJournal } from '@/lib/journal-context'
 
 // ─── Upgrade Wow Moment Modal ─────────────────────────────────────────────────
 const WOW_INSIGHTS = [
@@ -448,6 +449,7 @@ function ChecklistWidget() {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function JournalPage() {
+  const { activeJournalId, activeJournal } = useJournal()
   const [trades, setTrades] = useState<Trade[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -500,14 +502,18 @@ export default function JournalPage() {
   }
 
   const fetchTrades = useCallback(async () => {
+    setLoading(true)
     try {
-      const res = await fetch('/api/trades')
+      const url = activeJournalId
+        ? `/api/trades?journal_id=${activeJournalId}`
+        : '/api/trades'
+      const res = await fetch(url)
       const data = await res.json()
       if (data.trades) setTrades(data.trades)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [activeJournalId])
 
   useEffect(() => { fetchTrades() }, [fetchTrades])
 
@@ -572,7 +578,7 @@ export default function JournalPage() {
               lineHeight: 1.2,
             }}
           >
-            Journal
+            {activeJournal?.name ?? 'Journal'}
           </h1>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'rgba(255,255,255,0.28)', margin: 0, marginTop: '2px' }}>
             Track your edge, every trade.
@@ -827,7 +833,7 @@ export default function JournalPage() {
       </div>
 
       {showForm && (
-        <TradeForm trade={editingTrade} onClose={handleClose} onSuccess={handleSuccess} />
+        <TradeForm trade={editingTrade} onClose={handleClose} onSuccess={handleSuccess} journalId={activeJournalId} />
       )}
     </div>
   )

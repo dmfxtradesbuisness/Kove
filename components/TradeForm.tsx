@@ -10,6 +10,7 @@ interface TradeFormProps {
   trade?: Trade | null
   onClose: () => void
   onSuccess: (trade: Trade) => void
+  journalId?: string | null
 }
 
 interface ChecklistItem {
@@ -23,7 +24,7 @@ const emptyForm: TradeFormData = {
   lot_size: '', pnl: '', notes: '', screenshot_url: '',
 }
 
-export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps) {
+export default function TradeForm({ trade, onClose, onSuccess, journalId }: TradeFormProps) {
   const [form, setForm] = useState<TradeFormData>(
     trade ? {
       pair: trade.pair, type: trade.type, outcome: trade.outcome ?? null,
@@ -139,7 +140,7 @@ export default function TradeForm({ trade, onClose, onSuccess }: TradeFormProps)
       const res = await fetch(url, {
         method: trade ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, journal_id: trade ? trade.journal_id : (journalId ?? null) }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to save trade')

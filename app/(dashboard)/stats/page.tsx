@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useJournal } from '@/lib/journal-context'
 import {
   TrendingUp, TrendingDown, Activity, DollarSign, Target,
   BarChart2, Zap, Flame, Trophy, Calendar,
@@ -370,6 +371,7 @@ function PnlCalendar({ trades }: { trades: Trade[] }) {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function StatsPage() {
+  const { activeJournalId } = useJournal()
   const [allTrades, setAllTrades] = useState<Trade[]>([])
   const [loading, setLoading] = useState(true)
   const [subscribed, setSubscribed] = useState<boolean | null>(null)
@@ -379,15 +381,20 @@ export default function StatsPage() {
   const [lbLoading, setLbLoading] = useState(false)
   const [userRank, setUserRank] = useState<number | null>(null)
 
-  useEffect(() => {
+  const loadTrades = useCallback(() => {
+    const tradesUrl = activeJournalId
+      ? `/api/trades?journal_id=${activeJournalId}`
+      : '/api/trades'
     Promise.all([
-      fetch('/api/trades').then((r) => r.json()),
+      fetch(tradesUrl).then((r) => r.json()),
       fetch('/api/stripe/subscription-status').then((r) => r.json()),
     ]).then(([tradesData, subData]) => {
       if (tradesData.trades) setAllTrades(tradesData.trades)
       setSubscribed(subData.active === true)
     }).finally(() => setLoading(false))
-  }, [])
+  }, [activeJournalId])
+
+  useEffect(() => { loadTrades() }, [loadTrades])
 
   useEffect(() => {
     if (tab === 'leaderboard' && leaderboard.length === 0) {

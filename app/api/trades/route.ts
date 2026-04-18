@@ -1,26 +1,26 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const journalId = request.nextUrl.searchParams.get('journal_id')
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('trades')
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (journalId) {
+    query = query.eq('journal_id', journalId)
   }
+
+  const { data, error } = await query
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ trades: data })
 }
@@ -28,13 +28,8 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
 
@@ -50,6 +45,7 @@ export async function POST(request: NextRequest) {
     pnl,
     notes,
     screenshot_url,
+    journal_id,
   } = body
 
   if (!pair || !type || !entry_price) {
@@ -63,6 +59,7 @@ export async function POST(request: NextRequest) {
     .from('trades')
     .insert({
       user_id: user.id,
+      journal_id: journal_id || null,
       pair: pair.toUpperCase(),
       type,
       outcome: outcome ?? null,
@@ -78,9 +75,6 @@ export async function POST(request: NextRequest) {
     .select()
     .single()
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ trade: data }, { status: 201 })
 }
