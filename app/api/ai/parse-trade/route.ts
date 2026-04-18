@@ -52,10 +52,17 @@ For notes: write 1 concise sentence summarizing the trade if context is clear, o
 
 === TYPE_B (CHART) ===
 ONLY extract: pair, type, entry_price, stop_loss, take_profit, exit_price.
-Read prices from the RIGHT-SIDE Y-AXIS. Horizontal lines with price labels = SL (red/pink), TP (green/blue), entry (white/yellow). Trade markers (triangles/arrows) mark entry and exit.
-Do NOT guess or invent prices — use null if you cannot read a price clearly from the chart.
+Do NOT guess or invent prices — use null if you cannot read a price with confidence.
 ALWAYS set these to null for chart images: lot_size = null, pnl = null, outcome = null, notes = null.
 Do NOT write notes describing the chart. notes must be null.
+
+To find prices, check in this exact order:
+1. PRICE LABELS ON HORIZONTAL LINES — most charting tools draw horizontal dotted/solid lines with a price tag on the right end. Read each: red/pink line = stop_loss, green/teal line = take_profit, white/yellow/blue entry line = entry_price.
+2. TRADE PANEL / ORDER BOX — MT4/MT5 and TradingView sometimes show a shaded rectangle between entry and SL/TP with the exact price printed inside or on the edge. Read it directly.
+3. BUY/SELL ARROW OR TRIANGLE — find the triangle/arrow marker on a candle. Trace horizontally right to the Y-axis and read the price at that exact level. That is the entry_price.
+4. EXIT MARKER — find the closing triangle/arrow. Trace to Y-axis for exit_price.
+5. RIGHT Y-AXIS LABELS — if no markers exist, read the visible price levels on the right axis to establish the scale, then estimate where each line sits.
+The pair name is usually in the chart title or top-left corner. BUY type = upward/green arrow, SELL = downward/red arrow.
 
 === OUTPUT ===
 Return ONLY a valid JSON object. No markdown, no explanation.

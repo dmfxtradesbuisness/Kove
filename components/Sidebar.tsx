@@ -224,19 +224,27 @@ export default function Sidebar() {
   const router    = useRouter()
   const supabase  = createClient()
 
-  const [menuOpen,  setMenuOpen]  = useState(false)
-  const [profile,   setProfile]   = useState<Profile | null>(null)
-  const [userEmail, setUserEmail] = useState('')
+  const [menuOpen,    setMenuOpen]    = useState(false)
+  const [profile,     setProfile]     = useState<Profile | null>(null)
+  const [userEmail,   setUserEmail]   = useState('')
+  const [subscribed,  setSubscribed]  = useState(false)
 
   useEffect(() => {
     async function loadProfile() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) setUserEmail(user.email ?? '')
-        const res = await fetch('/api/community/profile')
-        if (res.ok) {
-          const data = await res.json()
+        const [profileRes, subRes] = await Promise.all([
+          fetch('/api/community/profile'),
+          fetch('/api/stripe/subscription-status'),
+        ])
+        if (profileRes.ok) {
+          const data = await profileRes.json()
           setProfile(data.profile ?? null)
+        }
+        if (subRes.ok) {
+          const data = await subRes.json()
+          setSubscribed(data.active === true)
         }
       } catch { /* noop */ }
     }
@@ -308,7 +316,7 @@ export default function Sidebar() {
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 <span className="flex-1">{label}</span>
-                {pro && (
+                {pro && !subscribed && (
                   <span style={{ fontFamily: 'var(--font-display)', fontSize: 8, fontWeight: 700, background: 'rgba(30,110,255,0.15)', color: '#4D90FF', border: '1px solid rgba(30,110,255,0.25)', borderRadius: 4, padding: '2px 5px', letterSpacing: '0.08em' }}>
                     PRO
                   </span>
