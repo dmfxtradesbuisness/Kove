@@ -76,13 +76,13 @@ function Bubble({ msg }: { msg: Message }) {
         <div
           style={{
             width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-            background: 'linear-gradient(135deg,rgba(30,110,255,0.8),rgba(60,40,140,0.9))',
+            background: 'linear-gradient(135deg,rgba(30,110,255,0.8),rgba(10,40,140,0.85))',
             border: '1px solid rgba(30,110,255,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             marginRight: 10, marginTop: 4,
           }}
         >
-          <BarChart2 style={{ width: 13, height: 13, color: 'rgba(200,190,255,0.9)' }} />
+          <BarChart2 style={{ width: 13, height: 13, color: 'rgba(160,200,255,0.9)' }} />
         </div>
       )}
       <div
@@ -92,8 +92,8 @@ function Bubble({ msg }: { msg: Message }) {
           borderRadius: isUser ? '20px 4px 20px 20px' : '4px 20px 20px 20px',
           background: isUser
             ? 'rgba(230,230,240,0.93)'
-            : 'rgba(18,14,48,0.92)',
-          color: isUser ? '#111' : 'rgba(215,210,255,0.9)',
+            : 'rgba(8,14,32,0.92)',
+          color: isUser ? '#111' : 'rgba(210,225,255,0.9)',
           fontSize: 13.5,
           lineHeight: '1.7',
           fontFamily: 'var(--font-body)',
@@ -103,13 +103,13 @@ function Bubble({ msg }: { msg: Message }) {
             : '1px solid rgba(30,110,255,0.2)',
           boxShadow: isUser
             ? '0 2px 16px rgba(0,0,0,0.3)'
-            : '0 4px 28px rgba(40,24,100,0.3)',
+            : '0 4px 28px rgba(10,30,80,0.25)',
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
         }}
       >
         {msg.loading ? (
-          <span className="flex items-center gap-2" style={{ color: 'rgba(180,170,255,0.5)' }}>
+          <span className="flex items-center gap-2" style={{ color: 'rgba(130,180,255,0.5)' }}>
             <Loader2 className="w-3 h-3 animate-spin" />
             <span style={{ fontSize: 12 }}>Thinking…</span>
           </span>
@@ -255,18 +255,18 @@ export default function AIPage() {
       style={{ background: '#080808' }}
     >
       {/* Orbs */}
-      <Orb style={{ width: 560, height: 560, top: -160, left: '50%', transform: 'translateX(-50%)', background: 'radial-gradient(circle,rgba(10,40,120,0.75) 0%,rgba(25,15,70,0.35) 55%,transparent 100%)', zIndex: 0 }} />
-      <Orb style={{ width: 320, height: 320, top: 20, left: -80, background: 'radial-gradient(circle,rgba(35,25,90,0.55) 0%,transparent 70%)', zIndex: 0 }} />
-      <Orb style={{ width: 280, height: 280, top: 40, right: -60, background: 'radial-gradient(circle,rgba(45,30,100,0.5) 0%,transparent 70%)', zIndex: 0 }} />
-      <Orb style={{ width: 340, height: 340, bottom: -100, left: -80, background: 'radial-gradient(circle,rgba(30,20,80,0.5) 0%,transparent 70%)', zIndex: 0 }} />
-      <Orb style={{ width: 300, height: 300, bottom: -60, right: -60, background: 'radial-gradient(circle,rgba(40,28,100,0.5) 0%,transparent 70%)', zIndex: 0 }} />
+      <Orb style={{ width: 560, height: 560, top: -160, left: '50%', transform: 'translateX(-50%)', background: 'radial-gradient(circle,rgba(10,50,140,0.8) 0%,rgba(8,25,80,0.35) 55%,transparent 100%)', zIndex: 0 }} />
+      <Orb style={{ width: 320, height: 320, top: 20, left: -80, background: 'radial-gradient(circle,rgba(10,30,100,0.5) 0%,transparent 70%)', zIndex: 0 }} />
+      <Orb style={{ width: 280, height: 280, top: 40, right: -60, background: 'radial-gradient(circle,rgba(15,35,100,0.45) 0%,transparent 70%)', zIndex: 0 }} />
+      <Orb style={{ width: 340, height: 340, bottom: -100, left: -80, background: 'radial-gradient(circle,rgba(8,20,80,0.45) 0%,transparent 70%)', zIndex: 0 }} />
+      <Orb style={{ width: 300, height: 300, bottom: -60, right: -60, background: 'radial-gradient(circle,rgba(10,28,90,0.45) 0%,transparent 70%)', zIndex: 0 }} />
 
       {/* KoveAI brand — empty state */}
       {messages.length === 0 && (
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ zIndex: 1 }}>
           <div
             style={{
-              background: 'radial-gradient(circle at center, rgba(90,70,200,0.14) 0%, transparent 80%)',
+              background: 'radial-gradient(circle at center, rgba(20,60,180,0.12) 0%, transparent 80%)',
               padding: '24px 40px',
               borderRadius: 24,
               display: 'flex',
@@ -282,14 +282,14 @@ export default function AIPage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               marginBottom: 4,
             }}>
-              <BarChart2 style={{ width: 22, height: 22, color: 'rgba(160,145,255,0.7)' }} />
+              <BarChart2 style={{ width: 22, height: 22, color: 'rgba(77,144,255,0.8)' }} />
             </div>
             <span
               style={{
                 fontFamily: 'var(--font-display)',
                 fontSize: 28,
                 fontWeight: 800,
-                color: 'rgba(200,190,255,0.5)',
+                color: 'rgba(130,180,255,0.55)',
                 letterSpacing: '-0.03em',
               }}
             >
@@ -321,7 +321,7 @@ export default function AIPage() {
             <div
               className="mb-3 flex items-center gap-2 animate-fade-in"
               style={{
-                background: 'rgba(20,16,50,0.92)',
+                background: 'rgba(6,12,28,0.92)',
                 border: '1px solid rgba(30,110,255,0.25)',
                 borderRadius: 14,
                 padding: '8px 14px',
@@ -340,7 +340,7 @@ export default function AIPage() {
                 >
                   <option value="">None — general chat</option>
                   {trades.map((t) => (
-                    <option key={t.id} value={t.id} style={{ background: '#1a1438' }}>
+                    <option key={t.id} value={t.id} style={{ background: '#080e20' }}>
                       {t.pair} {t.type} · {new Date(t.created_at).toLocaleDateString()} · {t.pnl != null ? `${t.pnl >= 0 ? '+' : ''}$${t.pnl.toFixed(2)}` : 'Open'}
                     </option>
                   ))}
@@ -365,15 +365,15 @@ export default function AIPage() {
                   onClick={() => send(s)}
                   className="text-xs font-semibold px-4 py-2 rounded-full transition-all"
                   style={{
-                    background: 'rgba(70,55,165,0.45)',
-                    color: 'rgba(210,200,255,0.85)',
+                    background: 'rgba(20,60,180,0.35)',
+                    color: 'rgba(160,200,255,0.9)',
                     border: '1px solid rgba(30,110,255,0.3)',
                     fontFamily: 'var(--font-display)',
                     cursor: 'pointer',
                     backdropFilter: 'blur(8px)',
                   }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'rgba(95,78,200,0.65)')}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'rgba(70,55,165,0.45)')}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'rgba(30,80,210,0.55)')}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'rgba(20,60,180,0.35)')}
                 >
                   {s}
                 </button>
@@ -384,7 +384,7 @@ export default function AIPage() {
           {/* Input pill */}
           <div
             style={{
-              background: 'rgba(22,20,36,0.94)',
+              background: 'rgba(6,10,22,0.96)',
               border: '1px solid rgba(255,255,255,0.08)',
               borderRadius: 20,
               backdropFilter: 'blur(24px)',

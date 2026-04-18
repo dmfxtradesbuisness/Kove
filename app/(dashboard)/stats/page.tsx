@@ -260,7 +260,8 @@ function EquityCurve({ trades }: { trades: Trade[] }) {
         <line x1="0" y1={toY(0).toFixed(1)} x2={W} y2={toY(0).toFixed(1)} stroke="rgba(255,255,255,0.06)" strokeWidth="1" strokeDasharray="4 4" />
       )}
       <path d={`${pathD} L ${W} ${H} L 0 ${H} Z`} fill="url(#eg)" />
-      <path d={pathD} fill="none" stroke={col} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={pathD} fill="none" stroke={col} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+        style={{ strokeDasharray: 2000, strokeDashoffset: 0, animation: 'drawLine 1.2s cubic-bezier(0.22,1,0.36,1) forwards' }} />
     </svg>
   )
 }
@@ -271,140 +272,97 @@ function PnlCalendar({ trades }: { trades: Trade[] }) {
   const year  = viewDate.getFullYear()
   const month = viewDate.getMonth()
 
-  const dayMap: Record<number, { pnl: number; count: number }> = {}
+  const dayMap: Record<number, number> = {}
   trades.forEach((t) => {
     if (t.pnl === null) return
     const d = new Date(t.created_at)
     if (d.getMonth() !== month || d.getFullYear() !== year) return
     const day = d.getDate()
-    if (!dayMap[day]) dayMap[day] = { pnl: 0, count: 0 }
-    dayMap[day].pnl += t.pnl
-    dayMap[day].count++
+    dayMap[day] = (dayMap[day] ?? 0) + t.pnl
   })
 
-  const firstDow    = new Date(year, month, 1).getDay()
+  const firstDow    = new Date(year, month, 1).getDay() // 0=Sun
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const today       = new Date()
   const isCurrentMonth = today.getMonth() === month && today.getFullYear() === year
-
-  // Mon-first: S M T W T F S → M T W T F S S
-  const DOW_LABELS = ['M','T','W','T','F','S','S']
-  // Shift firstDow: Sun=0 → col 6, Mon=1 → col 0
-  const startCol = (firstDow + 6) % 7
-
-  const monthLabel = viewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-  const monthPnl   = Object.values(dayMap).reduce((s, d) => s + d.pnl, 0)
-  const tradeDays  = Object.keys(dayMap).length
-
-  // Intensity-based coloring (no text inside cells)
-  function cellStyle(pnl: number, isToday: boolean, isFuture: boolean, hasData: boolean): React.CSSProperties {
-    if (isToday && !hasData) return { background: 'rgba(30,110,255,0.12)', border: '1.5px solid rgba(30,110,255,0.5)' }
-    if (!hasData) return { background: isFuture ? 'transparent' : 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.04)' }
-    if (pnl > 0) {
-      const i = pnl > 500 ? 0.55 : pnl > 200 ? 0.38 : pnl > 50 ? 0.22 : 0.12
-      return { background: `rgba(52,211,153,${i})`, border: `1px solid rgba(52,211,153,${i + 0.15})`, boxShadow: pnl > 200 ? '0 0 8px rgba(52,211,153,0.12)' : 'none' }
-    }
-    const i = pnl < -500 ? 0.55 : pnl < -200 ? 0.38 : pnl < -50 ? 0.22 : 0.12
-    return { background: `rgba(239,68,68,${i})`, border: `1px solid rgba(239,68,68,${i + 0.15})`, boxShadow: pnl < -200 ? '0 0 8px rgba(239,68,68,0.12)' : 'none' }
-  }
+  const monthLabel  = `${year}-${String(month + 1).padStart(2, '0')}`
 
   const prevMonth = () => setViewDate(new Date(year, month - 1, 1))
   const nextMonth = () => setViewDate(new Date(year, month + 1, 1))
 
+  const DOW = ['S','M','T','W','T','F','S']
+
+  // Build cell array: nulls for empty leading days, then 1..daysInMonth
+  const cells: (number | null)[] = [
+    ...Array(firstDow).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ]
+  // Pad to complete last row
+  while (cells.length % 7 !== 0) cells.push(null)
+
+  function cellColor(pnl: number) {
+    if (pnl > 0) {
+      const intensity = pnl > 200 ? 0.55 : pnl > 50 ? 0.35 : 0.2
+      return { bg: `rgba(52,211,153,${intensity})`, text: '#34D399', border: `rgba(52,211,153,${intensity + 0.15})` }
+    }
+    const intensity = pnl < -200 ? 0.6 : pnl < -50 ? 0.4 : 0.22
+    return { bg: `rgba(239,68,68,${intensity})`, text: '#F87171', border: `rgba(239,68,68,${intensity + 0.15})` }
+  }
+
   return (
-    <div className="dash-card" style={{ padding: '16px 18px', width: '100%' }}>
+    <div className="dash-card" style={{ padding: '18px 20px', width: '100%' }}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, color: 'var(--text-1)', letterSpacing: '-0.01em' }}>
-            {monthLabel}
-          </p>
-          {tradeDays > 0 && (
-            <span style={{
-              fontSize: 11, fontWeight: 700,
-              color: monthPnl >= 0 ? '#34d399' : '#f87171',
-              background: monthPnl >= 0 ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)',
-              border: `1px solid ${monthPnl >= 0 ? 'rgba(52,211,153,0.25)' : 'rgba(239,68,68,0.25)'}`,
-              borderRadius: 6, padding: '1px 7px',
-              fontFamily: 'var(--font-display)',
-            }}>
-              {monthPnl >= 0 ? '+' : ''}${Math.abs(monthPnl) >= 1000 ? (monthPnl / 1000).toFixed(1) + 'k' : Math.abs(monthPnl).toFixed(0)}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          <button onClick={prevMonth} style={{ width: 26, height: 26, borderRadius: 7, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontFamily: 'var(--font-display)' }}>‹</button>
-          <button onClick={nextMonth} disabled={isCurrentMonth} style={{ width: 26, height: 26, borderRadius: 7, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', cursor: isCurrentMonth ? 'not-allowed' : 'pointer', color: isCurrentMonth ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontFamily: 'var(--font-display)' }}>›</button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, color: '#fff' }}>Daily P&L</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={prevMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', fontSize: 16, lineHeight: 1, padding: '0 4px' }}>‹</button>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.7)', letterSpacing: '0.04em' }}>{monthLabel}</span>
+          <button onClick={nextMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', fontSize: 16, lineHeight: 1, padding: '0 4px' }}>›</button>
         </div>
       </div>
 
-      {/* DOW labels */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3, marginBottom: 3 }}>
-        {DOW_LABELS.map((d, i) => (
-          <div key={i} style={{ textAlign: 'center', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.18)', fontFamily: 'var(--font-display)', letterSpacing: '0.04em' }}>{d}</div>
+      {/* DOW headers */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
+        {DOW.map((d, i) => (
+          <div key={i} style={{ textAlign: 'center', fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.25)', paddingBottom: 4 }}>{d}</div>
         ))}
       </div>
 
-      {/* Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
-        {Array.from({ length: startCol }).map((_, i) => <div key={`e${i}`} />)}
-
-        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
-          const data    = dayMap[day]
+      {/* Day cells */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+        {cells.map((day, idx) => {
+          if (day === null) return <div key={idx} />
+          const pnl = dayMap[day]
+          const hasPnl = pnl !== undefined
           const isToday = isCurrentMonth && today.getDate() === day
           const isFuture = isCurrentMonth && day > today.getDate()
-          const s = cellStyle(data?.pnl ?? 0, isToday, isFuture, !!data)
-          const tooltip = data
-            ? `${new Date(year, month, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: ${data.pnl >= 0 ? '+' : ''}$${data.pnl.toFixed(2)} · ${data.count} trade${data.count !== 1 ? 's' : ''}`
-            : undefined
+          const colors = hasPnl ? cellColor(pnl) : null
 
           return (
-            <div
-              key={day}
-              title={tooltip}
-              style={{
-                aspectRatio: '1',
-                borderRadius: 5,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'transform 0.1s, opacity 0.1s',
-                cursor: data ? 'default' : 'default',
-                ...s,
-              }}
-              onMouseEnter={(e) => { if (data) (e.currentTarget as HTMLElement).style.transform = 'scale(1.12)' }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)' }}
+            <div key={idx} style={{
+              borderRadius: 8,
+              padding: '6px 4px',
+              textAlign: 'center',
+              background: colors ? colors.bg : isToday ? 'rgba(30,110,255,0.12)' : 'rgba(255,255,255,0.03)',
+              border: `1px solid ${colors ? colors.border : isToday ? 'rgba(30,110,255,0.4)' : 'rgba(255,255,255,0.05)'}`,
+              minHeight: 48,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+              opacity: isFuture && !hasPnl ? 0.35 : 1,
+              transition: 'transform 0.1s',
+              cursor: hasPnl ? 'default' : 'default',
+            }}
+            onMouseEnter={(e) => { if (hasPnl) (e.currentTarget as HTMLElement).style.transform = 'scale(1.06)' }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)' }}
             >
-              <span style={{
-                fontSize: 9,
-                fontWeight: isToday ? 800 : 500,
-                lineHeight: 1,
-                color: data
-                  ? (data.pnl >= 0 ? 'rgba(52,211,153,0.9)' : 'rgba(239,68,68,0.9)')
-                  : isToday
-                    ? 'rgba(77,144,255,0.8)'
-                    : isFuture ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.22)',
-                fontFamily: 'var(--font-display)',
-              }}>
-                {day}
-              </span>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: isToday ? 800 : 600, color: colors ? '#fff' : isToday ? 'rgba(77,144,255,0.9)' : 'rgba(255,255,255,0.5)', lineHeight: 1 }}>{day}</span>
+              {hasPnl && (
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: colors!.text, lineHeight: 1 }}>
+                  {pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}
+                </span>
+              )}
             </div>
           )
         })}
-      </div>
-
-      {/* Legend */}
-      <div className="flex items-center gap-3 mt-3">
-        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-body)' }}>Less</span>
-        {[0.1, 0.22, 0.38, 0.55].map((o, i) => (
-          <div key={i} style={{ width: 10, height: 10, borderRadius: 3, background: `rgba(52,211,153,${o})`, border: `1px solid rgba(52,211,153,${o + 0.1})` }} />
-        ))}
-        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-body)' }}>More profit</span>
-        <div style={{ width: 1, height: 10, background: 'rgba(255,255,255,0.08)', margin: '0 2px' }} />
-        {[0.1, 0.22, 0.38, 0.55].map((o, i) => (
-          <div key={i} style={{ width: 10, height: 10, borderRadius: 3, background: `rgba(239,68,68,${o})`, border: `1px solid rgba(239,68,68,${o + 0.1})` }} />
-        ))}
-        <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-body)' }}>Loss</span>
       </div>
     </div>
   )
@@ -487,6 +445,17 @@ export default function StatsPage() {
 
   return (
     <div className="px-4 md:px-8 pt-6 md:pt-10 pb-10">
+      <style>{`
+  @keyframes countUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes drawLine { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+  .stat-enter { animation: countUp 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+  .stat-enter:nth-child(1) { animation-delay: 0.05s; }
+  .stat-enter:nth-child(2) { animation-delay: 0.12s; }
+  .stat-enter:nth-child(3) { animation-delay: 0.19s; }
+  .stat-enter:nth-child(4) { animation-delay: 0.26s; }
+  .stat-enter:nth-child(5) { animation-delay: 0.33s; }
+  .stat-enter:nth-child(6) { animation-delay: 0.40s; }
+`}</style>
       {/* Header */}
       <div className="mb-6">
         <p className="page-label">Statistics</p>
@@ -556,12 +525,12 @@ export default function StatsPage() {
 
           {/* Stat cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
-            <StatCard label="Total Trades" value={String(trades.length)} sub={`${closedTrades.length} closed`} icon={Activity} neutral />
-            <StatCard label="Win Rate" value={winRate !== null ? `${winRate.toFixed(1)}%` : '—'} sub={winRate !== null ? `${wins.length}W / ${losses.length}L` : `${closedTrades.length}/10 trades`} icon={Target} positive={winRate !== null ? winRate >= 50 : undefined} neutral={winRate === null} />
-            <StatCard label="Total P&L" value={`${totalPnl >= 0 ? '+' : ''}$${Math.abs(totalPnl) >= 10000 ? (totalPnl / 1000).toFixed(2) + 'k' : totalPnl.toFixed(2)}`} sub="All closed" icon={totalPnl >= 0 ? TrendingUp : TrendingDown} positive={totalPnl >= 0} />
-            <StatCard label="Avg Win" value={avgWin > 0 ? `$${avgWin.toFixed(2)}` : '—'} sub={`${wins.length} winners`} icon={TrendingUp} positive={avgWin > 0 || undefined} neutral={avgWin === 0} />
-            <StatCard label="Avg Loss" value={avgLoss > 0 ? `$${avgLoss.toFixed(2)}` : '—'} sub={`${losses.length} losers`} icon={TrendingDown} positive={avgLoss > 0 ? false : undefined} neutral={avgLoss === 0} />
-            <StatCard label="Profit Factor" value={profitFactor > 0 ? profitFactor.toFixed(2) : '—'} sub="Win / loss ratio" icon={DollarSign} positive={profitFactor >= 1.5 || undefined} neutral={profitFactor === 0} />
+            <div className="stat-enter"><StatCard label="Total Trades" value={String(trades.length)} sub={`${closedTrades.length} closed`} icon={Activity} neutral /></div>
+            <div className="stat-enter"><StatCard label="Win Rate" value={winRate !== null ? `${winRate.toFixed(1)}%` : '—'} sub={winRate !== null ? `${wins.length}W / ${losses.length}L` : `${closedTrades.length}/10 trades`} icon={Target} positive={winRate !== null ? winRate >= 50 : undefined} neutral={winRate === null} /></div>
+            <div className="stat-enter"><StatCard label="Total P&L" value={`${totalPnl >= 0 ? '+' : ''}$${Math.abs(totalPnl) >= 10000 ? (totalPnl / 1000).toFixed(2) + 'k' : totalPnl.toFixed(2)}`} sub="All closed" icon={totalPnl >= 0 ? TrendingUp : TrendingDown} positive={totalPnl >= 0} /></div>
+            <div className="stat-enter"><StatCard label="Avg Win" value={avgWin > 0 ? `$${avgWin.toFixed(2)}` : '—'} sub={`${wins.length} winners`} icon={TrendingUp} positive={avgWin > 0 || undefined} neutral={avgWin === 0} /></div>
+            <div className="stat-enter"><StatCard label="Avg Loss" value={avgLoss > 0 ? `$${avgLoss.toFixed(2)}` : '—'} sub={`${losses.length} losers`} icon={TrendingDown} positive={avgLoss > 0 ? false : undefined} neutral={avgLoss === 0} /></div>
+            <div className="stat-enter"><StatCard label="Profit Factor" value={profitFactor > 0 ? profitFactor.toFixed(2) : '—'} sub="Win / loss ratio" icon={DollarSign} positive={profitFactor >= 1.5 || undefined} neutral={profitFactor === 0} /></div>
           </div>
 
           {/* Top pairs + recent */}

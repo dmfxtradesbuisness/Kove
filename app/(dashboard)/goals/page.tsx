@@ -232,6 +232,8 @@ export default function GoalsPage() {
   const [activeGoal, setActiveGoal]   = useState<'pnl' | 'wr' | 'dd'>('pnl')
   const [showForm, setShowForm]       = useState(false)
   const [form, setForm]               = useState({ monthly_pnl_target: '', win_rate_target: '', max_drawdown_target: '', notes: '' })
+  const [mounted, setMounted]         = useState(false)
+  useEffect(() => { const t = setTimeout(() => setMounted(true), 100); return () => clearTimeout(t) }, [goals])
 
   useEffect(() => {
     async function load() {
@@ -368,7 +370,7 @@ export default function GoalsPage() {
       color:  '#34d399',
       label:  'P&L Target',
       sub:    goals?.monthly_pnl_target ? `$${monthPnl.toFixed(0)} / $${Number(goals.monthly_pnl_target).toFixed(0)}` : 'Not set',
-      pct:    pnlPct,
+      pct:    mounted ? pnlPct : 0,
       badge:  pnlPct >= 100 ? 'REACHED' : pnlPct >= 50 ? 'ON TRACK' : 'IN PROGRESS',
       badgeBg: pnlPct >= 100 ? 'rgba(52,211,153,0.2)' : pnlPct >= 50 ? 'rgba(52,211,153,0.1)' : 'rgba(30,110,255,0.12)',
       badgeColor: pnlPct >= 100 ? '#34d399' : pnlPct >= 50 ? '#6ee7b7' : '#a78bfa',
@@ -381,7 +383,7 @@ export default function GoalsPage() {
       color:  '#4D90FF',
       label:  'Win Rate',
       sub:    goals?.win_rate_target ? `${monthWinRate}% / ${Number(goals.win_rate_target).toFixed(0)}%` : 'Not set',
-      pct:    wrPct,
+      pct:    mounted ? wrPct : 0,
       badge:  wrPct >= 100 ? 'REACHED' : wrPct >= 50 ? 'ON TRACK' : 'IN PROGRESS',
       badgeBg: wrPct >= 100 ? 'rgba(52,211,153,0.2)' : 'rgba(30,110,255,0.12)',
       badgeColor: wrPct >= 100 ? '#34d399' : '#a78bfa',
@@ -394,7 +396,7 @@ export default function GoalsPage() {
       color:  '#f97316',
       label:  'Drawdown Limit',
       sub:    goals?.max_drawdown_target ? `$${maxDD.toFixed(0)} / $${Number(goals.max_drawdown_target).toFixed(0)}` : 'Not set',
-      pct:    ddPct,
+      pct:    mounted ? ddPct : 0,
       badge:  ddPct >= 100 ? 'LIMIT HIT' : ddPct >= 80 ? 'AT RISK' : 'SAFE',
       badgeBg: ddPct >= 100 ? 'rgba(239,68,68,0.2)' : ddPct >= 80 ? 'rgba(239,68,68,0.12)' : 'rgba(52,211,153,0.1)',
       badgeColor: ddPct >= 80 ? '#f87171' : '#6ee7b7',
@@ -494,9 +496,9 @@ export default function GoalsPage() {
                 {/* Rings */}
                 <div style={{ position: 'relative', flexShrink: 0 }}>
                   <MultiRing rings={[
-                    { pct: goals?.monthly_pnl_target ? pnlPct : 0, color: '#34d399', r: 78, stroke: 11 },
-                    { pct: goals?.win_rate_target     ? wrPct  : 0, color: '#4D90FF', r: 60, stroke: 11 },
-                    { pct: goals?.max_drawdown_target ? Math.max(0, 100 - ddPct) : 0, color: '#f97316', r: 42, stroke: 11 },
+                    { pct: goals?.monthly_pnl_target ? (mounted ? pnlPct : 0) : 0, color: '#34d399', r: 78, stroke: 11 },
+                    { pct: goals?.win_rate_target     ? (mounted ? wrPct : 0)  : 0, color: '#4D90FF', r: 60, stroke: 11 },
+                    { pct: goals?.max_drawdown_target ? Math.max(0, 100 - (mounted ? ddPct : 0)) : 0, color: '#f97316', r: 42, stroke: 11 },
                   ]} />
                   {/* Center text */}
                   <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 1 }}>
@@ -559,7 +561,7 @@ export default function GoalsPage() {
                 accent="#34d399" icon={TrendingUp} label="Monthly P&L Target"
                 currentLabel="This Month" current={`${monthPnl >= 0 ? '+' : '-'}$${Math.abs(monthPnl).toFixed(0)}`}
                 targetLabel="Target" target={`$${Number(goals.monthly_pnl_target).toFixed(0)}`}
-                pct={pnlPct} color="#34d399" reached={monthPnl >= goals.monthly_pnl_target}
+                pct={mounted ? pnlPct : 0} color="#34d399" reached={monthPnl >= goals.monthly_pnl_target}
                 milestones={pnlMilestones()}
               />
             )}
@@ -568,7 +570,7 @@ export default function GoalsPage() {
                 accent="#4D90FF" icon={Target} label="Win Rate Target"
                 currentLabel="Current Win Rate" current={`${monthWinRate}%`}
                 targetLabel="Target" target={`${Number(goals.win_rate_target).toFixed(0)}%`}
-                pct={wrPct} color="#4D90FF" reached={monthWinRate >= goals.win_rate_target}
+                pct={mounted ? wrPct : 0} color="#4D90FF" reached={monthWinRate >= goals.win_rate_target}
                 milestones={wrMilestones()}
               />
             )}
@@ -577,7 +579,7 @@ export default function GoalsPage() {
                 accent="#f97316" icon={ShieldAlert} label="Max Drawdown Limit"
                 currentLabel="Current Drawdown" current={`$${maxDD.toFixed(0)}`}
                 targetLabel="Max Allowed" target={`$${Number(goals.max_drawdown_target).toFixed(0)}`}
-                pct={ddPct} color="#f97316" reached={maxDD >= goals.max_drawdown_target} warning
+                pct={mounted ? ddPct : 0} color="#f97316" reached={maxDD >= goals.max_drawdown_target} warning
                 milestones={ddMilestones()}
               />
             )}
