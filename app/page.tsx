@@ -172,45 +172,6 @@ export default function LandingPage() {
             />
           </div>
 
-          {/* Floating stat cards — layered over the neon */}
-          <div className="nc fc1" style={{
-            position: 'absolute', top: '22%', right: '14%',
-            zIndex: 3, pointerEvents: 'none',
-            background: 'rgba(8,12,28,0.82)',
-            border: '1px solid rgba(30,110,255,0.25)',
-            borderRadius: 12, padding: '12px 16px', backdropFilter: 'blur(12px)',
-            minWidth: 130,
-          }}>
-            <p style={{ fontFamily:'var(--font-display)', fontSize:9, fontWeight:700, color:'rgba(77,144,255,0.7)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:5 }}>Win Rate</p>
-            <p style={{ fontFamily:'var(--font-display)', fontSize:22, fontWeight:800, color:'#fff', letterSpacing:'-0.04em', lineHeight:1 }}>71.4<span style={{ fontSize:13, fontWeight:500, color:BLUE_HI }}>%</span></p>
-            <p style={{ fontFamily:'var(--font-body)', fontSize:10, color:'rgba(52,211,153,0.8)', marginTop:4 }}>▲ 8.2% this week</p>
-          </div>
-
-          <div className="nc fc2" style={{
-            position: 'absolute', top: '52%', right: '6%',
-            zIndex: 3, pointerEvents: 'none',
-            background: 'rgba(8,12,28,0.82)',
-            border: '1px solid rgba(30,110,255,0.2)',
-            borderRadius: 12, padding: '12px 16px', backdropFilter: 'blur(12px)',
-            minWidth: 148,
-          }}>
-            <p style={{ fontFamily:'var(--font-display)', fontSize:9, fontWeight:700, color:'rgba(77,144,255,0.7)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:5 }}>Total P&amp;L</p>
-            <p style={{ fontFamily:'var(--font-display)', fontSize:22, fontWeight:800, color:'#fff', letterSpacing:'-0.04em', lineHeight:1 }}>+$4,280</p>
-            <p style={{ fontFamily:'var(--font-body)', fontSize:10, color:'rgba(255,255,255,0.3)', marginTop:4 }}>Last 30 days</p>
-          </div>
-
-          <div className="nc fc3" style={{
-            position: 'absolute', top: '72%', right: '28%',
-            zIndex: 3, pointerEvents: 'none',
-            background: 'rgba(8,12,28,0.82)',
-            border: '1px solid rgba(30,110,255,0.18)',
-            borderRadius: 12, padding: '10px 14px', backdropFilter: 'blur(12px)',
-            minWidth: 120,
-          }}>
-            <p style={{ fontFamily:'var(--font-display)', fontSize:9, fontWeight:700, color:'rgba(77,144,255,0.7)', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:4 }}>Discipline</p>
-            <p style={{ fontFamily:'var(--font-display)', fontSize:20, fontWeight:800, color:'#fff', letterSpacing:'-0.04em', lineHeight:1 }}>87<span style={{ fontSize:12, color:BLUE_HI }}>/100</span></p>
-          </div>
-
           {/* Left content */}
           <div style={{
             position: 'absolute', inset: 0, zIndex: 2,
@@ -319,19 +280,6 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            {/* Stats row */}
-            <div className="hl hl-6" style={{ display:'flex', alignItems:'center', gap:28, flexWrap:'wrap' }}>
-              {[
-                { val:'12K+', label:'Active Traders' },
-                { val:'4.9★', label:'Average Rating' },
-                { val:'99.9%', label:'Uptime' },
-              ].map(({ val, label }) => (
-                <div key={label} style={{ display:'flex', flexDirection:'column', gap:2 }}>
-                  <span style={{ fontFamily:'var(--font-display)', fontSize:18, fontWeight:800, color:'#fff', letterSpacing:'-0.04em', lineHeight:1 }}>{val}</span>
-                  <span style={{ fontFamily:'var(--font-body)', fontSize:11, color:'rgba(255,255,255,0.3)' }}>{label}</span>
-                </div>
-              ))}
-            </div>
           </div>
         </section>
 
