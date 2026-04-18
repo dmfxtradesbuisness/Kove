@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useJournal } from '@/lib/journal-context'
 import {
-  TrendingUp, TrendingDown, Activity, DollarSign,
+  TrendingUp, TrendingDown, Activity, DollarSign, Target,
   BarChart2, Calendar,
 } from 'lucide-react'
 import type { Trade } from '@/lib/types'
