@@ -334,12 +334,16 @@ export default function AIPage() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto relative" style={{ zIndex: 2 }}>
-        {messages.length > 0 && (
-          <div style={{ maxWidth: 700, margin: '0 auto', padding: '32px 20px 24px' }}>
-            {messages.map((msg) => <Bubble key={msg.id} msg={msg} />)}
-            <div ref={bottomRef} />
-          </div>
-        )}
+        {/* Spacer pushes messages to the bottom when chat is short */}
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+          <div style={{ flex: 1 }} />
+          {messages.length > 0 && (
+            <div style={{ maxWidth: 700, width: '100%', margin: '0 auto', padding: '16px 20px 16px' }}>
+              {messages.map((msg) => <Bubble key={msg.id} msg={msg} />)}
+              <div ref={bottomRef} />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Bottom section */}
