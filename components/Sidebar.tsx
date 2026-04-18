@@ -282,13 +282,6 @@ export default function Sidebar() {
         className="hidden md:flex fixed left-0 top-0 h-screen w-[220px] flex-col z-40"
         style={{ background: '#0c0c0c', borderRight: '1px solid rgba(255,255,255,0.06)' }}
       >
-        {/* Logo */}
-        <div className="flex items-center justify-center px-4 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <Link href="/journal" className="flex items-center transition-opacity hover:opacity-80">
-            <KoveWordmark height={32} />
-          </Link>
-        </div>
-
         {/* Journal switcher */}
         <div style={{ paddingTop: 12, paddingBottom: 4 }}>
           <p style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.2)', padding: '0 20px 6px' }}>

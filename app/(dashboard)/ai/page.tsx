@@ -333,9 +333,9 @@ export default function AIPage() {
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto relative" style={{ zIndex: 2, paddingTop: messages.length === 0 ? 0 : 24 }}>
+      <div className="flex-1 overflow-y-auto relative" style={{ zIndex: 2 }}>
         {messages.length > 0 && (
-          <div style={{ maxWidth: 700, margin: '0 auto', padding: '0 20px 24px' }}>
+          <div style={{ maxWidth: 700, margin: '0 auto', padding: '32px 20px 24px' }}>
             {messages.map((msg) => <Bubble key={msg.id} msg={msg} />)}
             <div ref={bottomRef} />
           </div>

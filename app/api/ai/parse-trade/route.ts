@@ -37,43 +37,41 @@ export async function POST(request: NextRequest) {
           content: [
             {
               type: 'text',
-              text: `You are a trade data extractor for a trading journal app. Analyze this image carefully.
+              text: `You are a trade data extractor for a trading journal app.
 
-This could be:
-A) A broker STATEMENT or TRADE HISTORY table (MT4 report, account history, trade list) — numbers will be in clear table columns. Read them directly.
-B) A CHART screenshot (TradingView, MT4 chart, etc.) — prices are harder to read. Follow the specific instructions below.
+STEP 1 — CLASSIFY the image:
+- TYPE_A (STATEMENT): broker account history, MT4/MT5 trade report, trade table with rows and columns showing Symbol, Type, Open Price, Close Price, S/L, T/P, Profit, Lots as labeled column headers.
+- TYPE_B (CHART): a price chart (candlestick or line) from TradingView, MT4, MT5, or any charting platform. Even if it has some annotations or a trade panel overlay, it is still a chart.
 
-=== FOR CHART SCREENSHOTS ===
-Look carefully in this order:
-1. RIGHT-SIDE PRICE AXIS — read the Y-axis numbers carefully. Note the price scale.
-2. HORIZONTAL LINES on the chart — these are usually SL (red/pink), TP (green/blue), or entry levels. Each line usually has a price label at its right end.
-3. TRADE MARKERS — triangles, arrows, or dots on candles marking entry/exit. Look for any price tooltip or label near them.
-4. INFO PANELS / BOXES on the chart — MT4 often shows "Open: 1.08500" type overlays.
-5. CANDLE PRICES — if you can identify the entry/exit candle, read the open/close prices from the right axis at that level.
-6. Any popup, tooltip, or annotation with price data.
+STEP 2 — EXTRACT based on type:
 
-Do NOT invent prices. If you genuinely cannot read a price value, use null.
+=== TYPE_A (STATEMENT) ===
+Read table columns directly: Symbol → pair, Type → BUY/SELL, Open Price → entry_price, Close Price → exit_price, S/L → stop_loss, T/P → take_profit, Profit → pnl, Lots → lot_size.
+Derive outcome: positive pnl = "win", negative = "loss", zero = "breakeven".
+For notes: write 1 concise sentence summarizing the trade if context is clear, otherwise null.
 
-=== FOR STATEMENT SCREENSHOTS ===
-Read the table columns directly: Open Price, Close Price, S/L, T/P, Profit/Loss, Lots, Symbol, Type.
+=== TYPE_B (CHART) ===
+ONLY extract: pair, type, entry_price, stop_loss, take_profit, exit_price.
+Read prices from the RIGHT-SIDE Y-AXIS. Horizontal lines with price labels = SL (red/pink), TP (green/blue), entry (white/yellow). Trade markers (triangles/arrows) mark entry and exit.
+Do NOT guess or invent prices — use null if you cannot read a price clearly from the chart.
+ALWAYS set these to null for chart images: lot_size = null, pnl = null, outcome = null, notes = null.
+Do NOT write notes describing the chart. notes must be null.
 
 === OUTPUT ===
-Return ONLY a valid JSON object. Use null for anything you cannot read with confidence.
+Return ONLY a valid JSON object. No markdown, no explanation.
 
 {
   "pair": "instrument symbol (e.g. EUR/USD, XAU/USD, NQ, BTC/USD, US30) — normalize to slash format",
-  "type": "BUY or SELL",
+  "type": "BUY or SELL or null",
   "entry_price": number or null,
   "exit_price": number or null,
   "stop_loss": number or null,
   "take_profit": number or null,
   "lot_size": number or null,
-  "pnl": number or null (positive = profit, negative = loss),
+  "pnl": number or null,
   "outcome": "win" or "loss" or "breakeven" or null,
-  "notes": "1-2 sentences describing what you see — pattern, chart context, any visible labels" or null
-}
-
-No markdown, no explanation. Raw JSON only.`,
+  "notes": string or null
+}`,
             },
             {
               type: 'image_url',

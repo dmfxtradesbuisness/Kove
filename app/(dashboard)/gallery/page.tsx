@@ -24,7 +24,7 @@ export default function GalleryPage() {
   const [error, setError] = useState('')
   const [modalIdx, setModalIdx] = useState<number | null>(null)
   const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState<'all' | 'win' | 'loss' | 'open'>('all')
+  const [filter, setFilter] = useState<'all' | 'win' | 'loss'>('all')
 
   useEffect(() => {
     fetch('/api/gallery')
@@ -43,8 +43,7 @@ export default function GalleryPage() {
       const matchFilter =
         filter === 'all' ||
         (filter === 'win' && t.pnl !== null && t.pnl > 0) ||
-        (filter === 'loss' && t.pnl !== null && t.pnl < 0) ||
-        (filter === 'open' && t.pnl === null)
+        (filter === 'loss' && t.pnl !== null && t.pnl < 0)
       return matchSearch && matchFilter
     })
   }, [trades, search, filter])
@@ -94,7 +93,7 @@ export default function GalleryPage() {
           />
         </div>
         <div className="flex items-center gap-1.5 bg-[#0a0a0a] border border-white/[0.05] rounded-xl p-1">
-          {(['all', 'win', 'loss', 'open'] as const).map((f) => (
+          {(['all', 'win', 'loss'] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
