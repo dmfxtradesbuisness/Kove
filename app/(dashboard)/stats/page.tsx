@@ -298,7 +298,7 @@ function PnlCalendar({ trades }: { trades: Trade[] }) {
 
   // Intensity-based coloring (no text inside cells)
   function cellStyle(pnl: number, isToday: boolean, isFuture: boolean, hasData: boolean): React.CSSProperties {
-    if (isToday && !hasData) return { background: 'rgba(108,93,211,0.12)', border: '1.5px solid rgba(108,93,211,0.5)' }
+    if (isToday && !hasData) return { background: 'rgba(30,110,255,0.12)', border: '1.5px solid rgba(30,110,255,0.5)' }
     if (!hasData) return { background: isFuture ? 'transparent' : 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.04)' }
     if (pnl > 0) {
       const i = pnl > 500 ? 0.55 : pnl > 200 ? 0.38 : pnl > 50 ? 0.22 : 0.12
@@ -312,7 +312,7 @@ function PnlCalendar({ trades }: { trades: Trade[] }) {
   const nextMonth = () => setViewDate(new Date(year, month + 1, 1))
 
   return (
-    <div className="dash-card" style={{ padding: '16px 18px', maxWidth: 420 }}>
+    <div className="dash-card" style={{ padding: '16px 18px', width: '100%' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
@@ -382,7 +382,7 @@ function PnlCalendar({ trades }: { trades: Trade[] }) {
                 color: data
                   ? (data.pnl >= 0 ? 'rgba(52,211,153,0.9)' : 'rgba(239,68,68,0.9)')
                   : isToday
-                    ? 'rgba(139,124,248,0.8)'
+                    ? 'rgba(77,144,255,0.8)'
                     : isFuture ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.22)',
                 fontFamily: 'var(--font-display)',
               }}>

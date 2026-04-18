@@ -651,7 +651,7 @@ function AccountContent() {
           <div
             className="w-full flex flex-col justify-between p-6"
             style={{
-              background: 'linear-gradient(135deg,#5C4ED4 0%,#7B6CF5 60%,#6060C8 100%)',
+              background: 'linear-gradient(135deg,#1050CC 0%,#1E6EFF 60%,#6060C8 100%)',
               borderRadius: 20,
               minHeight: 170,
             }}
@@ -682,7 +682,7 @@ function AccountContent() {
                     onClick={handleManage}
                     disabled={portalLoading}
                     className="flex items-center gap-2 px-4 h-9 rounded-xl text-xs font-semibold transition-all"
-                    style={{ background: '#fff', color: '#5C4ED4' }}
+                    style={{ background: '#fff', color: '#1050CC' }}
                   >
                     {portalLoading && <Loader2 className="w-3 h-3 animate-spin" />}
                     Manage Billing
@@ -714,10 +714,10 @@ function AccountContent() {
                     onClick={handleUpgrade}
                     disabled={checkoutLoading}
                     className="flex items-center gap-2 px-4 h-9 rounded-xl text-xs font-semibold"
-                    style={{ background: '#fff', color: '#5C4ED4' }}
+                    style={{ background: '#fff', color: '#1050CC' }}
                   >
                     {checkoutLoading && <Loader2 className="w-3 h-3 animate-spin" />}
-                    <Sparkles className="w-3 h-3" style={{ color: '#5C4ED4' }} />
+                    <Sparkles className="w-3 h-3" style={{ color: '#1050CC' }} />
                     Upgrade — $19/mo
                   </button>
                 </div>

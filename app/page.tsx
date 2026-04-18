@@ -100,6 +100,15 @@ export default function LandingPage() {
         .fc1  { animation: floatCard 6s ease-in-out 0.5s infinite; }
         .fc2  { animation: floatCard 7s ease-in-out 1.2s infinite; }
         .fc3  { animation: floatCard 5.5s ease-in-out 0.8s infinite; }
+
+        /* ── Mobile ── */
+        @media (max-width: 767px) {
+          .nav-links-desktop { display: none !important; }
+          .nav-cta-desktop   { display: none !important; }
+          .hero-bg-wrap      { width: 100% !important; opacity: 0.22 !important; }
+          .hero-text-wrap    { max-width: 100% !important; padding-right: 24px; }
+          .hero-headline     { font-size: clamp(32px, 9vw, 46px) !important; }
+        }
       `}</style>
 
       <div style={{ background: '#030408', color: '#fff', minHeight: '100vh', overflowX: 'hidden' }}>
@@ -120,7 +129,7 @@ export default function LandingPage() {
             <KoveWordmark height={26} />
           </Link>
 
-          <div style={{ display:'flex', alignItems:'center', gap: 40, margin: '0 auto' }}>
+          <div className="nav-links-desktop" style={{ display:'flex', alignItems:'center', gap: 40, margin: '0 auto' }}>
             {[['Features','#features'],['Pricing','#pricing'],['FAQ','#faq']].map(([l, h]) => (
               <a key={l} href={h as string} style={{
                 fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 400,
@@ -132,7 +141,7 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <Link href="/signup" style={{
+          <Link href="/signup" className="nav-cta-desktop" style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: '8px 18px', borderRadius: 8,
             background: BLUE,
@@ -157,7 +166,7 @@ export default function LandingPage() {
         }}>
 
           {/* Neon background image — right side */}
-          <div className="nc" style={{
+          <div className="nc hero-bg-wrap" style={{
             position: 'absolute', top: 0, right: 0,
             width: '60%', height: '100%',
             zIndex: 1, pointerEvents: 'none',
@@ -173,10 +182,10 @@ export default function LandingPage() {
           </div>
 
           {/* Left content */}
-          <div style={{
+          <div className="hero-text-wrap" style={{
             position: 'absolute', inset: 0, zIndex: 2,
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
-            paddingLeft: 'max(32px, 6vw)', paddingTop: 60,
+            paddingLeft: 'max(24px, 6vw)', paddingTop: 60,
             maxWidth: 580,
           }}>
 
@@ -196,7 +205,7 @@ export default function LandingPage() {
             </div>
 
             {/* Headline */}
-            <h1 className="hl hl-2" style={{
+            <h1 className="hl hl-2 hero-headline" style={{
               fontFamily: 'var(--font-display)',
               fontSize: 'clamp(36px, 5.5vw, 68px)',
               fontWeight: 800,
@@ -208,7 +217,7 @@ export default function LandingPage() {
             }}>
               Trade With
             </h1>
-            <h1 className="hl hl-3" style={{
+            <h1 className="hl hl-3 hero-headline" style={{
               fontFamily: 'var(--font-display)',
               fontSize: 'clamp(36px, 5.5vw, 68px)',
               fontWeight: 800,
@@ -220,7 +229,7 @@ export default function LandingPage() {
             }}>
               Precision,
             </h1>
-            <h1 className="hl hl-3" style={{
+            <h1 className="hl hl-3 hero-headline" style={{
               fontFamily: 'var(--font-display)',
               fontSize: 'clamp(36px, 5.5vw, 68px)',
               fontWeight: 800,

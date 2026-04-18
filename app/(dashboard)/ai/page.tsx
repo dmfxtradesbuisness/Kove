@@ -255,7 +255,7 @@ export default function AIPage() {
       style={{ background: '#080808' }}
     >
       {/* Orbs */}
-      <Orb style={{ width: 560, height: 560, top: -160, left: '50%', transform: 'translateX(-50%)', background: 'radial-gradient(circle,rgba(55,38,130,0.75) 0%,rgba(25,15,70,0.35) 55%,transparent 100%)', zIndex: 0 }} />
+      <Orb style={{ width: 560, height: 560, top: -160, left: '50%', transform: 'translateX(-50%)', background: 'radial-gradient(circle,rgba(10,40,120,0.75) 0%,rgba(25,15,70,0.35) 55%,transparent 100%)', zIndex: 0 }} />
       <Orb style={{ width: 320, height: 320, top: 20, left: -80, background: 'radial-gradient(circle,rgba(35,25,90,0.55) 0%,transparent 70%)', zIndex: 0 }} />
       <Orb style={{ width: 280, height: 280, top: 40, right: -60, background: 'radial-gradient(circle,rgba(45,30,100,0.5) 0%,transparent 70%)', zIndex: 0 }} />
       <Orb style={{ width: 340, height: 340, bottom: -100, left: -80, background: 'radial-gradient(circle,rgba(30,20,80,0.5) 0%,transparent 70%)', zIndex: 0 }} />
@@ -461,7 +461,7 @@ export default function AIPage() {
                     width: 36, height: 36, borderRadius: '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     background: input.trim() && !sending
-                      ? 'linear-gradient(135deg,#7B6CF5,#5C4ED4)'
+                      ? 'linear-gradient(135deg,#1E6EFF,#1050CC)'
                       : 'rgba(30,110,255,0.3)',
                     border: 'none',
                     cursor: !input.trim() || sending ? 'not-allowed' : 'pointer',

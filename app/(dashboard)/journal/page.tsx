@@ -30,13 +30,13 @@ function WowModal({ onClose }: { onClose: () => void }) {
       <div
         style={{
           background: 'linear-gradient(145deg,#0f0d28,#0c0a20)',
-          border: '1px solid rgba(123,108,245,0.25)',
+          border: '1px solid rgba(30,110,255,0.25)',
           borderRadius: 24,
           padding: '36px 32px',
           maxWidth: 480,
           width: '100%',
           position: 'relative',
-          boxShadow: '0 0 80px rgba(123,108,245,0.2)',
+          boxShadow: '0 0 80px rgba(30,110,255,0.2)',
         }}
       >
         {/* Close */}
@@ -48,7 +48,7 @@ function WowModal({ onClose }: { onClose: () => void }) {
         </button>
 
         {/* Orb */}
-        <div style={{ position: 'absolute', top: -60, left: '50%', transform: 'translateX(-50%)', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle,rgba(55,38,130,0.55) 0%,transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: -60, left: '50%', transform: 'translateX(-50%)', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle,rgba(10,40,120,0.55) 0%,transparent 70%)', pointerEvents: 'none' }} />
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 28, position: 'relative', zIndex: 1 }}>
@@ -83,7 +83,7 @@ function WowModal({ onClose }: { onClose: () => void }) {
           <Link
             href="/ai"
             onClick={onClose}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px', borderRadius: 14, background: 'linear-gradient(135deg,#7B6CF5,#5C4ED4)', color: '#fff', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, textDecoration: 'none', boxShadow: '0 0 24px rgba(123,108,245,0.35)' }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px', borderRadius: 14, background: 'linear-gradient(135deg,#1E6EFF,#1050CC)', color: '#fff', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, textDecoration: 'none', boxShadow: '0 0 24px rgba(30,110,255,0.35)' }}
           >
             <Sparkles size={15} />
             Chat with KoveAI
@@ -616,7 +616,7 @@ export default function JournalPage() {
           {/* Avatar */}
           <div
             className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer"
-            style={{ background: 'linear-gradient(135deg, #7B6CF5, #5C4ED4)', color: '#fff', fontFamily: 'var(--font-display)' }}
+            style={{ background: 'linear-gradient(135deg, #1E6EFF, #1050CC)', color: '#fff', fontFamily: 'var(--font-display)' }}
           >
             K
           </div>
