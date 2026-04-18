@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { BarChart2, BookOpen, Brain, ArrowRight, Check } from 'lucide-react'
+import Image from 'next/image'
 import { KoveWordmark } from '@/components/KoveLogo'
-import NeonCurves from '@/components/NeonCurves'
 
 function useReveal() {
   useEffect(() => {
@@ -123,9 +123,20 @@ export default function LandingPage() {
         {/* ── HERO ── */}
         <section style={{ position: 'relative', height: '100vh', minHeight: 560, overflow: 'hidden', background: '#000' }}>
 
-          {/* Neon curves — full hero, behind text */}
-          <div className="nc" style={{ position:'absolute', inset:0, zIndex:1 }}>
-            <NeonCurves className="w-full h-full" />
+          {/* Hero background image — mix-blend-mode:screen makes black transparent */}
+          <div className="nc" style={{
+            position: 'absolute', top: 0, right: 0,
+            width: '65%', height: '100%',
+            zIndex: 1, pointerEvents: 'none',
+          }}>
+            <Image
+              src="/hero-bg.png"
+              alt=""
+              fill
+              priority
+              sizes="65vw"
+              style={{ objectFit: 'contain', objectPosition: 'center right', mixBlendMode: 'screen' }}
+            />
           </div>
 
           {/* Text content — left side */}
