@@ -10,57 +10,64 @@ const inter = Inter({
 })
 
 const APP_URL = 'https://kovefx.com'
-const OG_IMAGE = `${APP_URL}/og-image.png`
 
 export const metadata: Metadata = {
   // ── Title ──────────────────────────────────────────────────────────────────
-  // 52 chars — brand + outcome + keyword
   title: {
-    default: 'KoveFX – AI Trading Journal for Consistent Traders',
+    default: 'KoveFX – Free AI Trading Journal | Track, Analyze & Improve',
     template: '%s | KoveFX',
   },
 
   // ── Description ─────────────────────────────────────────────────────────────
-  // 155 chars — outcome + credibility + curiosity
   description:
-    'Stop guessing why you lose trades. KoveFX uses AI to identify your exact patterns, emotional triggers, and hidden mistakes — so you can finally trade consistently.',
+    'KoveFX is a free AI-powered trading journal. Log unlimited trades, track your P&L, win rate, and let AI identify your exact behavioral patterns and mistakes — so you can finally trade consistently.',
 
   // ── Keywords ────────────────────────────────────────────────────────────────
   keywords: [
-    'trading journal', 'AI trading journal', 'forex journal', 'trade analysis',
-    'trading psychology', 'trade tracker', 'KoveFX', 'trading performance',
-    'prop firm journal', 'forex trading tools', 'trading discipline',
+    'free trading journal',
+    'AI trading journal',
+    'trading journal app',
+    'forex trading journal',
+    'trade tracker',
+    'trading performance analysis',
+    'trading psychology app',
+    'prop firm journal',
+    'funded account journal',
+    'trading discipline score',
+    'KoveFX',
+    'trade log',
+    'forex journal free',
+    'trading journal online',
   ],
 
   // ── Authors & robots ────────────────────────────────────────────────────────
-  authors: [{ name: 'DMFX', url: APP_URL }],
-  creator: 'DMFX',
-  publisher: 'DMFX',
+  authors: [{ name: 'KoveFX', url: APP_URL }],
+  creator: 'KoveFX',
+  publisher: 'KoveFX',
   robots: {
     index: true,
     follow: true,
-    googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
   },
 
   // ── Canonical ───────────────────────────────────────────────────────────────
   alternates: { canonical: APP_URL },
 
   // ── Open Graph ──────────────────────────────────────────────────────────────
+  // Next.js serves the dynamic OG image from app/opengraph-image.tsx automatically
   openGraph: {
     type: 'website',
     url: APP_URL,
     siteName: 'KoveFX',
-    title: 'KoveFX – AI Trading Journal for Consistent Traders',
+    title: 'KoveFX – Free AI Trading Journal | Track, Analyze & Improve',
     description:
-      'Stop guessing why you lose trades. KoveFX uses AI to identify your patterns, emotional triggers, and hidden mistakes — so you can finally trade consistently.',
-    images: [
-      {
-        url: OG_IMAGE,
-        width: 1200,
-        height: 630,
-        alt: 'KoveFX – AI Trading Journal',
-      },
-    ],
+      'Log unlimited trades for free. KoveFX AI identifies your behavioral patterns, emotional triggers, and hidden mistakes so you can build consistent trading discipline.',
     locale: 'en_US',
   },
 
@@ -69,98 +76,149 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     site: '@kovefx',
     creator: '@kovefx',
-    title: 'KoveFX – AI Trading Journal for Consistent Traders',
+    title: 'KoveFX – Free AI Trading Journal',
     description:
-      'Stop guessing why you lose trades. AI-powered trade analysis, behavioral pattern detection, and discipline scoring — built for serious traders.',
-    images: [OG_IMAGE],
+      'Log trades free. AI-powered behavioral analysis, discipline scoring, and pattern detection — built for serious forex and crypto traders.',
   },
 
-  // ── Favicon / icons ─────────────────────────────────────────────────────────
+  // ── Icons ────────────────────────────────────────────────────────────────────
   icons: {
-    icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon-16.png', sizes: '16x16', type: 'image/png' },
-    ],
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
     shortcut: '/favicon.svg',
-    apple: '/apple-touch-icon.png',
   },
 
   // ── App metadata ─────────────────────────────────────────────────────────────
   applicationName: 'KoveFX',
   category: 'Finance',
   classification: 'Trading Tools',
-
-  // ── Verification (add once you have these) ───────────────────────────────────
-  // verification: { google: 'YOUR_GSC_TOKEN', yandex: 'xxx', bing: 'xxx' },
 }
 
 // ── JSON-LD Structured Data ──────────────────────────────────────────────────
 const jsonLd = {
   '@context': 'https://schema.org',
   '@graph': [
+    // Organization
     {
       '@type': 'Organization',
       '@id': `${APP_URL}/#organization`,
       name: 'KoveFX',
       url: APP_URL,
-      logo: {
-        '@type': 'ImageObject',
-        url: `${APP_URL}/og-image.png`,
-        width: 1200,
-        height: 630,
-      },
-      description: 'AI-powered trading journal and performance analytics platform for serious forex and crypto traders.',
-      foundingDate: '2026',
-      sameAs: [],
+      description: 'Free AI-powered trading journal and performance analytics for forex, crypto, and prop firm traders.',
+      foundingDate: '2024',
     },
+
+    // WebSite — enables sitelinks search box
     {
       '@type': 'WebSite',
       '@id': `${APP_URL}/#website`,
       url: APP_URL,
       name: 'KoveFX',
+      description: 'Free AI trading journal — log trades, track performance, and fix bad habits.',
       publisher: { '@id': `${APP_URL}/#organization` },
-      potentialAction: {
-        '@type': 'SearchAction',
-        target: `${APP_URL}/?q={search_term_string}`,
-        'query-input': 'required name=search_term_string',
+    },
+
+    // WebPage — homepage
+    {
+      '@type': 'WebPage',
+      '@id': `${APP_URL}/#webpage`,
+      url: APP_URL,
+      name: 'KoveFX – Free AI Trading Journal | Track, Analyze & Improve',
+      description:
+        'KoveFX is a free AI-powered trading journal. Log unlimited trades, track your P&L, win rate, and let AI identify your exact behavioral patterns and mistakes.',
+      isPartOf: { '@id': `${APP_URL}/#website` },
+      about: { '@id': `${APP_URL}/#organization` },
+      breadcrumb: {
+        '@type': 'BreadcrumbList',
+        itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Home', item: APP_URL }],
       },
     },
+
+    // SoftwareApplication
     {
       '@type': 'SoftwareApplication',
       '@id': `${APP_URL}/#app`,
-      name: 'KoveFX',
+      name: 'KoveFX Trading Journal',
       url: APP_URL,
       description:
-        'AI trading journal that identifies your mistakes, detects behavioral patterns, and helps you build consistent trading discipline through smart analytics.',
+        'Free AI trading journal that identifies your mistakes, detects behavioral patterns, and helps you build consistent trading discipline.',
       applicationCategory: 'FinanceApplication',
       applicationSubCategory: 'Trading Journal',
-      operatingSystem: 'Web, iOS, Android',
+      operatingSystem: 'Web Browser',
       offers: [
         {
           '@type': 'Offer',
           name: 'Starter',
           price: '0',
           priceCurrency: 'USD',
-          description: 'Unlimited trade logging, basic statistics, P&L tracking.',
+          availability: 'https://schema.org/InStock',
+          description: 'Unlimited trade logging, full trade history, basic statistics — free forever.',
         },
         {
           '@type': 'Offer',
           name: 'Pro',
           price: '19',
           priceCurrency: 'USD',
-          billingPeriod: 'P1M',
-          description: 'AI insights, behavioral pattern detection, discipline score, weekly reports.',
+          availability: 'https://schema.org/InStock',
+          description: 'AI behavioral insights, pattern detection, discipline score, weekly reports.',
         },
       ],
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: '4.9',
-        ratingCount: '128',
-        bestRating: '5',
-      },
       author: { '@id': `${APP_URL}/#organization` },
-      publisher: { '@id': `${APP_URL}/#organization` },
+    },
+
+    // FAQPage — creates expandable FAQ sitelinks in Google results
+    {
+      '@type': 'FAQPage',
+      '@id': `${APP_URL}/#faq`,
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'Is KoveFX free to use?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Yes. KoveFX Starter is completely free forever with no credit card required. You get unlimited trade logging, full trade history, and basic statistics at no cost.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'What is a trading journal?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'A trading journal is a record of all your trades including entry, exit, stop loss, take profit, P&L, and notes. KoveFX goes further by using AI to analyze your trading behavior and identify patterns causing losses.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'How does the AI trading journal work?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'KoveFX Pro uses AI to read your complete trade history and identify behavioral patterns — such as revenge trading, time-of-day performance leaks, and emotional triggers — then gives you a personalized improvement plan.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Can I use KoveFX for a funded trading account?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Yes. KoveFX works for live accounts, funded prop firm accounts, and backtesting. You can create separate journal profiles for each so your data stays organized.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'What is the Discipline Score in KoveFX?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'The Discipline Score (0–100) rates your trading behavior across stop loss usage, win rate consistency, overtrading frequency, and revenge trading patterns. It updates automatically as you log trades.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'What markets does KoveFX support?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'KoveFX supports all markets including forex (EUR/USD, GBP/USD, etc.), indices (NAS100, SPX500), commodities (XAU/USD, oil), and cryptocurrencies (BTC/USD, ETH/USD).',
+          },
+        },
+      ],
     },
   ],
 }
@@ -169,14 +227,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`dark ${inter.variable}`}>
       <head>
-        {/* ── Favicon ── */}
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <meta name="theme-color" content="#1E6EFF" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
 
-        {/* ── JSON-LD ── */}
+        {/* JSON-LD */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
