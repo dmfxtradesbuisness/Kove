@@ -276,7 +276,7 @@ export async function POST(request: NextRequest) {
 
     // ── 7. Call OpenAI ─────────────────────────────────────────────────────
     const completion = await getOpenAI().chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4.1-mini',
       messages: [
         { role: 'system', content: systemContent },
         ...messages.slice(-20).map((m) => ({

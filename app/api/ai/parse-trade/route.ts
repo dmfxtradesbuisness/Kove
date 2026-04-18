@@ -28,8 +28,8 @@ export async function POST(request: NextRequest) {
 
     // ── Call GPT-4o vision ─────────────────────────────────────────────────
     const completion = await getOpenAI().chat.completions.create({
-      model: 'gpt-4o',
-      max_tokens: 600,
+      model: 'gpt-4.1',
+      max_tokens: 800,
       temperature: 0.1,
       messages: [
         {
