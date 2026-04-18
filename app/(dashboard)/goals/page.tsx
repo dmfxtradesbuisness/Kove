@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { Loader2, TrendingUp, ShieldAlert, Target, Sparkles, Lock, ChevronRight, Settings2, Flame, Trophy, Zap } from 'lucide-react'
+import { useJournal } from '@/lib/journal-context'
 
 interface Goals {
   monthly_pnl_target: number | null
@@ -278,8 +279,94 @@ function DetailCard({
   )
 }
 
+// ─── Streaks section ──────────────────────────────────────────────────────────
+function StreaksSection({ currentStreak, bestStreak, greenDayStreak }: { currentStreak: number; bestStreak: number; greenDayStreak: number }) {
+  return (
+    <div>
+      <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Win Streaks</p>
+      <div className="grid grid-cols-3 xl:grid-cols-1 gap-3">
+        {[
+          { label: 'Current Streak', value: currentStreak, unit: 'W', icon: Flame, iconColor: '#fb923c', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.15)' },
+          { label: 'Best Ever', value: bestStreak, unit: 'W', icon: Trophy, iconColor: '#fbbf24', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.15)' },
+          { label: 'Green Days', value: greenDayStreak, unit: 'd', icon: TrendingUp, iconColor: '#34d399', bg: 'rgba(52,211,153,0.08)', border: 'rgba(52,211,153,0.15)' },
+        ].map(({ label, value, unit, icon: Icon, iconColor, bg, border }) => (
+          <div key={label} style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '16px', display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: bg, border: `1px solid ${border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Icon style={{ width: 15, height: 15, color: iconColor }} />
+            </div>
+            <div>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 900, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em' }}>
+                {value}<span style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.3)', marginLeft: 2 }}>{unit}</span>
+              </p>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>{label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Discipline section ────────────────────────────────────────────────────────
+function DisciplineSection({ discScore, discScoreColor, discScoreLabel, discBreakdown }: {
+  discScore: number; discScoreColor: string; discScoreLabel: string
+  discBreakdown: { label: string; pts: number; max: number; tip: string }[]
+}) {
+  return (
+    <div>
+      <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Discipline Score</p>
+      <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', borderLeft: `3px solid ${discScoreColor}`, borderRadius: 16, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ position: 'relative', width: 64, height: 64, flexShrink: 0 }}>
+            <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke={discScoreColor} strokeWidth="3" strokeLinecap="round"
+                strokeDasharray={`${discScore} 100`}
+                style={{ transition: 'stroke-dasharray 1s cubic-bezier(0.22,1,0.36,1)' }}
+              />
+            </svg>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Zap style={{ width: 16, height: 16, color: discScoreColor }} />
+            </div>
+          </div>
+          <div>
+            <p style={{ fontFamily: 'var(--font-display)', fontSize: 40, fontWeight: 900, color: discScoreColor, lineHeight: 1, letterSpacing: '-0.03em' }}>{discScore}</p>
+            <p style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 4 }}>out of 100 · {discScoreLabel}</p>
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {discBreakdown.map((item) => {
+            const pct = (item.pts / item.max) * 100
+            const barColor = pct >= 75 ? '#34d399' : pct >= 50 ? '#fbbf24' : '#f87171'
+            return (
+              <div key={item.label}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#fff', fontFamily: 'var(--font-display)' }}>{item.label}</span>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-body)' }}>{item.pts}/{item.max}</span>
+                </div>
+                <div style={{ width: '100%', height: 5, background: 'rgba(255,255,255,0.05)', borderRadius: 999, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 999, transition: 'width 0.9s cubic-bezier(0.22,1,0.36,1)' }} />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        {discBreakdown.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 4, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            {discBreakdown[0]?.pts < 20 && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-body)' }}>📍 Set a stop loss on every trade.</p>}
+            {discBreakdown[2]?.pts < 20 && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-body)' }}>🧘 Quality over quantity — {discBreakdown[2]?.tip}.</p>}
+            {discBreakdown[3]?.pts < 20 && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-body)' }}>⏸️ 30-min break after a loss before re-entering.</p>}
+            {discScore >= 75 && <p style={{ fontSize: 12, color: '#34d399', fontFamily: 'var(--font-body)' }}>🔥 Excellent discipline. Keep following your rules.</p>}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function GoalsPage() {
+  const { activeJournalId, activeJournal } = useJournal()
   const [goals, setGoals]             = useState<Goals | null>(null)
   const [trades, setTrades]           = useState<Trade[]>([])
   const [subscription, setSubscription] = useState<{ active: boolean } | null>(null)
@@ -295,9 +382,13 @@ export default function GoalsPage() {
 
   useEffect(() => {
     async function load() {
+      setLoading(true)
       try {
+        const jParam = activeJournalId ? `?journal_id=${activeJournalId}` : ''
         const [goalsRes, tradesRes, subRes] = await Promise.all([
-          fetch('/api/goals'), fetch('/api/trades'), fetch('/api/stripe/subscription-status'),
+          fetch(`/api/goals${jParam}`),
+          fetch(`/api/trades${jParam}`),
+          fetch('/api/stripe/subscription-status'),
         ])
         const [goalsData, tradesData, subData] = await Promise.all([
           goalsRes.json(), tradesRes.json(), subRes.json(),
@@ -310,6 +401,9 @@ export default function GoalsPage() {
             max_drawdown_target: goalsData.goals.max_drawdown_target ?? '',
             notes: goalsData.goals.notes ?? '',
           })
+        } else {
+          setGoals(null)
+          setForm({ monthly_pnl_target: '', win_rate_target: '', max_drawdown_target: '', notes: '' })
         }
         if (tradesData.trades) setTrades(tradesData.trades)
         setSubscription(subData)
@@ -317,12 +411,16 @@ export default function GoalsPage() {
       finally { setLoading(false) }
     }
     load()
-  }, [])
+  }, [activeJournalId])
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault(); setSaving(true)
     try {
-      const res = await fetch('/api/goals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+      const res = await fetch('/api/goals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, journal_id: activeJournalId ?? null }),
+      })
       const data = await res.json()
       if (data.goals) { setGoals(data.goals); setShowForm(false) }
       setSaved(true); setTimeout(() => setSaved(false), 3000)
@@ -475,7 +573,7 @@ export default function GoalsPage() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between mb-8">
         <div>
-          <p className="page-label">Pro · {now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+          <p className="page-label">Pro · {now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}{activeJournal ? ` · ${activeJournal.name}` : ''}</p>
           <h1 className="page-title">Goals &amp; Milestones</h1>
         </div>
         <button
@@ -544,7 +642,9 @@ export default function GoalsPage() {
           </button>
         </div>
       ) : hasGoals ? (
-        <div style={{ maxWidth: 900 }} className="flex flex-col gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6 items-start" style={{ maxWidth: 1280 }}>
+          {/* ── LEFT COLUMN ── */}
+          <div className="flex flex-col gap-6">
           {/* ── Top row: overview donut + goal list ── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -665,86 +765,26 @@ export default function GoalsPage() {
             </div>
           )}
 
-          {/* ── Streaks ── */}
-          {trades.length > 0 && (
-            <div>
-              <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Win Streaks</p>
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: 'Current', value: currentStreak, unit: 'W', icon: Flame, iconColor: '#fb923c', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.15)' },
-                  { label: 'Best Ever', value: bestStreak, unit: 'W', icon: Trophy, iconColor: '#fbbf24', bg: 'rgba(251,191,36,0.08)', border: 'rgba(251,191,36,0.15)' },
-                  { label: 'Green Days', value: greenDayStreak, unit: 'd', icon: TrendingUp, iconColor: '#34d399', bg: 'rgba(52,211,153,0.08)', border: 'rgba(52,211,153,0.15)' },
-                ].map(({ label, value, unit, icon: Icon, iconColor, bg, border }) => (
-                  <div key={label} style={{ background: '#111', border: `1px solid rgba(255,255,255,0.07)`, borderRadius: 16, padding: '18px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 10, background: bg, border: `1px solid ${border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Icon style={{ width: 14, height: 14, color: iconColor }} />
-                    </div>
-                    <div>
-                      <p style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 900, color: '#fff', lineHeight: 1, letterSpacing: '-0.02em' }}>
-                        {value}<span style={{ fontSize: 14, fontWeight: 400, color: 'rgba(255,255,255,0.3)', marginLeft: 2 }}>{unit}</span>
-                      </p>
-                      <p style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 6 }}>{label}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* ── Streaks + Discipline (mobile only — shown below on desktop) ── */}
+          <div className="flex flex-col gap-6 xl:hidden">
+            {trades.length > 0 && <StreaksSection currentStreak={currentStreak} bestStreak={bestStreak} greenDayStreak={greenDayStreak} />}
+            {trades.length >= 5 && <DisciplineSection discScore={discScore} discScoreColor={discScoreColor} discScoreLabel={discScoreLabel} discBreakdown={discBreakdown} />}
+          </div>
 
-          {/* ── Discipline Score ── */}
-          {trades.length >= 5 && (
-            <div>
-              <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Discipline Score</p>
-              <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', borderLeft: `3px solid ${discScoreColor}`, borderRadius: 16, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-                {/* Score header */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{ position: 'relative', width: 64, height: 64, flexShrink: 0 }}>
-                    <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
-                      <circle cx="18" cy="18" r="15.9" fill="none" stroke={discScoreColor} strokeWidth="3" strokeLinecap="round"
-                        strokeDasharray={`${discScore} 100`}
-                        style={{ transition: 'stroke-dasharray 1s cubic-bezier(0.22,1,0.36,1)' }}
-                      />
-                    </svg>
-                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Zap style={{ width: 16, height: 16, color: discScoreColor }} />
-                    </div>
-                  </div>
-                  <div>
-                    <p style={{ fontFamily: 'var(--font-display)', fontSize: 40, fontWeight: 900, color: discScoreColor, lineHeight: 1, letterSpacing: '-0.03em' }}>{discScore}</p>
-                    <p style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 4 }}>out of 100 · {discScoreLabel}</p>
-                  </div>
-                </div>
-                {/* Breakdown */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {discBreakdown.map((item) => {
-                    const pct = (item.pts / item.max) * 100
-                    const barColor = pct >= 75 ? '#34d399' : pct >= 50 ? '#fbbf24' : '#f87171'
-                    return (
-                      <div key={item.label}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: '#fff', fontFamily: 'var(--font-display)' }}>{item.label}</span>
-                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-body)' }}>{item.pts}/{item.max}pts · {item.tip}</span>
-                        </div>
-                        <div style={{ width: '100%', height: 5, background: 'rgba(255,255,255,0.05)', borderRadius: 999, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 999, transition: 'width 0.9s cubic-bezier(0.22,1,0.36,1)' }} />
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-                {/* Tips */}
-                {discBreakdown.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 4, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                    {discBreakdown[0]?.pts < 20 && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-body)' }}>📍 Set a stop loss on every trade — biggest risk management habit.</p>}
-                    {discBreakdown[2]?.pts < 20 && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-body)' }}>🧘 Averaging {discBreakdown[2]?.tip} — quality over quantity always wins.</p>}
-                    {discBreakdown[3]?.pts < 20 && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontFamily: 'var(--font-body)' }}>⏸️ Take a 30-minute break after a loss before your next trade.</p>}
-                    {discScore >= 75 && <p style={{ fontSize: 12, color: '#34d399', fontFamily: 'var(--font-body)' }}>🔥 Excellent discipline. Keep following your rules.</p>}
-                  </div>
-                )}
+          </div>{/* end LEFT COLUMN */}
+
+          {/* ── RIGHT COLUMN — streaks + discipline (desktop only) ── */}
+          <div className="hidden xl:flex flex-col gap-6 sticky top-6">
+            {trades.length > 0 && <StreaksSection currentStreak={currentStreak} bestStreak={bestStreak} greenDayStreak={greenDayStreak} />}
+            {trades.length >= 5 && <DisciplineSection discScore={discScore} discScoreColor={discScoreColor} discScoreLabel={discScoreLabel} discBreakdown={discBreakdown} />}
+            {trades.length === 0 && (
+              <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '28px 20px', textAlign: 'center' }}>
+                <Flame style={{ width: 24, height: 24, color: 'rgba(255,255,255,0.15)', margin: '0 auto 12px' }} />
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-display)' }}>Log trades to see your streaks &amp; discipline score</p>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+
         </div>
       ) : null}
     </div>

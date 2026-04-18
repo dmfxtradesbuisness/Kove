@@ -149,7 +149,7 @@ function JournalSwitcher() {
                   >
                     <Pencil style={{ width: 11, height: 11 }} />
                   </button>
-                  {journals.length > 1 && (
+                  {journals.length > 1 && j.id !== journals[0].id && (
                     <button
                       onClick={() => setConfirmDel(j.id)}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.2)', padding: 2, display: 'flex', flexShrink: 0 }}

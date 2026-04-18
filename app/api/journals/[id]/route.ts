@@ -34,6 +34,19 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   const { id } = await params
 
+  // Protect the default journal (oldest one — first by created_at)
+  const { data: allJournals } = await supabase
+    .from('journals')
+    .select('id')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: true })
+
+  if (!allJournals || allJournals.length === 0)
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  if (allJournals[0].id === id)
+    return NextResponse.json({ error: 'Cannot delete your default journal' }, { status: 400 })
+
   const { error } = await supabase
     .from('journals')
     .delete()
