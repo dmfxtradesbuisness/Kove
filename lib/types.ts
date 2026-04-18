@@ -3,6 +3,7 @@ export interface Journal {
   user_id: string
   name: string
   color: string
+  starting_balance: number | null
   created_at: string
 }
 

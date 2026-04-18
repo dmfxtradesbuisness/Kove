@@ -8,10 +8,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
-  const { name, color } = await request.json()
-  const updates: Record<string, string> = {}
+  const { name, color, starting_balance } = await request.json()
+  const updates: Record<string, unknown> = {}
   if (name?.trim()) updates.name = name.trim()
   if (color) updates.color = color
+  if (starting_balance !== undefined) updates.starting_balance = starting_balance === '' || starting_balance === null ? null : Number(starting_balance)
 
   const { data, error } = await supabase
     .from('journals')

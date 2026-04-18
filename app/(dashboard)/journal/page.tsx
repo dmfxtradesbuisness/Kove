@@ -450,7 +450,7 @@ function ChecklistWidget() {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function JournalPage() {
-  const { activeJournalId, activeJournal } = useJournal()
+  const { activeJournalId, activeJournal, reload: reloadJournals } = useJournal()
   const [trades, setTrades] = useState<Trade[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -472,29 +472,26 @@ export default function JournalPage() {
     }
   }, [])
 
-  // Load account balance from preferences
+  // Load account balance from active journal
   useEffect(() => {
-    fetch('/api/preferences')
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.preferences?.account_balance != null) {
-          setAccountBalance(Number(d.preferences.account_balance))
-        }
-      })
-      .catch(() => {})
-  }, [])
+    const bal = activeJournal?.starting_balance ?? null
+    setAccountBalance(bal)
+    setBalanceInput(bal != null ? String(bal) : '')
+  }, [activeJournalId, activeJournal])
 
   async function saveBalance() {
+    if (!activeJournalId) return
     setSavingBalance(true)
     const val = balanceInput === '' ? null : Number(balanceInput)
     try {
-      await fetch('/api/preferences', {
-        method: 'POST',
+      await fetch(`/api/journals/${activeJournalId}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ account_balance: balanceInput }),
+        body: JSON.stringify({ starting_balance: balanceInput }),
       })
       setAccountBalance(val)
       setEditingBalance(false)
+      await reloadJournals()
     } catch {
       // ignore
     } finally {
