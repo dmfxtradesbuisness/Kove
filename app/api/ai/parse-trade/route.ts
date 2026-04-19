@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { getOpenAI } from '@/lib/openai'
 import { NextRequest, NextResponse } from 'next/server'
 
+const FREE_DAILY_LIMIT = 1
+
 export async function POST(request: NextRequest) {
   try {
     // ── Auth ───────────────────────────────────────────────────────────────
@@ -11,6 +13,44 @@ export async function POST(request: NextRequest) {
 
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json({ error: 'AI not configured.' }, { status: 500 })
+    }
+
+    // ── Subscription check ─────────────────────────────────────────────────
+    const { data: sub } = await supabase
+      .from('subscriptions')
+      .select('subscription_status')
+      .eq('user_id', user.id)
+      .single()
+    const isPro = sub?.subscription_status === 'active'
+
+    // ── Daily scan limit for free users ───────────────────────────────────
+    if (!isPro) {
+      const today = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+
+      const { data: prefs } = await supabase
+        .from('user_preferences')
+        .select('daily_scan_date, daily_scan_count')
+        .eq('user_id', user.id)
+        .single()
+
+      const sameDay = prefs?.daily_scan_date === today
+      const count   = sameDay ? (prefs?.daily_scan_count ?? 0) : 0
+
+      if (count >= FREE_DAILY_LIMIT) {
+        return NextResponse.json({
+          error: `Free plan allows ${FREE_DAILY_LIMIT} AI scan per day. Upgrade to Pro for unlimited scans.`,
+          limitReached: true,
+        }, { status: 429 })
+      }
+
+      // Increment
+      await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: user.id,
+          daily_scan_date: today,
+          daily_scan_count: count + 1,
+        }, { onConflict: 'user_id' })
     }
 
     // ── Read image ─────────────────────────────────────────────────────────
@@ -26,7 +66,7 @@ export async function POST(request: NextRequest) {
     const base64 = Buffer.from(bytes).toString('base64')
     const mimeType = file.type || 'image/jpeg'
 
-    // ── Call GPT-4o vision ─────────────────────────────────────────────────
+    // ── Call GPT-4.1 vision ────────────────────────────────────────────────
     const completion = await getOpenAI().chat.completions.create({
       model: 'gpt-4.1',
       max_tokens: 800,
@@ -94,7 +134,7 @@ Return ONLY a valid JSON object. No markdown, no explanation.
 
     const raw = completion.choices[0]?.message?.content?.trim() ?? ''
 
-    // ── Parse JSON (handle markdown code fences if model adds them) ────────
+    // ── Parse JSON ─────────────────────────────────────────────────────────
     let parsed: Record<string, unknown>
     try {
       const jsonStr = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim()
@@ -111,13 +151,13 @@ Return ONLY a valid JSON object. No markdown, no explanation.
       }
     }
 
-    // Sanitize — ensure type is BUY or SELL
+    // Sanitize type
     if (parsed.type && typeof parsed.type === 'string') {
       const t = parsed.type.toUpperCase()
       parsed.type = t === 'SELL' || t === 'SHORT' ? 'SELL' : 'BUY'
     }
 
-    return NextResponse.json({ trade: parsed })
+    return NextResponse.json({ trade: parsed, isPro })
   } catch (err) {
     console.error('[parse-trade] error:', err)
     const msg = err instanceof Error ? err.message : String(err)

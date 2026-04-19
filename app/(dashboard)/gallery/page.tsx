@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { Images, X, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Search } from 'lucide-react'
+import { Images, X, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Search, BookOpen } from 'lucide-react'
+import { useJournal } from '@/lib/journal-context'
 
 interface GalleryTrade {
   id: string
@@ -11,6 +12,7 @@ interface GalleryTrade {
   screenshot_url: string
   created_at: string
   notes: string | null
+  journal_id: string | null
 }
 
 function formatPnl(pnl: number) {
@@ -19,20 +21,24 @@ function formatPnl(pnl: number) {
 }
 
 export default function GalleryPage() {
-  const [trades, setTrades] = useState<GalleryTrade[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const { journals, activeJournalId, setActiveJournalId } = useJournal()
+  const [trades, setTrades]     = useState<GalleryTrade[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState('')
   const [modalIdx, setModalIdx] = useState<number | null>(null)
-  const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState<'all' | 'win' | 'loss'>('all')
+  const [search, setSearch]     = useState('')
+  const [filter, setFilter]     = useState<'all' | 'win' | 'loss'>('all')
 
+  // Fetch trades whenever active journal changes
   useEffect(() => {
-    fetch('/api/gallery')
+    setLoading(true)
+    const url = activeJournalId ? `/api/gallery?journal_id=${activeJournalId}` : '/api/gallery'
+    fetch(url)
       .then((r) => r.json())
       .then((d) => { if (d.trades) setTrades(d.trades) })
       .catch(() => setError('Failed to load gallery. Please refresh.'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [activeJournalId])
 
   const filtered = useMemo(() => {
     return trades.filter((t) => {
@@ -66,6 +72,7 @@ export default function GalleryPage() {
   }, [modalIdx, filtered.length, prevImage, nextImage, closeModal])
 
   const currentTrade = modalIdx !== null ? filtered[modalIdx] : null
+  const activeJournal = journals.find(j => j.id === activeJournalId)
 
   return (
     <div className="px-4 md:px-8 pt-6 md:pt-10 pb-8 animate-fade-in">
@@ -81,32 +88,61 @@ export default function GalleryPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-3 mb-6 flex-wrap">
-        <div className="relative flex-1 min-w-[180px] max-w-xs">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#333]" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search pair or notes…"
-            className="input pl-9 !min-h-0 h-10 !text-xs !rounded-xl !py-2.5 w-full"
-          />
+      <div className="flex flex-col gap-3 mb-6">
+        {/* Row 1: search + win/loss filter */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[180px] max-w-xs">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#333]" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search pair or notes…"
+              className="input pl-9 !min-h-0 h-10 !text-xs !rounded-xl !py-2.5 w-full"
+            />
+          </div>
+          <div className="flex items-center gap-1.5 bg-[#0a0a0a] border border-white/[0.05] rounded-xl p-1">
+            {(['all', 'win', 'loss'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-3 h-8 rounded-lg text-xs font-medium transition-all capitalize ${
+                  filter === f ? 'bg-white/[0.08] text-white' : 'text-[#444] hover:text-[#888]'
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex items-center gap-1.5 bg-[#0a0a0a] border border-white/[0.05] rounded-xl p-1">
-          {(['all', 'win', 'loss'] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 h-8 rounded-lg text-xs font-medium transition-all capitalize ${
-                filter === f
-                  ? 'bg-white/[0.08] text-white'
-                  : 'text-[#444] hover:text-[#888]'
-              }`}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
+
+        {/* Row 2: journal filter */}
+        {journals.length > 1 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <BookOpen className="w-3 h-3 text-[#333]" />
+            <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-display)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Journal:</span>
+            {journals.map((j) => {
+              const active = activeJournalId === j.id
+              return (
+                <button
+                  key={j.id}
+                  onClick={() => setActiveJournalId(j.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600,
+                    fontFamily: 'var(--font-display)', cursor: 'pointer', transition: 'all 0.15s',
+                    background: active ? 'rgba(255,255,255,0.08)' : 'transparent',
+                    color: active ? '#fff' : 'rgba(255,255,255,0.3)',
+                    border: active ? `1px solid ${j.color}44` : '1px solid rgba(255,255,255,0.06)',
+                  }}
+                >
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: j.color, flexShrink: 0 }} />
+                  {j.name}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Error state */}
@@ -128,7 +164,7 @@ export default function GalleryPage() {
           </div>
           <p className="text-[#444] text-sm font-medium">
             {trades.length === 0
-              ? 'No screenshots saved yet'
+              ? `No screenshots in ${activeJournal?.name ?? 'this journal'}`
               : 'No results for your filters'}
           </p>
           <p className="text-[#2a2a2a] text-xs mt-1 font-light">
@@ -140,8 +176,9 @@ export default function GalleryPage() {
       ) : !error ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {filtered.map((trade, idx) => {
-            const isWin = trade.pnl !== null && trade.pnl > 0
+            const isWin  = trade.pnl !== null && trade.pnl > 0
             const isLoss = trade.pnl !== null && trade.pnl < 0
+            const journal = journals.find(j => j.id === trade.journal_id)
             return (
               <button
                 key={trade.id}
@@ -155,7 +192,6 @@ export default function GalleryPage() {
                   loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-                {/* Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
                 {/* P&L badge */}
                 {trade.pnl !== null && (
@@ -167,6 +203,13 @@ export default function GalleryPage() {
                     {formatPnl(trade.pnl)}
                   </div>
                 )}
+                {/* Journal dot (only when showing all journals) */}
+                {!activeJournalId && journal && (
+                  <div
+                    style={{ position: 'absolute', top: 8, left: 8, width: 8, height: 8, borderRadius: '50%', background: journal.color, boxShadow: `0 0 6px ${journal.color}88` }}
+                    title={journal.name}
+                  />
+                )}
                 {/* Bottom info */}
                 <div className="absolute bottom-0 left-0 right-0 p-2.5 translate-y-full group-hover:translate-y-0 transition-transform duration-200">
                   <p className="text-white text-xs font-bold">{trade.pair}</p>
@@ -174,7 +217,6 @@ export default function GalleryPage() {
                     {new Date(trade.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
                   </p>
                 </div>
-                {/* Open status */}
                 {trade.pnl === null && (
                   <div className="absolute top-2 right-2 text-[10px] font-bold px-2 py-1 rounded-lg bg-violet-500/20 text-violet-400 border border-violet-500/30">
                     Open
@@ -196,16 +238,14 @@ export default function GalleryPage() {
             className="relative max-w-5xl w-full bg-[#0a0a0a] border border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.05]">
               <div className="flex items-center gap-3">
                 <div>
                   <p className="text-white font-bold text-sm">{currentTrade.pair}</p>
                   <p className="text-[#444] text-xs font-light">
                     {currentTrade.type} ·{' '}
-                    {new Date(currentTrade.created_at).toLocaleDateString('en-US', {
-                      month: 'long', day: 'numeric', year: 'numeric',
-                    })}
+                    {new Date(currentTrade.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    {(() => { const j = journals.find(j => j.id === currentTrade.journal_id); return j ? ` · ${j.name}` : '' })()}
                   </p>
                 </div>
               </div>
@@ -216,60 +256,35 @@ export default function GalleryPage() {
                       ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                       : 'bg-red-500/10 text-red-400 border border-red-500/20'
                   }`}>
-                    {currentTrade.pnl >= 0
-                      ? <TrendingUp className="w-3.5 h-3.5" />
-                      : <TrendingDown className="w-3.5 h-3.5" />
-                    }
+                    {currentTrade.pnl >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                     {formatPnl(currentTrade.pnl)}
                   </div>
                 )}
-                <button
-                  onClick={closeModal}
-                  className="w-8 h-8 flex items-center justify-center rounded-xl text-[#444] hover:text-white hover:bg-white/[0.06] transition-all"
-                >
+                <button onClick={closeModal} className="w-8 h-8 flex items-center justify-center rounded-xl text-[#444] hover:text-white hover:bg-white/[0.06] transition-all">
                   <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
-
-            {/* Image */}
             <div className="relative bg-black max-h-[60vh] flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={currentTrade.screenshot_url}
-                alt={`${currentTrade.pair} trade`}
-                className="max-h-[60vh] w-full object-contain"
-              />
-
-              {/* Prev / Next */}
+              <img src={currentTrade.screenshot_url} alt={`${currentTrade.pair} trade`} className="max-h-[60vh] w-full object-contain" />
               {modalIdx !== null && modalIdx > 0 && (
-                <button
-                  onClick={prevImage}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/60 hover:bg-black/80 border border-white/10 rounded-full flex items-center justify-center text-white transition-all"
-                >
+                <button onClick={prevImage} className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/60 hover:bg-black/80 border border-white/10 rounded-full flex items-center justify-center text-white transition-all">
                   <ChevronLeft className="w-5 h-5" />
                 </button>
               )}
               {modalIdx !== null && modalIdx < filtered.length - 1 && (
-                <button
-                  onClick={() => nextImage(filtered.length)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/60 hover:bg-black/80 border border-white/10 rounded-full flex items-center justify-center text-white transition-all"
-                >
+                <button onClick={() => nextImage(filtered.length)} className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/60 hover:bg-black/80 border border-white/10 rounded-full flex items-center justify-center text-white transition-all">
                   <ChevronRight className="w-5 h-5" />
                 </button>
               )}
             </div>
-
-            {/* Notes + counter */}
             <div className="px-6 py-4 flex items-center justify-between gap-4">
-              {currentTrade.notes ? (
-                <p className="text-[#666] text-xs font-light leading-relaxed flex-1">{currentTrade.notes}</p>
-              ) : (
-                <p className="text-[#333] text-xs italic">No notes for this trade</p>
-              )}
-              <p className="text-[#333] text-xs font-medium shrink-0">
-                {(modalIdx ?? 0) + 1} / {filtered.length}
-              </p>
+              {currentTrade.notes
+                ? <p className="text-[#666] text-xs font-light leading-relaxed flex-1">{currentTrade.notes}</p>
+                : <p className="text-[#333] text-xs italic">No notes for this trade</p>
+              }
+              <p className="text-[#333] text-xs font-medium shrink-0">{(modalIdx ?? 0) + 1} / {filtered.length}</p>
             </div>
           </div>
         </div>
