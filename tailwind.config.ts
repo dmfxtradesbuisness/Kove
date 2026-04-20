@@ -28,10 +28,11 @@ const config: Config = {
         danger:  '#F87171',
       },
       fontFamily: {
-        display: ['var(--font-display)', 'Space Grotesk', 'system-ui', 'sans-serif'],
-        body:    ['var(--font-body)',    'DM Sans',        'system-ui', 'sans-serif'],
-        mono:    ['var(--font-mono)',    'Space Mono',     'ui-monospace', 'monospace'],
-        sans:    ['var(--font-body)',    'DM Sans',        'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'Fahkwang',  'system-ui', 'sans-serif'],
+        heading: ['var(--font-heading)', 'Krona One', 'system-ui', 'sans-serif'],
+        body:    ['var(--font-body)',    'Inter',     'system-ui', 'sans-serif'],
+        mono:    ['var(--font-body)',    'Inter',     'ui-monospace', 'monospace'],
+        sans:    ['var(--font-body)',    'Inter',     'system-ui', 'sans-serif'],
       },
       borderRadius: {
         sm:  '8px',

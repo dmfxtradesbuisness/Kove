@@ -1,28 +1,28 @@
 import type { Metadata } from 'next'
-import { Space_Grotesk, DM_Sans, Space_Mono } from 'next/font/google'
+import { Inter, Fahkwang, Krona_One } from 'next/font/google'
 import './globals.css'
 
-// ── Display font — headings, labels, UI chrome ──────────────────────────────
-const spaceGrotesk = Space_Grotesk({
+// ── Body font — prose, descriptions, UI text ────────────────────────────────
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-body',
+  weight: ['300', '400', '500', '600', '700'],
+  display: 'swap',
+})
+
+// ── Display font — hero text, big headings ──────────────────────────────────
+const fahkwang = Fahkwang({
   subsets: ['latin'],
   variable: '--font-display',
   weight: ['300', '400', '500', '600', '700'],
   display: 'swap',
 })
 
-// ── Body font — prose, descriptions, notes ──────────────────────────────────
-const dmSans = DM_Sans({
+// ── Accent font — section titles, card headers, labels ──────────────────────
+const kronaOne = Krona_One({
   subsets: ['latin'],
-  variable: '--font-body',
-  weight: ['300', '400', '500', '600'],
-  display: 'swap',
-})
-
-// ── Mono font — numbers, prices, P&L, data ──────────────────────────────────
-const spaceMono = Space_Mono({
-  subsets: ['latin'],
-  variable: '--font-mono',
-  weight: ['400', '700'],
+  variable: '--font-heading',
+  weight: ['400'],
   display: 'swap',
 })
 
@@ -85,7 +85,7 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`dark ${spaceGrotesk.variable} ${dmSans.variable} ${spaceMono.variable}`}>
+    <html lang="en" className={`dark ${inter.variable} ${fahkwang.variable} ${kronaOne.variable}`}>
       <head>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <meta name="theme-color" content="#1E6EFF" />

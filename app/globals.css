@@ -42,9 +42,10 @@
     --shadow-glow:0 0 0 1px rgba(30,110,255,0.2), 0 8px 32px rgba(30,110,255,0.12);
 
     /* ── Fonts ── */
-    --font-display: var(--font-display), 'Space Grotesk', system-ui, sans-serif;
-    --font-body:    var(--font-body),    'DM Sans',        system-ui, sans-serif;
-    --font-mono:    var(--font-mono),    'Space Mono',     'Courier New', monospace;
+    --font-display: var(--font-display), 'Fahkwang',  system-ui, sans-serif;
+    --font-heading: var(--font-heading), 'Krona One', system-ui, sans-serif;
+    --font-body:    var(--font-body),    'Inter',      system-ui, sans-serif;
+    --font-mono:    var(--font-body),    'Inter',      'Courier New', monospace;
   }
 
   * {
@@ -68,10 +69,16 @@
     line-height: 1.6;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1, h2 {
     font-family: var(--font-display);
-    letter-spacing: -0.025em;
-    line-height: 1.15;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: 0.01em;
+    line-height: 1.2;
   }
 
   ::selection {
