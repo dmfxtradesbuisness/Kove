@@ -95,6 +95,29 @@ export default function LoginPage() {
 
       <div className="px-8 pt-5 pb-8 flex flex-col gap-4">
 
+        {/* ── Google OAuth ── */}
+        <button
+          type="button"
+          onClick={handleGoogleOAuth}
+          disabled={loading || oauthLoading}
+          className="w-full flex items-center justify-center gap-3 h-11 rounded-xl font-semibold text-sm transition-all"
+          style={{
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            color: 'rgba(255,255,255,0.85)',
+            fontFamily: 'var(--font-display)',
+            cursor: loading || oauthLoading ? 'not-allowed' : 'pointer',
+            opacity: loading || oauthLoading ? 0.6 : 1,
+          }}
+          onMouseEnter={(e) => { if (!loading && !oauthLoading) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.09)' }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)' }}
+        >
+          {oauthLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <GoogleIcon />}
+          Continue with Google
+        </button>
+
+        <OAuthDivider />
+
         {/* ── Email / password form ── */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
