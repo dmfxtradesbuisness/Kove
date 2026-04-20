@@ -19,11 +19,11 @@ interface Message {
 
 // ─── Suggestion chips ─────────────────────────────────────────────────────────
 const SUGGESTIONS = [
-  'What patterns am I repeating?',
-  'Am I overtrading?',
-  'Analyze my risk management',
-  'What is my biggest weakness?',
-  'How can I improve my entries?',
+  'Where am I leaking the most money?',
+  'Am I revenge trading?',
+  'Break down my last 20 trades',
+  'What time of day do I trade best?',
+  'Am I cutting winners too early?',
 ]
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -272,8 +272,8 @@ export default function AIPage() {
   if (!subscribed) {
     return (
       <ProGate
-        title="Unlock KoveAI"
-        description="GPT-4 powered trading coach. Identify your mistakes, detect hidden patterns, and get personalized coaching — all from a natural conversation."
+        title="KoveAI"
+        description="Your AI trading coach — powered by GPT-4.1. It reads every trade you've logged, spots the patterns you're missing, and tells you exactly what's costing you money."
       />
     )
   }
@@ -326,7 +326,7 @@ export default function AIPage() {
               KoveAI
             </span>
             <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>
-              Your personal trading coach
+              Knows your trades. Tells you the truth.
             </span>
           </div>
         </div>
@@ -438,7 +438,7 @@ export default function AIPage() {
                   e.target.style.height = Math.min(e.target.scrollHeight, 130) + 'px'
                 }}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask anything about your trading…"
+                placeholder="Ask me anything — I know your numbers."
                 rows={1}
                 className="flex-1 resize-none outline-none text-sm"
                 style={{
@@ -482,7 +482,7 @@ export default function AIPage() {
                   background: 'rgba(255,255,255,0.04)',
                   border: '1px solid rgba(255,255,255,0.06)',
                 }}>
-                  GPT-4o mini
+                  GPT-4.1
                 </span>
               </div>
 
@@ -521,7 +521,7 @@ export default function AIPage() {
           </div>
 
           <p style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.12)', fontFamily: 'var(--font-body)', marginTop: 10 }}>
-            KoveAI can make mistakes. Verify important decisions independently.
+            KoveAI reads your real trade data. Always verify before changing your strategy.
           </p>
         </div>
       </div>

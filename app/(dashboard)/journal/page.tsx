@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Plus, Search, BarChart2, Images, Sparkles, Bell, ListChecks, ChevronDown, Trash2, X, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import TradeForm from '@/components/TradeForm'
@@ -8,6 +8,85 @@ import TradeTable from '@/components/TradeTable'
 import type { Trade } from '@/lib/types'
 import { useJournal } from '@/lib/journal-context'
 import AiDailyBanner from '@/components/AiDailyBanner'
+
+// ─── Win Celebration ──────────────────────────────────────────────────────────
+const CONFETTI_COLORS = ['#34D399','#1E6EFF','#FBBF24','#F472B6','#A78BFA','#fff']
+const PARTICLE_COUNT  = 52
+
+interface Particle {
+  id: number; x: number; y: number; vx: number; vy: number
+  color: string; size: number; rotate: number; rotateSpeed: number; shape: 'rect' | 'circle'
+}
+
+function WinConfetti({ onDone }: { onDone: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const rafRef    = useRef<number>(0)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')!
+    canvas.width  = window.innerWidth
+    canvas.height = window.innerHeight
+
+    const particles: Particle[] = Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
+      id:          i,
+      x:           window.innerWidth  * 0.5 + (Math.random() - 0.5) * 120,
+      y:           window.innerHeight * 0.42,
+      vx:          (Math.random() - 0.5) * 14,
+      vy:          -(Math.random() * 14 + 6),
+      color:       CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+      size:        Math.random() * 6 + 4,
+      rotate:      Math.random() * 360,
+      rotateSpeed: (Math.random() - 0.5) * 8,
+      shape:       Math.random() > 0.4 ? 'rect' : 'circle',
+    }))
+
+    let frame = 0
+    function draw() {
+      ctx.clearRect(0, 0, canvas!.width, canvas!.height)
+      let alive = false
+      for (const p of particles) {
+        p.x  += p.vx
+        p.y  += p.vy
+        p.vy += 0.42          // gravity
+        p.vx *= 0.98          // drag
+        p.rotate += p.rotateSpeed
+        const alpha = Math.max(0, 1 - frame / 90)
+        if (alpha <= 0) continue
+        alive = true
+        ctx.save()
+        ctx.globalAlpha = alpha
+        ctx.translate(p.x, p.y)
+        ctx.rotate((p.rotate * Math.PI) / 180)
+        ctx.fillStyle = p.color
+        if (p.shape === 'circle') {
+          ctx.beginPath()
+          ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2)
+          ctx.fill()
+        } else {
+          ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2)
+        }
+        ctx.restore()
+      }
+      frame++
+      if (alive) {
+        rafRef.current = requestAnimationFrame(draw)
+      } else {
+        onDone()
+      }
+    }
+    rafRef.current = requestAnimationFrame(draw)
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [onDone])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ position: 'fixed', inset: 0, zIndex: 9998, pointerEvents: 'none' }}
+    />
+  )
+}
 
 // ─── Upgrade Wow Moment Modal ─────────────────────────────────────────────────
 const WOW_INSIGHTS = [
@@ -133,7 +212,7 @@ function PnlChart({ trades }: { trades: Trade[] }) {
         className="flex items-center justify-center"
         style={{ height: '140px', color: 'rgba(255,255,255,0.14)', fontSize: '13px', fontFamily: 'var(--font-display)' }}
       >
-        Log trades to see your equity curve
+        Log your first trade to start building your curve
       </div>
     )
   }
@@ -457,7 +536,8 @@ export default function JournalPage() {
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null)
   const [search, setSearch] = useState('')
   const [showSearch, setShowSearch] = useState(false)
-  const [showWowModal, setShowWowModal] = useState(false)
+  const [showWowModal,   setShowWowModal]   = useState(false)
+  const [showConfetti,   setShowConfetti]   = useState(false)
   const [accountBalance, setAccountBalance] = useState<number | null>(null)
   const [editingBalance, setEditingBalance] = useState(false)
   const [balanceInput, setBalanceInput] = useState('')
@@ -516,6 +596,7 @@ export default function JournalPage() {
   useEffect(() => { fetchTrades() }, [fetchTrades])
 
   function handleSuccess(trade: Trade) {
+    const isNew = !trades.find((t) => t.id === trade.id)
     setTrades((prev) => {
       const exists = prev.find((t) => t.id === trade.id)
       if (exists) return prev.map((t) => (t.id === trade.id ? trade : t))
@@ -523,6 +604,10 @@ export default function JournalPage() {
     })
     setShowForm(false)
     setEditingTrade(null)
+    // Fire confetti for a brand-new winning trade
+    if (isNew && trade.pnl !== null && trade.pnl > 0) {
+      setShowConfetti(true)
+    }
   }
 
   async function handleDelete(id: string) {
@@ -556,6 +641,9 @@ export default function JournalPage() {
   return (
     <div className="min-h-screen flex flex-col">
 
+      {/* ── Win confetti ── */}
+      {showConfetti && <WinConfetti onDone={() => setShowConfetti(false)} />}
+
       {/* ── Post-upgrade wow moment ── */}
       {showWowModal && <WowModal onClose={() => setShowWowModal(false)} />}
 
@@ -579,7 +667,7 @@ export default function JournalPage() {
             {activeJournal?.name ?? 'Journal'}
           </h1>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'rgba(255,255,255,0.28)', margin: 0, marginTop: '2px' }}>
-            Track your edge, every trade.
+            Every trade tells you something.
           </p>
         </div>
         <div className="flex items-center gap-2.5">
@@ -638,7 +726,7 @@ export default function JournalPage() {
         {/* Quick Actions */}
         <div className="mb-5">
           <p style={{ fontFamily: 'var(--font-display)', fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.22)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>
-            Quick-Action
+            Session
           </p>
           <div className="flex items-center gap-2.5 flex-wrap">
             <button
@@ -686,7 +774,7 @@ export default function JournalPage() {
         {/* Stat Tiles */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
           {[
-            { label: 'Total Trades', value: String(trades.length), sub: `${closedTrades.length} closed`, color: '#fff' },
+            { label: 'Trades', value: String(trades.length), sub: `${closedTrades.length} closed`, color: '#fff' },
             { label: 'Win Rate', value: `${winRate}%`, sub: `${wins} wins`, color: winRate >= 50 ? '#34D399' : '#F87171' },
             { label: 'Total P&L', value: closedTrades.length > 0 ? fmtPnl(totalPnl) : '—', sub: 'all time', color: totalPnl >= 0 ? '#34D399' : '#F87171' },
           ].map(({ label, value, sub, color }) => (

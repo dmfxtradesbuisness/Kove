@@ -136,7 +136,7 @@ export default function SignupPage() {
           Create account
         </h1>
         <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-body)' }}>
-          Your trading journal. Free to start.
+          Build your edge. Start free.
         </p>
       </div>
 

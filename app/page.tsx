@@ -200,7 +200,7 @@ export default function LandingPage() {
             }}>
               <span style={{ width: 5, height: 5, borderRadius: '50%', background: BLUE_HI, flexShrink: 0, boxShadow: `0 0 6px ${BLUE_HI}` }} />
               <span style={{ fontFamily:'var(--font-display)', fontSize:11, fontWeight:600, color: BLUE_HI, letterSpacing:'0.06em' }}>
-                AI-POWERED TRADING JOURNAL
+                BUILT FOR SERIOUS TRADERS
               </span>
             </div>
 
@@ -252,8 +252,8 @@ export default function LandingPage() {
               margin: '0 0 32px',
               maxWidth: 380,
             }}>
-              The only trading journal that analyzes your behavior, not just your results.
-              Stop guessing why you&apos;re losing — see exactly what&apos;s costing you money.
+              Most traders lose the same money the same way — they just don&apos;t see it yet.
+              Kove logs every trade and finds the patterns you keep missing.
             </p>
 
             {/* Buttons */}
@@ -270,7 +270,7 @@ export default function LandingPage() {
               onMouseEnter={(e)=>{ (e.currentTarget as HTMLElement).style.background=BLUE_HI; (e.currentTarget as HTMLElement).style.transform='scale(1.04)'; (e.currentTarget as HTMLElement).style.boxShadow=`0 0 44px rgba(30,110,255,0.5)` }}
               onMouseLeave={(e)=>{ (e.currentTarget as HTMLElement).style.background=BLUE; (e.currentTarget as HTMLElement).style.transform='scale(1)'; (e.currentTarget as HTMLElement).style.boxShadow=`0 0 32px ${BLUE_GLOW}` }}
               >
-                Explore KovePro <ArrowRight style={{ width:14, height:14 }} />
+                Start for free <ArrowRight style={{ width:14, height:14 }} />
               </Link>
 
               <Link href="/login" style={{
@@ -311,11 +311,10 @@ export default function LandingPage() {
             <p style={{ fontFamily:'var(--font-display)', fontSize:10, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.14em', color:'rgba(255,255,255,0.3)', marginBottom:16 }}>The Problem</p>
             <h2 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(1.7rem,3.8vw,2.8rem)', fontWeight:700, letterSpacing:'-0.03em', lineHeight:1.15, marginBottom:24 }}>
               You already know you&apos;re making mistakes.<br />
-              <span style={{ color:'rgba(255,255,255,0.24)' }}>You just don&apos;t know which ones.</span>
+              <span style={{ color:'rgba(255,255,255,0.24)' }}>You just can&apos;t see which ones.</span>
             </h2>
             <p style={{ fontFamily:'var(--font-body)', fontSize:14, color:'rgba(255,255,255,0.36)', lineHeight:1.75, maxWidth:520, margin:'0 auto' }}>
-              Most traders log trades but never understand them. You see the numbers — but not the behavioral patterns behind them.
-              The revenge trades, the Friday slippage, the tilt spirals. KoveFX makes those visible.
+              Logging trades isn&apos;t the problem — understanding them is. The revenge trades after a loss, the Friday slippage, the overtrading when you&apos;re on tilt. You know something&apos;s off. Kove shows you exactly what.
             </p>
           </div>
         </section>
@@ -497,7 +496,7 @@ export default function LandingPage() {
               Fix the habits costing you money.
             </h2>
             <p style={{ fontFamily:'var(--font-body)', fontSize:14, color:'rgba(255,255,255,0.34)', maxWidth:420, margin:'0 auto 36px', lineHeight:1.7 }}>
-              KoveFX Pro is the difference between random trading and consistent, disciplined performance.
+              Every trader has a leak. Most never find it. Kove does — in the data you&apos;ve already logged.
             </p>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:14, flexWrap:'wrap' }}>
               <Link href="/signup" style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'12px 28px', borderRadius:9, background:BLUE, color:'#fff', fontFamily:'var(--font-display)', fontSize:14, fontWeight:700, textDecoration:'none', boxShadow:`0 0 32px ${BLUE_GLOW}`, transition:'all 0.18s' }}
@@ -525,7 +524,7 @@ export default function LandingPage() {
               >{l}</a>
             ))}
           </div>
-          <span style={{ fontFamily:'var(--font-display)', fontSize:11, color:'rgba(255,255,255,0.12)' }}>© {new Date().getFullYear()} KoveFX by DMFX</span>
+          <span style={{ fontFamily:'var(--font-display)', fontSize:11, color:'rgba(255,255,255,0.12)' }}>© {new Date().getFullYear()} Kove · Built by a trader, for traders</span>
         </footer>
 
       </div>

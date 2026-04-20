@@ -89,7 +89,7 @@ export default function LoginPage() {
           Sign in
         </h1>
         <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-body)' }}>
-          Welcome back to your trading journal.
+          Good to have you back.
         </p>
       </div>
 

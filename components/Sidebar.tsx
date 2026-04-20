@@ -19,8 +19,8 @@ const NAV_ITEMS = [
   { href: '/stats',     label: 'Statistics',  icon: BarChart2 },
   { href: '/goals',     label: 'Goals',       icon: Target,   pro: true  },
   { href: '/gallery',   label: 'Gallery',     icon: Images    },
-  { href: '/ai',        label: 'AI Insights', icon: Sparkles, pro: true  },
-  { href: '/news',      label: 'Market Events', icon: Newspaper },
+  { href: '/ai',        label: 'KoveAI',      icon: Sparkles, pro: true  },
+  { href: '/news',      label: 'Economic Calendar', icon: Newspaper },
 ]
 
 const JOURNAL_COLORS = [
