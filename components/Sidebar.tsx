@@ -19,7 +19,7 @@ const NAV_ITEMS = [
   { href: '/stats',     label: 'Statistics',  icon: BarChart2 },
   { href: '/goals',     label: 'Goals',       icon: Target,   pro: true  },
   { href: '/gallery',   label: 'Gallery',     icon: Images    },
-  { href: '/ai',        label: 'KoveAI',      icon: Sparkles, pro: true  },
+  { href: '/ai',        label: 'Coach',        icon: Sparkles, pro: true  },
   { href: '/news',      label: 'Economic Calendar', icon: Newspaper },
 ]
 
@@ -228,15 +228,17 @@ export default function Sidebar() {
   const [profile,     setProfile]     = useState<Profile | null>(null)
   const [userEmail,   setUserEmail]   = useState('')
   const [subscribed,  setSubscribed]  = useState(false)
+  const [streak,      setStreak]      = useState(0)
 
   useEffect(() => {
     async function loadProfile() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) setUserEmail(user.email ?? '')
-        const [profileRes, subRes] = await Promise.all([
+        const [profileRes, subRes, prefsRes] = await Promise.all([
           fetch('/api/community/profile'),
           fetch('/api/stripe/subscription-status'),
+          fetch('/api/onboarding'),
         ])
         if (profileRes.ok) {
           const data = await profileRes.json()
@@ -245,6 +247,10 @@ export default function Sidebar() {
         if (subRes.ok) {
           const data = await subRes.json()
           setSubscribed(data.active === true)
+        }
+        if (prefsRes.ok) {
+          const data = await prefsRes.json()
+          setStreak(data.prefs?.trading_streak ?? 0)
         }
       } catch { /* noop */ }
     }
@@ -325,6 +331,21 @@ export default function Sidebar() {
             )
           })}
         </nav>
+
+        {/* Streak badge */}
+        {streak > 0 && (
+          <div style={{ margin: '0 12px 8px', padding: '9px 12px', borderRadius: 10, background: 'rgba(30,110,255,0.06)', border: '1px solid rgba(30,110,255,0.14)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 15, lineHeight: 1 }}>🔥</span>
+            <div>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1.2 }}>
+                {streak} day{streak !== 1 ? 's' : ''}
+              </p>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: 'rgba(255,255,255,0.28)', margin: 0 }}>
+                logging streak
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Bottom — account + sign out */}
         <div className="px-3 py-4 flex flex-col gap-0.5" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>

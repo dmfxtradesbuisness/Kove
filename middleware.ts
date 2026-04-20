@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
-  const protectedRoutes = ['/journal', '/ai', '/stats', '/account', '/goals', '/gallery', '/community', '/news']
+  const protectedRoutes = ['/onboarding', '/journal', '/ai', '/stats', '/account', '/goals', '/gallery', '/community', '/news', '/api/trades', '/api/journals', '/api/goals', '/api/checklist', '/api/gallery', '/api/preferences', '/api/leaderboard', '/api/ai', '/api/onboarding', '/api/stripe/subscription-status', '/api/stripe/checkout', '/api/stripe/portal', '/api/stripe/invoices', '/api/community']
   const isProtected = protectedRoutes.some((route) =>
     pathname.startsWith(route)
   )

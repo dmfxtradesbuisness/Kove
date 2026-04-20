@@ -65,7 +65,7 @@ export default function AiDailyBanner() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
           <Icon style={{ width: 12, height: 12, color: cfg.iconColor, flexShrink: 0 }} />
           <span style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 700, color: cfg.label, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            KoveAI
+            Coach
           </span>
           {sorted.length > 1 && (
             <span style={{ fontFamily: 'var(--font-display)', fontSize: 9, color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.06)', borderRadius: 999, padding: '1px 6px' }}>
@@ -94,7 +94,7 @@ export default function AiDailyBanner() {
             style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600, color: '#4D90FF', display: 'flex', alignItems: 'center', gap: 4 }}
           >
             <Sparkles style={{ width: 10, height: 10 }} />
-            Open AI Chat
+            Open Coach
           </Link>
           <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: 10 }}>·</span>
           <span style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>

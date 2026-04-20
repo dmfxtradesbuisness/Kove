@@ -14,17 +14,17 @@ const APP_URL = 'https://kovefx.com'
 
 export const metadata: Metadata = {
   title: {
-    default: 'KoveFX – Free AI Trading Journal | Track, Analyze & Improve',
-    template: '%s | KoveFX',
+    default: 'Kove – The Trade Journal That Actually Helps You Improve',
+    template: '%s | Kove',
   },
   description:
-    'KoveFX is a free AI-powered trading journal. Log unlimited trades, track your P&L, win rate, and let AI identify your exact behavioral patterns and mistakes — so you can finally trade consistently.',
+    'Kove is the trade journal built to make you better. Log trades, find the patterns costing you money, and get clear feedback on exactly what to fix — so you stop repeating the same mistakes.',
   keywords: [
-    'free trading journal', 'AI trading journal', 'trading journal app',
+    'trading journal', 'free trading journal', 'trade journal app',
     'forex trading journal', 'trade tracker', 'trading performance analysis',
-    'trading psychology app', 'prop firm journal', 'funded account journal',
-    'trading discipline score', 'KoveFX', 'trade log', 'forex journal free',
-    'trading journal online',
+    'trading psychology', 'prop firm journal', 'funded account journal',
+    'trading discipline', 'KoveFX', 'trade log', 'forex journal',
+    'trading improvement', 'trading mistakes', 'trading consistency',
   ],
   authors: [{ name: 'KoveFX', url: APP_URL }],
   creator: 'KoveFX',
@@ -35,15 +35,15 @@ export const metadata: Metadata = {
   },
   alternates: { canonical: APP_URL },
   openGraph: {
-    type: 'website', url: APP_URL, siteName: 'KoveFX',
-    title: 'KoveFX – Free AI Trading Journal | Track, Analyze & Improve',
-    description: 'Log unlimited trades for free. KoveFX AI identifies your behavioral patterns, emotional triggers, and hidden mistakes so you can build consistent trading discipline.',
+    type: 'website', url: APP_URL, siteName: 'Kove',
+    title: 'Kove – The Trade Journal That Actually Helps You Improve',
+    description: 'Log trades. Find the patterns costing you money. Get clear feedback on what to fix. Kove is the journal built to make you a better trader.',
     locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image', site: '@kovefx', creator: '@kovefx',
-    title: 'KoveFX – Free AI Trading Journal',
-    description: 'Log trades free. AI-powered behavioral analysis, discipline scoring, and pattern detection — built for serious traders.',
+    title: 'Kove – The Trade Journal That Actually Helps You Improve',
+    description: 'Log trades. Find the patterns costing you money. Get clear feedback on what to fix — built for traders who want to actually get better.',
   },
   icons: { icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }], shortcut: '/favicon.svg' },
   applicationName: 'KoveFX',
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
 const jsonLd = {
   '@context': 'https://schema.org',
   '@graph': [
-    { '@type': 'Organization', '@id': `${APP_URL}/#organization`, name: 'KoveFX', url: APP_URL, description: 'Free AI-powered trading journal.', foundingDate: '2024' },
+    { '@type': 'Organization', '@id': `${APP_URL}/#organization`, name: 'KoveFX', url: APP_URL, description: 'The trade journal that actually helps you improve.', foundingDate: '2024' },
     { '@type': 'WebSite', '@id': `${APP_URL}/#website`, url: APP_URL, name: 'KoveFX', publisher: { '@id': `${APP_URL}/#organization` } },
     {
       '@type': 'SoftwareApplication', '@id': `${APP_URL}/#app`, name: 'KoveFX Trading Journal',

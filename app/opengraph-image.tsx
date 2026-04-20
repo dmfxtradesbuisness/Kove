@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
-export const alt = 'KoveFX – Free AI Trading Journal'
+export const alt = 'Kove – The Trade Journal That Actually Helps You Improve'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -75,13 +75,13 @@ export default async function Image() {
             marginBottom: 40,
           }}
         >
-          Free AI Trading Journal — Log trades, track performance,
-          and fix the habits costing you money.
+          The trade journal that actually helps you improve —
+          find the patterns, fix the mistakes, trade better.
         </div>
 
         {/* Feature pills */}
         <div style={{ display: 'flex', gap: 12 }}>
-          {['Free Forever', 'AI Insights', 'Discipline Score', 'All Markets'].map((f) => (
+          {['Free to Start', 'Pattern Analysis', 'Discipline Score', 'All Markets'].map((f) => (
             <div
               key={f}
               style={{

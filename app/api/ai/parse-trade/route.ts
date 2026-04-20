@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getOpenAI } from '@/lib/openai'
+import { checkRateLimit } from '@/lib/ai-rate-limit'
 import { NextRequest, NextResponse } from 'next/server'
 
 const FREE_DAILY_LIMIT = 1
@@ -22,6 +23,12 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id)
       .single()
     const isPro = sub?.subscription_status === 'active'
+
+    // ── Rate limit ─────────────────────────────────────────────────────────
+    const rateLimitError = checkRateLimit(user.id, isPro, 'parse-trade')
+    if (rateLimitError) {
+      return NextResponse.json({ error: rateLimitError }, { status: 429 })
+    }
 
     // ── Daily scan limit for free users ───────────────────────────────────
     if (!isPro) {

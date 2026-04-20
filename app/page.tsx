@@ -38,7 +38,7 @@ const PRO_FEATURES = [
   'Real-time session warnings',
   'Discipline scoring',
   'Behavioral analysis',
-  'AI coaching (KoveAI)',
+  'Personal coaching & feedback',
 ]
 
 const WARNING_EXAMPLES = [
@@ -201,7 +201,7 @@ export default function LandingPage() {
                 fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 500,
                 textTransform: 'uppercase', letterSpacing: '0.12em',
                 color: 'rgba(255,255,255,0.28)', marginBottom: 24,
-              }}>AI Trading Journal</p>
+              }}>Trade Journal</p>
 
               <h1 className="hl hl-2" style={{
                 fontFamily: 'var(--font-body)',
@@ -212,8 +212,8 @@ export default function LandingPage() {
                 margin: '0 0 20px',
                 color: '#fff',
               }}>
-                Find the patterns<br />
-                <span style={{ color: BLUE }}>costing you money.</span>
+                The journal that<br />
+                <span style={{ color: BLUE }}>actually helps you improve.</span>
               </h1>
 
               <p className="hl hl-3" style={{
@@ -221,7 +221,7 @@ export default function LandingPage() {
                 color: 'rgba(255,255,255,0.38)', lineHeight: 1.65,
                 margin: '0 0 36px',
               }}>
-                Log trades. Kove analyzes your behavior and tells you exactly what&apos;s holding you back.
+                Log your trades. Kove finds what&apos;s holding you back and tells you exactly what to fix.
               </p>
 
               <div className="hl hl-4 hero-cta" style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>

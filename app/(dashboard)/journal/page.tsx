@@ -8,6 +8,7 @@ import TradeTable from '@/components/TradeTable'
 import type { Trade } from '@/lib/types'
 import { useJournal } from '@/lib/journal-context'
 import AiDailyBanner from '@/components/AiDailyBanner'
+import PostTradeCoach from '@/components/PostTradeCoach'
 
 // ─── Win Celebration ──────────────────────────────────────────────────────────
 const CONFETTI_COLORS = ['#34D399','#1E6EFF','#FBBF24','#F472B6','#A78BFA','#fff']
@@ -536,8 +537,9 @@ export default function JournalPage() {
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null)
   const [search, setSearch] = useState('')
   const [showSearch, setShowSearch] = useState(false)
-  const [showWowModal,   setShowWowModal]   = useState(false)
-  const [showConfetti,   setShowConfetti]   = useState(false)
+  const [showWowModal,    setShowWowModal]   = useState(false)
+  const [showConfetti,    setShowConfetti]   = useState(false)
+  const [lastLoggedTrade, setLastLoggedTrade] = useState<Trade | null>(null)
   const [accountBalance, setAccountBalance] = useState<number | null>(null)
   const [editingBalance, setEditingBalance] = useState(false)
   const [balanceInput, setBalanceInput] = useState('')
@@ -604,9 +606,12 @@ export default function JournalPage() {
     })
     setShowForm(false)
     setEditingTrade(null)
-    // Fire confetti for a brand-new winning trade
     if (isNew && trade.pnl !== null && trade.pnl > 0) {
       setShowConfetti(true)
+    }
+    // Show post-trade Coach card for new trades
+    if (isNew) {
+      setLastLoggedTrade(trade)
     }
   }
 
@@ -722,6 +727,82 @@ export default function JournalPage() {
 
       {/* ── Body ── */}
       <div className="flex-1 p-5 md:p-6">
+
+        {/* ── Empty state — shown when no trades yet ── */}
+        {!loading && trades.length === 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center', padding: '40px 24px' }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: 16,
+              background: 'linear-gradient(135deg,rgba(30,110,255,0.18),rgba(10,40,140,0.25))',
+              border: '1px solid rgba(30,110,255,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: 24,
+            }}>
+              <Plus style={{ width: 24, height: 24, color: '#4D90FF' }} />
+            </div>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', color: '#fff', margin: '0 0 10px' }}>
+              Log your first trade
+            </h2>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'rgba(255,255,255,0.35)', lineHeight: 1.6, maxWidth: 340, margin: '0 0 32px' }}>
+              Take a screenshot of your trade. Kove fills in the details automatically — it takes 15 seconds.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 300 }}>
+              <button
+                onClick={() => setShowForm(true)}
+                style={{
+                  width: '100%', padding: '13px 24px', borderRadius: 10,
+                  background: '#1E6EFF', border: 'none', color: '#fff',
+                  fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600,
+                  cursor: 'pointer', transition: 'all 0.15s',
+                  boxShadow: '0 0 28px rgba(30,110,255,0.3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#4D90FF' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#1E6EFF' }}
+              >
+                <Sparkles style={{ width: 14, height: 14 }} />
+                Scan a screenshot
+              </button>
+              <button
+                onClick={() => setShowForm(true)}
+                style={{
+                  width: '100%', padding: '12px 24px', borderRadius: 10,
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.09)',
+                  color: 'rgba(255,255,255,0.45)',
+                  fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 500,
+                  cursor: 'pointer', transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.18)'; (e.currentTarget as HTMLElement).style.color = '#fff' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.09)'; (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.45)' }}
+              >
+                Enter manually
+              </button>
+            </div>
+            <div style={{ marginTop: 40, display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {[
+                { n: '1', label: 'Log a trade' },
+                { n: '2', label: 'See your patterns' },
+                { n: '3', label: 'Get coached' },
+              ].map(({ n, label }) => (
+                <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{
+                    width: 22, height: 22, borderRadius: '50%',
+                    background: 'rgba(30,110,255,0.12)',
+                    border: '1px solid rgba(30,110,255,0.2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: '#4D90FF',
+                    flexShrink: 0,
+                  }}>{n}</span>
+                  <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'rgba(255,255,255,0.28)' }}>{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Normal journal body — only shown when trades exist or still loading */}
+        {(loading || trades.length > 0) && <>
 
         {/* Quick Actions */}
         <div className="mb-5">
@@ -921,10 +1002,20 @@ export default function JournalPage() {
           <PnlCalendar trades={trades} />
           <ChecklistWidget />
         </div>
+
+        </> /* end (loading || trades.length > 0) */}
       </div>
 
       {showForm && (
         <TradeForm trade={editingTrade} onClose={handleClose} onSuccess={handleSuccess} journalId={activeJournalId} />
+      )}
+
+      {lastLoggedTrade && (
+        <PostTradeCoach
+          trade={lastLoggedTrade}
+          allTrades={trades}
+          onDismiss={() => setLastLoggedTrade(null)}
+        />
       )}
     </div>
   )

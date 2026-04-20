@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getOpenAI } from '@/lib/openai'
+import { checkChatPayload, checkRateLimit } from '@/lib/ai-rate-limit'
 import { NextRequest, NextResponse } from 'next/server'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -431,12 +432,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'KoveAI requires an active Pro subscription.' }, { status: 403 })
     }
 
-    // ── 3. Parse body ────────────────────────────────────────────────────────
+    // ── 3. Rate limit ────────────────────────────────────────────────────────
+    const rateLimitError = checkRateLimit(user.id, true, 'chat')
+    if (rateLimitError) {
+      return NextResponse.json({ error: rateLimitError }, { status: 429 })
+    }
+
+    // ── 4. Parse body + size limits ──────────────────────────────────────────
     let body: { messages?: ChatMessage[]; tradeContext?: TradeContext }
     try { body = await request.json() }
     catch { return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 }) }
 
     const { messages = [], tradeContext } = body
+
+    const sizeError = checkChatPayload(messages)
+    if (sizeError) {
+      return NextResponse.json({ error: sizeError }, { status: 400 })
+    }
+
     const lastMessage = messages[messages.length - 1]
     if (!lastMessage?.content?.trim()) {
       return NextResponse.json({ error: 'No message provided.' }, { status: 400 })
@@ -446,7 +459,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'OPENAI_API_KEY is not configured.' }, { status: 500 })
     }
 
-    // ── 4. Fetch all context in parallel ─────────────────────────────────────
+    // ── 5. Fetch all context in parallel ─────────────────────────────────────
     const [tradesRes, profileRes, goalsRes, checklistRes, upcomingEvents] = await Promise.all([
       admin
         .from('trades')
@@ -491,7 +504,7 @@ export async function POST(request: NextRequest) {
     const checklistItems = (checklistRes.data       ?? []) as { label: string }[]
     const checklistRules = checklistItems.map(i => i.label)
 
-    // ── 5. Build system prompt ───────────────────────────────────────────────
+    // ── 6. Build system prompt ───────────────────────────────────────────────
     const systemContent = buildSystemPrompt(
       trades,
       tradeContext && Object.keys(tradeContext).length > 0 ? tradeContext : null,
@@ -501,7 +514,7 @@ export async function POST(request: NextRequest) {
       upcomingEvents,
     )
 
-    // ── 6. Call OpenAI ───────────────────────────────────────────────────────
+    // ── 7. Call OpenAI ───────────────────────────────────────────────────────
     const completion = await getOpenAI().chat.completions.create({
       model:       'gpt-4.1-mini',
       temperature: 0.4,
@@ -531,6 +544,6 @@ export async function POST(request: NextRequest) {
     if (msg.includes('rate_limit') || msg.includes('429')) {
       return NextResponse.json({ error: 'Too many requests — wait a few seconds and try again.' }, { status: 429 })
     }
-    return NextResponse.json({ error: `Something went wrong: ${msg}` }, { status: 500 })
+    return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
   }
 }

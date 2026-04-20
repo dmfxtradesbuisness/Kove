@@ -1,29 +1,36 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 
+function verifyAdminSecret(request: NextRequest): boolean {
+  if (!process.env.ADMIN_SECRET) return false
+  // Accept secret from Authorization header: "Bearer <secret>"
+  const authHeader = request.headers.get('authorization') ?? ''
+  const [scheme, token] = authHeader.split(' ')
+  if (scheme === 'Bearer' && token === process.env.ADMIN_SECRET) return true
+  return false
+}
+
 // POST /api/admin/grant-premium
-// Body: { user_id: string, admin_secret: string, active: boolean }
-// Use this to manually grant/revoke premium for any user
+// Headers: Authorization: Bearer <ADMIN_SECRET>
+// Body: { user_id: string, active?: boolean }
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { user_id, admin_secret, active = true } = body
-
-    // Verify admin secret — also reject if ADMIN_SECRET is not configured
     if (!process.env.ADMIN_SECRET) {
       return NextResponse.json({ error: 'Not configured' }, { status: 503 })
     }
-    if (!admin_secret || admin_secret !== process.env.ADMIN_SECRET) {
+    if (!verifyAdminSecret(request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!user_id) {
+    const body = await request.json()
+    const { user_id, active = true } = body
+
+    if (!user_id || typeof user_id !== 'string') {
       return NextResponse.json({ error: 'user_id required' }, { status: 400 })
     }
 
     const supabase = createAdminClient()
 
-    // Upsert subscription record with manual active status
     const { data, error } = await supabase
       .from('subscriptions')
       .upsert(
@@ -33,7 +40,7 @@ export async function POST(request: NextRequest) {
           stripe_subscription_id: active ? 'manual_grant' : null,
           subscription_status: active ? 'active' : 'canceled',
           current_period_end: active
-            ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 year
+            ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
             : null,
         },
         { onConflict: 'user_id' }
@@ -42,7 +49,8 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('grant-premium upsert error:', error)
+      return NextResponse.json({ error: 'Failed to update subscription' }, { status: 500 })
     }
 
     return NextResponse.json({
@@ -51,37 +59,43 @@ export async function POST(request: NextRequest) {
       status: active ? 'active' : 'canceled',
       record: data,
     })
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 })
+  } catch {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
-// GET /api/admin/grant-premium?admin_secret=xxx&user_id=xxx
-// Check current subscription status for a user
+// GET /api/admin/grant-premium
+// Headers: Authorization: Bearer <ADMIN_SECRET>
+// Query: ?user_id=xxx  (optional — omit to list all)
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const admin_secret = searchParams.get('admin_secret')
-  const user_id = searchParams.get('user_id')
+  try {
+    if (!process.env.ADMIN_SECRET) {
+      return NextResponse.json({ error: 'Not configured' }, { status: 503 })
+    }
+    if (!verifyAdminSecret(request)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-  if (!admin_secret || admin_secret !== process.env.ADMIN_SECRET) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+    const { searchParams } = new URL(request.url)
+    const user_id = searchParams.get('user_id')
 
-  const supabase = createAdminClient()
+    const supabase = createAdminClient()
 
-  if (user_id) {
+    if (user_id) {
+      const { data } = await supabase
+        .from('subscriptions')
+        .select('user_id, subscription_status, stripe_customer_id, current_period_end')
+        .eq('user_id', user_id)
+        .single()
+      return NextResponse.json({ subscription: data })
+    }
+
     const { data } = await supabase
       .from('subscriptions')
-      .select('*')
-      .eq('user_id', user_id)
-      .single()
-    return NextResponse.json({ subscription: data })
+      .select('user_id, subscription_status, stripe_customer_id, current_period_end')
+      .order('subscription_status')
+    return NextResponse.json({ subscriptions: data })
+  } catch {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-
-  // List all subscriptions
-  const { data } = await supabase
-    .from('subscriptions')
-    .select('user_id, subscription_status, stripe_customer_id, current_period_end')
-    .order('subscription_status')
-  return NextResponse.json({ subscriptions: data })
 }

@@ -53,7 +53,7 @@ export default function SubscriptionPolicyPage() {
               </div>
               <div style={{ background: 'rgba(30,110,255,0.06)', border: '1px solid rgba(30,110,255,0.2)', borderRadius: 12, padding: '16px 20px' }}>
                 <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: '#4D90FF', marginBottom: 6 }}>Pro — Paid Subscription</p>
-                <p style={{ fontSize: 14 }}>Everything in Starter, plus AI Insights (KoveAI), advanced discipline analytics, and priority access to new features. Billed monthly or annually.</p>
+                <p style={{ fontSize: 14 }}>Everything in Starter, plus the Coach (behavioral feedback &amp; pattern coaching), advanced discipline analytics, and priority access to new features. Billed monthly or annually.</p>
               </div>
             </div>
           </Section>

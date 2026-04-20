@@ -125,20 +125,31 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { action } = body
 
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
     if (action === 'dismiss_report') {
       const { report_id } = body
+      if (!report_id || !UUID_RE.test(report_id)) {
+        return NextResponse.json({ error: 'Invalid report_id' }, { status: 400 })
+      }
       await admin.from('post_reports').update({ resolved: true }).eq('id', report_id)
       return NextResponse.json({ ok: true })
     }
 
     if (action === 'dismiss_all') {
       const { post_id } = body
+      if (!post_id || !UUID_RE.test(post_id)) {
+        return NextResponse.json({ error: 'Invalid post_id' }, { status: 400 })
+      }
       await admin.from('post_reports').update({ resolved: true }).eq('post_id', post_id)
       return NextResponse.json({ ok: true })
     }
 
     if (action === 'restore_post') {
       const { post_id } = body
+      if (!post_id || !UUID_RE.test(post_id)) {
+        return NextResponse.json({ error: 'Invalid post_id' }, { status: 400 })
+      }
       await admin.from('community_posts').update({ is_removed: false, removed_by: null, removed_at: null }).eq('id', post_id)
       await admin.from('moderation_log').insert({ admin_id: user.id, post_id, action: 'restore', reason: 'Admin restored post' })
       return NextResponse.json({ ok: true })
@@ -146,8 +157,10 @@ export async function POST(request: NextRequest) {
 
     if (action === 'remove_post') {
       const { post_id } = body
+      if (!post_id || !UUID_RE.test(post_id)) {
+        return NextResponse.json({ error: 'Invalid post_id' }, { status: 400 })
+      }
       await admin.from('community_posts').update({ is_removed: true, removed_by: user.id, removed_at: new Date().toISOString() }).eq('id', post_id)
-      // Dismiss all reports for this post too
       await admin.from('post_reports').update({ resolved: true }).eq('post_id', post_id)
       await admin.from('moderation_log').insert({ admin_id: user.id, post_id, action: 'delete', reason: 'Admin removed post from flagged queue' })
       return NextResponse.json({ ok: true })
