@@ -298,10 +298,9 @@ If ${name} is losing → show them exactly WHY with their own data.
 If ${name} is winning → verify whether it's repeatable or luck.
 Always default to truth over comfort.`
 
+  prompt += `
 
-════════════════════════════════════════
-${name.toUpperCase()}'S TRADING DATA
-════════════════════════════════════════
+--- ${name.toUpperCase()}'S TRADING DATA ---
 Total trades: ${totalTrades} (${totalClosed} closed, ${totalTrades - totalClosed} open)
 `
 
