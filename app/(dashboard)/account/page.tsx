@@ -4,7 +4,7 @@ import { Suspense, useState, useEffect, useRef } from 'react'
 import {
   Loader2, Sparkles, Lock, Mail, Receipt, ExternalLink,
   ChevronDown, ChevronUp, Pencil, Check, X, Camera,
-  Trophy, Trash2, MessageSquare, Heart, FileText,
+  Trophy, Trash2,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -31,13 +31,6 @@ interface CommunityProfile {
   display_name: string | null
   avatar_url: string | null
   bio: string | null
-}
-
-interface MiniPost {
-  id: string
-  content: string
-  like_count: number
-  created_at: string
 }
 
 /* ─── Helpers ─── */
@@ -155,7 +148,6 @@ function AccountContent() {
 
   // Profile
   const [profile, setProfile] = useState<CommunityProfile | null>(null)
-  const [postCount, setPostCount] = useState(0)
   const [userRank, setUserRank] = useState<number | null>(null)
 
   // Subscription
@@ -165,9 +157,6 @@ function AccountContent() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [showInvoices, setShowInvoices] = useState(false)
   const [invoicesLoading, setInvoicesLoading] = useState(false)
-
-  // My posts
-  const [myPosts, setMyPosts] = useState<MiniPost[]>([])
 
   // Loading states
   const [loading, setLoading] = useState(true)
@@ -180,10 +169,6 @@ function AccountContent() {
   const [editingName, setEditingName] = useState(false)
   const [nameValue, setNameValue] = useState('')
   const [nameSaving, setNameSaving] = useState(false)
-
-  // Bio
-  const [bioValue, setBioValue] = useState('')
-  const [bioSaving, setBioSaving] = useState(false)
 
   // Change email
   const [newEmail, setNewEmail] = useState('')
@@ -214,11 +199,10 @@ function AccountContent() {
           setUserId(user.id)
         }
 
-        const [subRes, profileRes, leaderRes, postsRes] = await Promise.all([
+        const [subRes, profileRes, leaderRes] = await Promise.all([
           fetch('/api/stripe/subscription-status'),
           fetch('/api/community/profile'),
           fetch('/api/leaderboard'),
-          fetch('/api/community/posts?mine=true&limit=5'),
         ])
 
         const subData = await subRes.json()
@@ -227,19 +211,12 @@ function AccountContent() {
         if (profileRes.ok) {
           const profileData = await profileRes.json()
           setProfile(profileData.profile ?? null)
-          setPostCount(profileData.post_count ?? 0)
           setNameValue(profileData.profile?.display_name ?? '')
-          setBioValue(profileData.profile?.bio ?? '')
         }
 
         if (leaderRes.ok) {
           const leaderData = await leaderRes.json()
           setUserRank(leaderData.userRank ?? null)
-        }
-
-        if (postsRes.ok) {
-          const postsData = await postsRes.json()
-          setMyPosts(postsData.posts ?? [])
         }
       } finally {
         setLoading(false)
@@ -291,20 +268,6 @@ function AccountContent() {
       /* noop */
     } finally {
       setNameSaving(false)
-    }
-  }
-
-  /* ── Save bio on blur ── */
-  async function saveBio() {
-    setBioSaving(true)
-    try {
-      await fetch('/api/community/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bio: bioValue }),
-      })
-    } finally {
-      setBioSaving(false)
     }
   }
 
@@ -540,11 +503,8 @@ function AccountContent() {
               </div>
             )}
 
-            {/* Post count + rank */}
+            {/* Rank */}
             <div className="flex items-center gap-3">
-              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-display)' }}>
-                <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>{postCount}</span> posts
-              </span>
               {userRank && (
                 <Link
                   href="/stats?tab=leaderboard"
@@ -564,25 +524,6 @@ function AccountContent() {
               )}
             </div>
           </div>
-
-          {/* Bio */}
-          <InnerCard title="Bio">
-            <div className="flex flex-col gap-2">
-              <textarea
-                value={bioValue}
-                onChange={(e) => setBioValue(e.target.value.slice(0, 150))}
-                onBlur={saveBio}
-                placeholder="Tell the community about yourself..."
-                rows={3}
-                className="input !resize-none text-sm"
-                style={{ minHeight: 72 }}
-              />
-              <div className="flex items-center justify-between">
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>{bioValue.length}/150</span>
-                {bioSaving && <span style={{ fontSize: 10, color: 'rgba(77,144,255,0.6)' }}>Saving...</span>}
-              </div>
-            </div>
-          </InnerCard>
 
           {/* Change email */}
           <InnerCard title="Change Email" collapsible defaultOpen={false}>
@@ -727,57 +668,11 @@ function AccountContent() {
             )}
           </div>
 
-          {/* Bottom row: My Posts + Billing History */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-
-            {/* My Posts */}
-            <div
-              className="flex flex-col gap-3 p-5"
-              style={{ background: '#0f0f0f', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 18 }}
-            >
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.3)' }} />
-                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>
-                  Your Posts
-                </span>
-              </div>
-              {myPosts.length === 0 ? (
-                <div className="flex flex-col gap-2 py-4 items-center text-center">
-                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)' }}>No posts yet</p>
-                  <Link href="/community" style={{ fontSize: 11, color: '#4D90FF', fontWeight: 600 }}>
-                    Go to Community →
-                  </Link>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {myPosts.map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex flex-col gap-1 p-3 rounded-xl"
-                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.04)' }}
-                    >
-                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>
-                        {p.content.length > 80 ? p.content.slice(0, 80) + '…' : p.content}
-                      </p>
-                      <div className="flex items-center gap-3 mt-0.5">
-                        <span className="flex items-center gap-1" style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>
-                          <Heart className="w-2.5 h-2.5" /> {p.like_count}
-                        </span>
-                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>
-                          {new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Billing History */}
-            <div
-              className="flex flex-col gap-3 p-5"
-              style={{ background: '#0f0f0f', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 18 }}
-            >
+          {/* Billing History */}
+          <div
+            className="flex flex-col gap-3 p-5"
+            style={{ background: '#0f0f0f', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 18 }}
+          >
               <div className="flex items-center gap-2">
                 <Receipt className="w-4 h-4" style={{ color: 'rgba(255,255,255,0.3)' }} />
                 <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>
@@ -829,7 +724,6 @@ function AccountContent() {
                   )}
                 </div>
               )}
-            </div>
           </div>
 
           {/* Footer */}
