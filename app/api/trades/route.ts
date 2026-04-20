@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
-const VALID_TYPES = ['buy', 'sell', 'long', 'short']
+const VALID_TYPES = ['buy', 'sell', 'long', 'short', 'BUY', 'SELL', 'LONG', 'SHORT']
 const VALID_OUTCOMES = ['win', 'loss', 'breakeven', null, undefined]
 
 function safeFloat(value: unknown): number | null {
@@ -63,8 +63,8 @@ export async function POST(request: NextRequest) {
   if (!pair || typeof pair !== 'string' || pair.trim().length === 0) {
     return NextResponse.json({ error: 'pair is required' }, { status: 400 })
   }
-  if (!type || !VALID_TYPES.includes(String(type).toLowerCase())) {
-    return NextResponse.json({ error: `type must be one of: ${VALID_TYPES.join(', ')}` }, { status: 400 })
+  if (!type || !VALID_TYPES.includes(String(type).toUpperCase()) && !VALID_TYPES.includes(String(type).toLowerCase())) {
+    return NextResponse.json({ error: 'type must be BUY or SELL' }, { status: 400 })
   }
   if (outcome !== undefined && outcome !== null && !VALID_OUTCOMES.includes(outcome)) {
     return NextResponse.json({ error: 'Invalid outcome value' }, { status: 400 })
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       journal_id: journal_id || null,
       pair: pair.trim().toUpperCase(),
-      type: String(type).toLowerCase(),
+      type: String(type).toUpperCase(),
       outcome: outcome ?? null,
       entry_price: parsedEntry,
       exit_price: safeFloat(exit_price),
