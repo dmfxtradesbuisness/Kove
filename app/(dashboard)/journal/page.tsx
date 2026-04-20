@@ -544,6 +544,14 @@ export default function JournalPage() {
   const [editingBalance, setEditingBalance] = useState(false)
   const [balanceInput, setBalanceInput] = useState('')
   const [savingBalance, setSavingBalance] = useState(false)
+  const [isPro, setIsPro] = useState(true) // optimistic default to avoid flash
+
+  useEffect(() => {
+    fetch('/api/stripe/subscription-status')
+      .then(r => r.json())
+      .then(d => setIsPro(d.active === true))
+      .catch(() => {})
+  }, [])
 
   // Detect post-upgrade redirect
   useEffect(() => {
@@ -747,6 +755,20 @@ export default function JournalPage() {
               Take a screenshot of your trade. Kove fills in the details automatically — it takes 15 seconds.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 300 }}>
+              {!isPro && (
+                <p style={{
+                  fontFamily: 'var(--font-body)', fontSize: 12,
+                  color: 'rgba(255,255,255,0.35)',
+                  margin: 0,
+                  lineHeight: 1.5,
+                }}>
+                  Free plan allows 1 AI scan per day.{' '}
+                  <Link href="/account" style={{ color: '#4D90FF', textDecoration: 'none', fontWeight: 600 }}>
+                    Upgrade to Pro
+                  </Link>{' '}
+                  for unlimited scans.
+                </p>
+              )}
               <button
                 onClick={() => setShowForm(true)}
                 style={{
