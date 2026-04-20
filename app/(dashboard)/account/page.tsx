@@ -545,21 +545,23 @@ function AccountContent() {
               <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-display)' }}>
                 <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>{postCount}</span> posts
               </span>
-              <Link
-                href="/stats?tab=leaderboard"
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full transition-all hover:opacity-80"
-                style={{
-                  background: 'rgba(30,110,255,0.15)',
-                  border: '1px solid rgba(30,110,255,0.3)',
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: '#4D90FF',
-                  fontFamily: 'var(--font-display)',
-                }}
-              >
-                <Trophy className="w-3 h-3" />
-                {userRank ? `Rank #${userRank}` : 'Unranked'}
-              </Link>
+              {userRank && (
+                <Link
+                  href="/stats?tab=leaderboard"
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full transition-all hover:opacity-80"
+                  style={{
+                    background: 'rgba(30,110,255,0.15)',
+                    border: '1px solid rgba(30,110,255,0.3)',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: '#4D90FF',
+                    fontFamily: 'var(--font-display)',
+                  }}
+                >
+                  <Trophy className="w-3 h-3" />
+                  Rank #{userRank}
+                </Link>
+              )}
             </div>
           </div>
 
