@@ -1,17 +1,16 @@
 import { createServerClient } from '@supabase/ssr'
-import type { SetAllCookies } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get('code')
-  const type = searchParams.get('type')
-  const next = searchParams.get('next') ?? '/journal'
-  const error = searchParams.get('error')
+  const code             = searchParams.get('code')
+  const type             = searchParams.get('type')
+  const next             = searchParams.get('next') ?? '/journal'
+  const error            = searchParams.get('error')
   const errorDescription = searchParams.get('error_description')
 
-  // Supabase returned an error (e.g. expired link, already confirmed)
+  // Supabase returned an OAuth error
   if (error) {
     const msg = errorDescription ?? error
     return NextResponse.redirect(
@@ -22,15 +21,19 @@ export async function GET(request: NextRequest) {
   if (code) {
     const cookieStore = await cookies()
 
-    const setAll: SetAllCookies = (cookiesToSet) => {
-      try {
-        cookiesToSet.forEach(({ name, value, options }) =>
-          cookieStore.set(name, value, options)
-        )
-      } catch {
-        // Ignored in server context
-      }
+    // ── Decide destination before building the response ───────────────────
+    let destination = `${origin}${next}`
+    if (type === 'signup' || type === 'email_change' || type === 'email') {
+      destination = `${origin}/auth/confirmed`
+    } else if (type === 'recovery') {
+      destination = `${origin}/auth/reset-password`
     }
+
+    // ── Build the redirect response first so we can attach cookies to it ──
+    // This is critical: NextResponse.redirect() creates a brand-new response.
+    // If we set cookies on cookieStore instead, they don't travel with this
+    // redirect and the middleware sees no session → lands on the landing page.
+    const response = NextResponse.redirect(destination)
 
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,7 +43,12 @@ export async function GET(request: NextRequest) {
           getAll() {
             return cookieStore.getAll()
           },
-          setAll,
+          setAll(cookiesToSet) {
+            // Write cookies onto the redirect response directly
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options)
+            })
+          },
         },
       }
     )
@@ -48,16 +56,7 @@ export async function GET(request: NextRequest) {
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!exchangeError) {
-      // Email confirmation or email change — show success screen
-      if (type === 'signup' || type === 'email_change' || type === 'email') {
-        return NextResponse.redirect(`${origin}/auth/confirmed`)
-      }
-      // Password recovery — redirect to reset-password page
-      if (type === 'recovery') {
-        return NextResponse.redirect(`${origin}/auth/reset-password`)
-      }
-      // Default — go to journal
-      return NextResponse.redirect(`${origin}${next}`)
+      return response
     }
 
     return NextResponse.redirect(
