@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Check } from 'lucide-react'
 import { KoveWordmark } from '@/components/KoveLogo'
+import HeroVisual from '@/components/HeroVisual'
 
 // ─── Reveal on scroll ─────────────────────────────────────────────────────────
 function useReveal() {
@@ -162,25 +163,13 @@ export default function LandingPage() {
           overflow: 'hidden',
           background: '#030408',
         }}>
-          {/* Background video — LEFT side */}
+          {/* 3D animated visual — LEFT side */}
           <div className="hero-bg hero-bg-wrap" style={{
             position: 'absolute', top: 0, left: 0,
             width: '58%', height: '100%',
             zIndex: 1, pointerEvents: 'none',
-            display: 'flex', alignItems: 'center',
           }}>
-            <video
-              src="/hero-video.mp4"
-              autoPlay
-              muted
-              loop
-              playsInline
-              style={{
-                width: '100%', height: '100%',
-                objectFit: 'cover', objectPosition: 'center left',
-                mixBlendMode: 'screen', opacity: 0.88,
-              }}
-            />
+            <HeroVisual />
           </div>
 
           {/* Subtle left-edge fade so image blends into bg */}
