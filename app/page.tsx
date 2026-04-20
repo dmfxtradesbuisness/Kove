@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { ArrowRight, Check } from 'lucide-react'
 import { KoveWordmark } from '@/components/KoveLogo'
 
@@ -163,19 +162,24 @@ export default function LandingPage() {
           overflow: 'hidden',
           background: '#030408',
         }}>
-          {/* Background image — LEFT side */}
-          <div className="hero-bg" style={{
+          {/* Background video — LEFT side */}
+          <div className="hero-bg hero-bg-wrap" style={{
             position: 'absolute', top: 0, left: 0,
-            width: '55%', height: '100%',
+            width: '58%', height: '100%',
             zIndex: 1, pointerEvents: 'none',
+            display: 'flex', alignItems: 'center',
           }}>
-            <Image
-              src="/hero-bg.png"
-              alt=""
-              fill
-              priority
-              sizes="55vw"
-              style={{ objectFit: 'contain', objectPosition: 'center left', mixBlendMode: 'screen', opacity: 0.9 }}
+            <video
+              src="/hero-video.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+              style={{
+                width: '100%', height: '100%',
+                objectFit: 'cover', objectPosition: 'center left',
+                mixBlendMode: 'screen', opacity: 0.88,
+              }}
             />
           </div>
 
