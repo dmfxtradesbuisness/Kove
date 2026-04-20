@@ -1,28 +1,12 @@
 import type { Metadata } from 'next'
-import { Inter, Fahkwang, Krona_One } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import './globals.css'
 
-// ── Body font — prose, descriptions, UI text ────────────────────────────────
+// ── Single font — Inter for everything ──────────────────────────────────────
 const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-body',
-  weight: ['300', '400', '500', '600', '700'],
-  display: 'swap',
-})
-
-// ── Display font — hero text, big headings ──────────────────────────────────
-const fahkwang = Fahkwang({
-  subsets: ['latin'],
-  variable: '--font-display',
-  weight: ['300', '400', '500', '600', '700'],
-  display: 'swap',
-})
-
-// ── Accent font — section titles, card headers, labels ──────────────────────
-const kronaOne = Krona_One({
-  subsets: ['latin'],
-  variable: '--font-heading',
-  weight: ['400'],
+  variable: '--font-inter',
+  weight: ['300', '400', '500', '600', '700', '800'],
   display: 'swap',
 })
 
@@ -85,7 +69,7 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`dark ${inter.variable} ${fahkwang.variable} ${kronaOne.variable}`}>
+    <html lang="en" className={`dark ${inter.variable}`}>
       <head>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <meta name="theme-color" content="#1E6EFF" />

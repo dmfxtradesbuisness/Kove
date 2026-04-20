@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowRight, Check } from 'lucide-react'
 import { KoveWordmark } from '@/components/KoveLogo'
 
@@ -74,6 +75,7 @@ export default function LandingPage() {
         .hl-3 { animation-delay: 0.28s; }
         .hl-4 { animation-delay: 0.42s; }
         .hl-5 { animation-delay: 0.58s; }
+        .hero-bg { opacity: 0; animation: fadeIn 1.4s ease 0.1s forwards; }
 
         .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22,1,0.36,1); }
         .reveal.visible { opacity: 1; transform: translateY(0); }
@@ -101,9 +103,14 @@ export default function LandingPage() {
         }
 
         @media (max-width: 767px) {
-          .nav-links { display: none !important; }
-          .nav-cta   { display: none !important; }
+          .nav-links  { display: none !important; }
+          .nav-cta    { display: none !important; }
           .pricing-grid { grid-template-columns: 1fr !important; }
+          .hero-content { align-items: center !important; padding-right: 24px !important; padding-left: 24px !important; }
+          .hero-content > div { text-align: center !important; max-width: 100% !important; }
+          .hero-content h1 { font-size: clamp(1.8rem, 8vw, 2.6rem) !important; }
+          .hero-cta { justify-content: center !important; }
+          .hero-bg-wrap { width: 100% !important; opacity: 0.18 !important; }
         }
       `}</style>
 
@@ -151,75 +158,108 @@ export default function LandingPage() {
 
         {/* ── HERO ─────────────────────────────────────────────────── */}
         <section style={{
-          minHeight: '100vh',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          padding: '120px max(24px,5vw) 80px',
-          textAlign: 'center',
           position: 'relative',
-          background: 'radial-gradient(ellipse 60% 50% at 50% 40%, rgba(30,110,255,0.07) 0%, transparent 65%)',
+          height: '100vh', minHeight: 620,
+          overflow: 'hidden',
+          background: '#030408',
         }}>
-
-          <p className="hl hl-1" style={{
-            fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 500,
-            textTransform: 'uppercase', letterSpacing: '0.12em',
-            color: 'rgba(255,255,255,0.28)', marginBottom: 32,
-          }}>Trading journal · Behavior analysis</p>
-
-          <h1 className="hl hl-2" style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(2rem, 5.5vw, 4rem)',
-            fontWeight: 700,
-            letterSpacing: '-0.03em',
-            lineHeight: 1.1,
-            maxWidth: 780,
-            margin: '0 0 28px',
-            color: '#fff',
+          {/* Background image — LEFT side */}
+          <div className="hero-bg" style={{
+            position: 'absolute', top: 0, left: 0,
+            width: '55%', height: '100%',
+            zIndex: 1, pointerEvents: 'none',
           }}>
-            Kove tracks your trades, finds your patterns, and points out the exact behaviors holding you back.
-          </h1>
-
-          <p className="hl hl-3" style={{
-            fontFamily: 'var(--font-body)', fontSize: 15,
-            color: 'rgba(255,255,255,0.32)', lineHeight: 1.65,
-            maxWidth: 460, margin: '0 0 44px',
-          }}>
-            Most traders lose the same money the same way. They just don&apos;t see it yet.
-          </p>
-
-          <div className="hl hl-4" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Link href="/signup" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 7,
-              padding: '12px 26px', borderRadius: 9,
-              background: BLUE, color: '#fff',
-              fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600,
-              textDecoration: 'none',
-              boxShadow: `0 0 32px ${BLUE_GLOW}`,
-              transition: 'all 0.18s',
-            }}
-            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = BLUE_HI; el.style.transform = 'scale(1.03)' }}
-            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = BLUE; el.style.transform = 'scale(1)' }}
-            >
-              Start free <ArrowRight style={{ width: 14, height: 14 }} />
-            </Link>
-
-            <a href="#how" style={{
-              display: 'inline-flex', alignItems: 'center',
-              padding: '12px 26px', borderRadius: 9,
-              background: 'transparent', color: 'rgba(255,255,255,0.5)',
-              fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 500,
-              textDecoration: 'none',
-              border: '1px solid rgba(255,255,255,0.1)',
-              transition: 'all 0.18s',
-            }}
-            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'rgba(255,255,255,0.22)'; el.style.color = '#fff' }}
-            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'rgba(255,255,255,0.1)'; el.style.color = 'rgba(255,255,255,0.5)' }}
-            >See how it works</a>
+            <Image
+              src="/hero-bg.png"
+              alt=""
+              fill
+              priority
+              sizes="55vw"
+              style={{ objectFit: 'contain', objectPosition: 'center left', mixBlendMode: 'screen', opacity: 0.9 }}
+            />
           </div>
 
-          <p className="hl hl-5" style={{
-            fontFamily: 'var(--font-body)', fontSize: 12,
-            color: 'rgba(255,255,255,0.18)', marginTop: 20,
-          }}>Free to start · No card required</p>
+          {/* Subtle left-edge fade so image blends into bg */}
+          <div style={{
+            position: 'absolute', top: 0, left: 0,
+            width: '20%', height: '100%',
+            background: 'linear-gradient(to right, #030408 0%, transparent 100%)',
+            zIndex: 2, pointerEvents: 'none',
+          }} />
+
+          {/* Content — center-right */}
+          <div className="hero-content" style={{
+            position: 'absolute', inset: 0, zIndex: 3,
+            display: 'flex', flexDirection: 'column', justifyContent: 'center',
+            alignItems: 'flex-end',
+            paddingRight: 'max(48px, 7vw)',
+            paddingTop: 60,
+          }}>
+            <div style={{ maxWidth: 480, textAlign: 'right' }}>
+
+              <p className="hl hl-1" style={{
+                fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 500,
+                textTransform: 'uppercase', letterSpacing: '0.12em',
+                color: 'rgba(255,255,255,0.28)', marginBottom: 24,
+              }}>AI Trading Journal</p>
+
+              <h1 className="hl hl-2" style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 'clamp(2rem, 4.5vw, 3.4rem)',
+                fontWeight: 700,
+                letterSpacing: '-0.03em',
+                lineHeight: 1.1,
+                margin: '0 0 20px',
+                color: '#fff',
+              }}>
+                Find the patterns<br />
+                <span style={{ color: BLUE }}>costing you money.</span>
+              </h1>
+
+              <p className="hl hl-3" style={{
+                fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 400,
+                color: 'rgba(255,255,255,0.38)', lineHeight: 1.65,
+                margin: '0 0 36px',
+              }}>
+                Log trades. Kove analyzes your behavior and tells you exactly what&apos;s holding you back.
+              </p>
+
+              <div className="hl hl-4 hero-cta" style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                <Link href="/signup" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 7,
+                  padding: '11px 24px', borderRadius: 9,
+                  background: BLUE, color: '#fff',
+                  fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600,
+                  textDecoration: 'none',
+                  boxShadow: `0 0 28px ${BLUE_GLOW}`,
+                  transition: 'all 0.18s',
+                }}
+                onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = BLUE_HI; el.style.transform = 'scale(1.03)' }}
+                onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = BLUE; el.style.transform = 'scale(1)' }}
+                >
+                  Start free <ArrowRight style={{ width: 13, height: 13 }} />
+                </Link>
+
+                <a href="#how" style={{
+                  display: 'inline-flex', alignItems: 'center',
+                  padding: '11px 22px', borderRadius: 9,
+                  background: 'transparent', color: 'rgba(255,255,255,0.45)',
+                  fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 500,
+                  textDecoration: 'none',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  transition: 'all 0.18s',
+                }}
+                onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'rgba(255,255,255,0.22)'; el.style.color = '#fff' }}
+                onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'rgba(255,255,255,0.1)'; el.style.color = 'rgba(255,255,255,0.45)' }}
+                >See how it works</a>
+              </div>
+
+              <p className="hl hl-5" style={{
+                fontFamily: 'var(--font-body)', fontSize: 11,
+                color: 'rgba(255,255,255,0.16)', marginTop: 16, textAlign: 'right',
+              }}>Free to start · No card required</p>
+            </div>
+          </div>
         </section>
 
         {/* ── HOW IT WORKS ─────────────────────────────────────────── */}
