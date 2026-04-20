@@ -50,8 +50,8 @@ function toET(utcStr: string): string {
     // FinnHub: "2026-04-19 12:30:00" → treat as UTC
     const d = new Date(utcStr.replace(' ', 'T') + 'Z')
     const hhmm = d.toLocaleTimeString('en-US', {
-      hour: '2-digit', minute: '2-digit',
-      timeZone: 'America/New_York', hour12: false,
+      hour: 'numeric', minute: '2-digit',
+      timeZone: 'America/New_York', hour12: true,
     })
     return `${hhmm} ET`
   } catch {
