@@ -45,7 +45,15 @@ export const metadata: Metadata = {
     title: 'Kove – The Trade Journal That Actually Helps You Improve',
     description: 'Log trades. Find the patterns costing you money. Get clear feedback on what to fix — built for traders who want to actually get better.',
   },
-  icons: { icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }], shortcut: '/favicon.svg' },
+  icons: {
+    icon: [
+      { url: '/favicon.ico',      sizes: 'any' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+    other: [{ rel: 'manifest', url: '/site.webmanifest' }],
+  },
   applicationName: 'KoveFX',
   category: 'Finance',
   classification: 'Trading Tools',
@@ -71,7 +79,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`dark ${inter.variable}`}>
       <head>
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
+        <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/site.webmanifest" />
         <meta name="theme-color" content="#1E6EFF" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
