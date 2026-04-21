@@ -14,7 +14,7 @@ const APP_URL = 'https://kovefx.com'
 
 export const metadata: Metadata = {
   title: {
-    default: 'Kove – The Trade Journal That Actually Helps You Improve',
+    default: 'Kove',
     template: '%s | Kove',
   },
   description:
