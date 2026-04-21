@@ -47,12 +47,15 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.ico',      sizes: 'any' },
-      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon.ico',       sizes: 'any' },
       { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
     ],
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
-    other: [{ rel: 'manifest', url: '/site.webmanifest' }],
+    other: [
+      { rel: 'manifest',       url: '/site.webmanifest' },
+      { rel: 'privacy-policy', url: 'https://kovefx.com/privacy' },
+    ],
   },
   applicationName: 'KoveFX',
   category: 'Finance',
@@ -84,6 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
+        <link rel="privacy-policy" href="https://kovefx.com/privacy" />
         <meta name="theme-color" content="#1E6EFF" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
