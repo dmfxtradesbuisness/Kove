@@ -106,11 +106,11 @@ export default function LandingPage() {
           .nav-links  { display: none !important; }
           .nav-cta    { display: none !important; }
           .pricing-grid { grid-template-columns: 1fr !important; }
-          .hero-content { align-items: center !important; padding-right: 24px !important; padding-left: 24px !important; }
+          .hero-content { align-items: center !important; padding-left: 24px !important; padding-right: 24px !important; }
           .hero-content > div { text-align: center !important; max-width: 100% !important; }
           .hero-content h1 { font-size: clamp(1.8rem, 8vw, 2.6rem) !important; }
           .hero-cta { justify-content: center !important; }
-          .hero-bg-wrap { width: 100% !important; opacity: 0.18 !important; }
+          .hero-bg-wrap { width: 100% !important; opacity: 0.12 !important; }
         }
       `}</style>
 
@@ -163,32 +163,32 @@ export default function LandingPage() {
           overflow: 'hidden',
           background: '#030408',
         }}>
-          {/* 3D animated visual — LEFT side */}
+          {/* 3D animated visual — RIGHT side */}
           <div className="hero-bg hero-bg-wrap" style={{
-            position: 'absolute', top: 0, left: 0,
+            position: 'absolute', top: 0, right: 0,
             width: '58%', height: '100%',
             zIndex: 1, pointerEvents: 'none',
           }}>
             <HeroVisual />
           </div>
 
-          {/* Subtle left-edge fade so image blends into bg */}
+          {/* Right-edge fade */}
           <div style={{
-            position: 'absolute', top: 0, left: 0,
-            width: '20%', height: '100%',
-            background: 'linear-gradient(to right, #030408 0%, transparent 100%)',
+            position: 'absolute', top: 0, right: 0,
+            width: '22%', height: '100%',
+            background: 'linear-gradient(to left, #030408 0%, transparent 100%)',
             zIndex: 2, pointerEvents: 'none',
           }} />
 
-          {/* Content — center-right */}
+          {/* Content — left */}
           <div className="hero-content" style={{
             position: 'absolute', inset: 0, zIndex: 3,
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
-            alignItems: 'flex-end',
-            paddingRight: 'max(48px, 7vw)',
+            alignItems: 'flex-start',
+            paddingLeft: 'max(48px, 7vw)',
             paddingTop: 60,
           }}>
-            <div style={{ maxWidth: 480, textAlign: 'right' }}>
+            <div style={{ maxWidth: 480, textAlign: 'left' }}>
 
               <p className="hl hl-1" style={{
                 fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 500,
@@ -217,7 +217,7 @@ export default function LandingPage() {
                 Log your trades. Kove finds what&apos;s holding you back and tells you exactly what to fix.
               </p>
 
-              <div className="hl hl-4 hero-cta" style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <div className="hl hl-4 hero-cta" style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'flex-start', flexWrap: 'wrap' }}>
                 <Link href="/signup" style={{
                   display: 'inline-flex', alignItems: 'center', gap: 7,
                   padding: '11px 24px', borderRadius: 9,
@@ -249,7 +249,7 @@ export default function LandingPage() {
 
               <p className="hl hl-5" style={{
                 fontFamily: 'var(--font-body)', fontSize: 11,
-                color: 'rgba(255,255,255,0.16)', marginTop: 16, textAlign: 'right',
+                color: 'rgba(255,255,255,0.16)', marginTop: 16,
               }}>Free to start · No card required</p>
             </div>
           </div>
