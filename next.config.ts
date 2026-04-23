@@ -26,13 +26,13 @@ const securityHeaders = [
       // Images from self, Supabase, data URIs, blob
       `img-src 'self' data: blob: https://*.supabase.co`,
       // API calls: Supabase (REST + realtime), Stripe, OpenAI
-      `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://api.openai.com`,
+      `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://api.openai.com https://accounts.google.com`,
       // Stripe iframes for checkout
-      `frame-src https://js.stripe.com https://checkout.stripe.com https://hooks.stripe.com`,
+      `frame-src https://js.stripe.com https://checkout.stripe.com https://hooks.stripe.com https://accounts.google.com`,
       `media-src 'self'`,
       `object-src 'none'`,
       `base-uri 'self'`,
-      `form-action 'self'`,
+      `form-action 'self' https://accounts.google.com https://*.supabase.co`,
       `upgrade-insecure-requests`,
     ].join('; '),
   },
