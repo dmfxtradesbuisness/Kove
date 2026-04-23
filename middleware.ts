@@ -48,7 +48,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  if (user && (pathname === '/login' || pathname === '/signup')) {
+  if (user && (pathname === '/' || pathname === '/login' || pathname === '/signup')) {
     const journalUrl = request.nextUrl.clone()
     journalUrl.pathname = '/journal'
     return NextResponse.redirect(journalUrl)
