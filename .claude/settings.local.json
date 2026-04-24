@@ -16,7 +16,17 @@
       "Bash(npx next:*)",
       "Bash(xargs sed:*)",
       "WebFetch(domain:supabase.com)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "Bash(python3 -c ':*)",
+      "Bash(node -e ':*)",
+      "Bash(cat lib/openai.ts)",
+      "Bash(cat lib/openai.tsx)",
+      "mcp__f5b591cc-cec7-43c2-b34a-e5d5575f56b6__list_tables",
+      "Bash(npm install *)",
+      "Bash(unzip -l favicon_io.zip)",
+      "Bash(unzip -o favicon_io.zip -d \"/c/Users/dmfxt/OneDrive/Desktop/kove/public/\")",
+      "mcp__f5b591cc-cec7-43c2-b34a-e5d5575f56b6__get_logs",
+      "Bash(del \"C:\\\\Users\\\\dmfxt\\\\OneDrive\\\\Desktop\\\\kove\\\\app\\\\auth\\\\callback\\\\route.ts\")"
     ]
   }
 }

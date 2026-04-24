@@ -1029,7 +1029,7 @@ export default function JournalPage() {
       </div>
 
       {showForm && (
-        <TradeForm trade={editingTrade} onClose={handleClose} onSuccess={handleSuccess} journalId={activeJournalId} />
+        <TradeForm key={editingTrade?.id ?? 'new'} trade={editingTrade} onClose={handleClose} onSuccess={handleSuccess} journalId={activeJournalId} />
       )}
 
       {lastLoggedTrade && (
