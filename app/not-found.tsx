@@ -10,7 +10,7 @@ export default function NotFound() {
   return (
     <div
       className="min-h-screen flex items-center justify-center relative overflow-hidden px-4"
-      style={{ background: '#080808' }}
+      style={{ background: '#030408' }}
     >
       {/* Grid overlay */}
       <div

@@ -12,6 +12,7 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
@@ -49,21 +50,30 @@ export default function ResetPasswordPage() {
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: '#080808' }}
+      style={{ background: '#030408' }}
     >
-      {/* Atmospheric glow */}
+      {/* Grid overlay */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)`,
+          backgroundSize: '72px 72px',
+        }}
+      />
+
+      {/* Atmospheric glow — brand blue */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div
           className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[600px] h-[500px] rounded-full opacity-30"
           style={{
-            background: 'radial-gradient(ellipse, rgba(59,130,246,0.35) 0%, transparent 70%)',
+            background: 'radial-gradient(ellipse, rgba(30,110,255,0.45) 0%, transparent 70%)',
             filter: 'blur(120px)',
           }}
         />
       </div>
 
       <div
-        className="relative w-full max-w-[420px] bg-[#0e0e0e] border border-white/[0.07] rounded-3xl animate-scale-in"
+        className="relative w-full max-w-[420px] bg-[#0e0e13] border border-white/[0.07] rounded-3xl animate-scale-in"
         style={{ boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 40px 80px rgba(0,0,0,0.8)' }}
       >
         {done ? (
@@ -116,14 +126,24 @@ export default function ResetPasswordPage() {
 
               <div className="flex flex-col gap-2">
                 <label className="label">Confirm password</label>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  placeholder="Repeat your password…"
-                  className="input"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirm ? 'text' : 'password'}
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    placeholder="Repeat your password…"
+                    className="input pr-12"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#444] hover:text-[#888] transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               {error && (

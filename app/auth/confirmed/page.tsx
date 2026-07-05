@@ -5,14 +5,14 @@ export default function ConfirmedPage() {
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: '#080808' }}
+      style={{ background: '#030408' }}
     >
       {/* Atmospheric glow */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div
           className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[600px] h-[500px] rounded-full opacity-30"
           style={{
-            background: 'radial-gradient(ellipse, rgba(59,130,246,0.35) 0%, transparent 70%)',
+            background: 'radial-gradient(ellipse, rgba(30,110,255,0.45) 0%, transparent 70%)',
             filter: 'blur(120px)',
           }}
         />

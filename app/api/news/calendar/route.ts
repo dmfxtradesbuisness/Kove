@@ -77,18 +77,56 @@ function buildDescription(e: FinnhubEvent): string {
   return parts.length ? parts.join(' · ') : e.event
 }
 
-// ─── Route ───────────────────────────────────────────────────────────────────
-export async function GET() {
-  // Return cache if still fresh
-  if (_cache && Date.now() - _cache.ts < CACHE_TTL) {
-    return NextResponse.json({ events: _cache.data, cached: true })
-  }
+// ─── Forex Factory fallback (no API key required) ─────────────────────────────
+interface FFEvent {
+  title:    string
+  country:  string   // currency code: USD, EUR, GBP, ...
+  date:     string   // ISO with offset, e.g. "2026-07-06T08:30:00-04:00"
+  impact:   string   // High | Medium | Low | Holiday
+  forecast: string
+  previous: string
+}
 
-  const apiKey = process.env.FINNHUB_API_KEY
-  if (!apiKey) {
-    return NextResponse.json({ events: [], error: 'FINNHUB_API_KEY not set' }, { status: 500 })
-  }
+const FF_CURRENCY_TO_COUNTRY: Record<string, string> = {
+  USD: 'US', EUR: 'EU', GBP: 'GB', JPY: 'JP',
+  CAD: 'CA', AUD: 'AU', NZD: 'NZ', CHF: 'CH',
+}
 
+async function fetchForexFactory(): Promise<CalendarEvent[]> {
+  const res = await fetch('https://nfs.faireconomy.media/ff_calendar_thisweek.json', {
+    next: { revalidate: 21600 },
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; KoveJournal/1.0)' },
+  })
+  if (!res.ok) throw new Error(`ForexFactory ${res.status}`)
+  const raw: FFEvent[] = await res.json()
+
+  return raw
+    .filter(e => FF_CURRENCY_TO_COUNTRY[e.country] && ['High', 'Medium', 'Low'].includes(e.impact))
+    .map(e => {
+      const country = FF_CURRENCY_TO_COUNTRY[e.country]
+      const d = new Date(e.date)
+      const parts: string[] = []
+      if (e.forecast) parts.push(`Est: ${e.forecast}`)
+      if (e.previous) parts.push(`Prev: ${e.previous}`)
+      return {
+        name:        e.title,
+        date:        d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' }),
+        time:        `${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York', hour12: true })} ET`,
+        impact:      e.impact.toLowerCase() as 'high' | 'medium' | 'low',
+        description: parts.length ? parts.join(' · ') : e.title,
+        currencies:  COUNTRY_CURRENCIES[country] ?? [e.country],
+        actual:      null,
+        estimate:    e.forecast || null,
+        prev:        e.previous || null,
+        unit:        null,
+        country,
+      }
+    })
+    .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
+}
+
+// ─── Finnhub (primary, when key is configured) ────────────────────────────────
+async function fetchFinnhub(apiKey: string): Promise<CalendarEvent[]> {
   // Fetch 3 months: 2 weeks back + 10 weeks forward
   const from = new Date()
   from.setDate(from.getDate() - 14)
@@ -98,30 +136,52 @@ export async function GET() {
   const fmt = (d: Date) => d.toISOString().slice(0, 10)
   const url = `https://finnhub.io/api/v1/calendar/economic?from=${fmt(from)}&to=${fmt(to)}&token=${apiKey}`
 
+  const res = await fetch(url, { next: { revalidate: 21600 } })
+  if (!res.ok) throw new Error(`Finnhub ${res.status}`)
+
+  const json = await res.json()
+  const raw: FinnhubEvent[] = json.economicCalendar ?? []
+
+  return raw
+    .filter(e => RELEVANT_COUNTRIES.has(e.country))
+    .filter(e => ['high', 'medium', 'low'].includes(e.impact))
+    .map(e => ({
+      name:        e.event,
+      date:        toDateStr(e.time),
+      time:        toET(e.time),
+      impact:      e.impact as 'high' | 'medium' | 'low',
+      description: buildDescription(e),
+      currencies:  COUNTRY_CURRENCIES[e.country] ?? [e.country],
+      actual:      e.actual,
+      estimate:    e.estimate,
+      prev:        e.prev,
+      unit:        e.unit,
+      country:     e.country,
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
+}
+
+// ─── Route ───────────────────────────────────────────────────────────────────
+export async function GET() {
+  // Return cache if still fresh
+  if (_cache && Date.now() - _cache.ts < CACHE_TTL) {
+    return NextResponse.json({ events: _cache.data, cached: true })
+  }
+
+  const apiKey = process.env.FINNHUB_API_KEY
+
   try {
-    const res = await fetch(url, { next: { revalidate: 21600 } })
-    if (!res.ok) throw new Error(`Finnhub ${res.status}`)
-
-    const json = await res.json()
-    const raw: FinnhubEvent[] = json.economicCalendar ?? []
-
-    const events: CalendarEvent[] = raw
-      .filter(e => RELEVANT_COUNTRIES.has(e.country))
-      .filter(e => ['high', 'medium', 'low'].includes(e.impact))
-      .map(e => ({
-        name:        e.event,
-        date:        toDateStr(e.time),
-        time:        toET(e.time),
-        impact:      e.impact as 'high' | 'medium' | 'low',
-        description: buildDescription(e),
-        currencies:  COUNTRY_CURRENCIES[e.country] ?? [e.country],
-        actual:      e.actual,
-        estimate:    e.estimate,
-        prev:        e.prev,
-        unit:        e.unit,
-        country:     e.country,
-      }))
-      .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
+    let events: CalendarEvent[]
+    if (apiKey) {
+      try {
+        events = await fetchFinnhub(apiKey)
+      } catch (err) {
+        console.error('[calendar] Finnhub failed, falling back to ForexFactory', err)
+        events = await fetchForexFactory()
+      }
+    } else {
+      events = await fetchForexFactory()
+    }
 
     _cache = { data: events, ts: Date.now() }
     return NextResponse.json({ events })

@@ -336,11 +336,14 @@ export default function NewsPage() {
       {/* ── Error ── */}
       {!loading && error && (
         <div style={{ background: 'rgba(248,113,113,0.07)', border: '1px solid rgba(248,113,113,0.18)', borderRadius: 12, padding: '20px 24px', textAlign: 'center' }}>
-          <p style={{ fontSize: 13, color: '#f87171', fontFamily: 'var(--font-body)', marginBottom: 8 }}>{error}</p>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-body)' }}>
-            Add <span style={{ color: '#fff' }}>FINNHUB_API_KEY</span> to your env vars.{' '}
-            <a href="https://finnhub.io" target="_blank" rel="noreferrer" style={{ color: '#4D90FF' }}>Get a free key →</a>
-          </p>
+          <p style={{ fontSize: 13, color: '#f87171', fontFamily: 'var(--font-body)', marginBottom: 8 }}>Couldn&apos;t load market events.</p>
+          <button
+            onClick={() => fetchEvents(true)}
+            style={{
+              fontSize: 12, color: '#4D90FF', fontFamily: 'var(--font-body)',
+              background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+            }}
+          >Try again →</button>
         </div>
       )}
 

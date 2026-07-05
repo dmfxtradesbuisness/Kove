@@ -282,7 +282,7 @@ export default function AIPage() {
   return (
     <div
       className="relative flex flex-col overflow-hidden h-[calc(100dvh-56px)] md:h-screen"
-      style={{ background: '#080808' }}
+      style={{ background: 'var(--base)' }}
     >
       {/* Orbs */}
       <Orb style={{ width: 560, height: 560, top: -160, left: '50%', transform: 'translateX(-50%)', background: 'radial-gradient(circle,rgba(10,50,140,0.8) 0%,rgba(8,25,80,0.35) 55%,transparent 100%)', zIndex: 0 }} />

@@ -13,7 +13,7 @@ function ErrorContent() {
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: '#080808' }}
+      style={{ background: '#030408' }}
     >
       {/* Atmospheric glow */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -75,7 +75,7 @@ export default function AuthErrorPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center" style={{ background: '#080808' }}>
+        <div className="min-h-screen flex items-center justify-center" style={{ background: '#030408' }}>
           <div className="w-5 h-5 border-2 border-white/10 border-t-white/40 rounded-full animate-spin" />
         </div>
       }

@@ -267,99 +267,158 @@ function EquityCurve({ trades }: { trades: Trade[] }) {
 }
 
 // ─── P&L Calendar ─────────────────────────────────────────────────────────────
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
+
+function fmtPnl(v: number): string {
+  const abs = Math.abs(v)
+  const body = abs >= 1000 ? `$${(abs / 1000).toFixed(1)}k` : `$${abs.toFixed(1)}`
+  return v < 0 ? `-${body}` : body
+}
+
 function PnlCalendar({ trades }: { trades: Trade[] }) {
   const [viewDate, setViewDate] = useState(() => new Date())
   const year  = viewDate.getFullYear()
   const month = viewDate.getMonth()
 
-  const dayMap: Record<number, number> = {}
+  const dayMap: Record<number, { pnl: number; count: number }> = {}
   trades.forEach((t) => {
     if (t.pnl === null) return
     const d = new Date(t.created_at)
     if (d.getMonth() !== month || d.getFullYear() !== year) return
     const day = d.getDate()
-    dayMap[day] = (dayMap[day] ?? 0) + t.pnl
+    if (!dayMap[day]) dayMap[day] = { pnl: 0, count: 0 }
+    dayMap[day].pnl   += t.pnl
+    dayMap[day].count += 1
   })
 
   const firstDow    = new Date(year, month, 1).getDay() // 0=Sun
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const today       = new Date()
   const isCurrentMonth = today.getMonth() === month && today.getFullYear() === year
-  const monthLabel  = `${year}-${String(month + 1).padStart(2, '0')}`
 
-  const prevMonth = () => setViewDate(new Date(year, month - 1, 1))
-  const nextMonth = () => setViewDate(new Date(year, month + 1, 1))
+  const nowYear = today.getFullYear()
+  const yearOptions = Array.from({ length: 7 }, (_, i) => nowYear - 5 + i)
 
-  const DOW = ['S','M','T','W','T','F','S']
+  const go = (months: number) => setViewDate(new Date(year, month + months, 1))
+
+  const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 
   // Build cell array: nulls for empty leading days, then 1..daysInMonth
   const cells: (number | null)[] = [
     ...Array(firstDow).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ]
-  // Pad to complete last row
   while (cells.length % 7 !== 0) cells.push(null)
 
-  function cellColor(pnl: number) {
-    if (pnl > 0) {
-      const intensity = pnl > 200 ? 0.55 : pnl > 50 ? 0.35 : 0.2
-      return { bg: `rgba(52,211,153,${intensity})`, text: '#34D399', border: `rgba(52,211,153,${intensity + 0.15})` }
-    }
-    const intensity = pnl < -200 ? 0.6 : pnl < -50 ? 0.4 : 0.22
-    return { bg: `rgba(239,68,68,${intensity})`, text: '#F87171', border: `rgba(239,68,68,${intensity + 0.15})` }
+  const navBtn: React.CSSProperties = {
+    background: 'none', border: 'none', cursor: 'pointer',
+    color: 'var(--text-2)', fontSize: 15, lineHeight: 1,
+    padding: '4px 6px', borderRadius: 6, fontFamily: 'var(--font-display)',
+  }
+
+  const selectStyle: React.CSSProperties = {
+    appearance: 'none', WebkitAppearance: 'none',
+    background: 'var(--surface-3)', border: '1px solid var(--border)',
+    borderRadius: 10, color: 'var(--text-1)',
+    fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 600,
+    padding: '7px 28px 7px 14px', cursor: 'pointer', outline: 'none',
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238A8A9A' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
+    backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center',
   }
 
   return (
     <div className="dash-card" style={{ padding: '18px 20px', width: '100%' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, color: '#fff' }}>Daily P&L</p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={prevMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', fontSize: 16, lineHeight: 1, padding: '0 4px' }}>‹</button>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.7)', letterSpacing: '0.04em' }}>{monthLabel}</span>
-          <button onClick={nextMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', fontSize: 16, lineHeight: 1, padding: '0 4px' }}>›</button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+        <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, color: 'var(--text-1)' }}>Daily P&L</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <button onClick={() => go(-12)} title="Previous year"  style={navBtn}>«</button>
+          <button onClick={() => go(-1)}  title="Previous month" style={navBtn}>‹</button>
+          <select value={month} onChange={(e) => setViewDate(new Date(year, Number(e.target.value), 1))} style={selectStyle}>
+            {MONTH_NAMES.map((m, i) => <option key={m} value={i}>{m}</option>)}
+          </select>
+          <select value={year} onChange={(e) => setViewDate(new Date(Number(e.target.value), month, 1))} style={{ ...selectStyle, marginLeft: 4 }}>
+            {yearOptions.map((y) => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <button onClick={() => go(1)}   title="Next month" style={navBtn}>›</button>
+          <button onClick={() => go(12)}  title="Next year"  style={navBtn}>»</button>
+          <button
+            onClick={() => setViewDate(new Date())}
+            style={{
+              marginLeft: 6, background: 'var(--surface-3)', border: '1px solid var(--border)',
+              borderRadius: 10, color: 'var(--text-2)', cursor: 'pointer',
+              fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600, padding: '7px 14px',
+            }}
+          >Today</button>
         </div>
       </div>
 
       {/* DOW headers */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
-        {DOW.map((d, i) => (
-          <div key={i} style={{ textAlign: 'center', fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.25)', paddingBottom: 4 }}>{d}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 6 }}>
+        {DOW.map((d) => (
+          <div key={d} style={{
+            textAlign: 'center', fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 600,
+            color: 'var(--text-2)', padding: '8px 0',
+            background: 'var(--surface-2)', border: '1px solid var(--border-lo)', borderRadius: 10,
+          }}>{d}</div>
         ))}
       </div>
 
       {/* Day cells */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
         {cells.map((day, idx) => {
-          if (day === null) return <div key={idx} />
-          const pnl = dayMap[day]
-          const hasPnl = pnl !== undefined
+          if (day === null) return <div key={idx} style={{ minHeight: 76, borderRadius: 12 }} />
+          const data    = dayMap[day]
+          const hasPnl  = data !== undefined
+          const isWin   = hasPnl && data.pnl >= 0
           const isToday = isCurrentMonth && today.getDate() === day
           const isFuture = isCurrentMonth && day > today.getDate()
-          const colors = hasPnl ? cellColor(pnl) : null
+
+          const bg = hasPnl
+            ? isWin ? 'rgba(52,211,153,0.12)' : 'rgba(239,68,68,0.12)'
+            : 'var(--surface-2)'
+          const border = hasPnl
+            ? isWin ? 'rgba(52,211,153,0.32)' : 'rgba(239,68,68,0.32)'
+            : 'var(--border-lo)'
+          const pnlColor = isWin ? '#5EEAB4' : '#F87171'
 
           return (
             <div key={idx} style={{
-              borderRadius: 8,
-              padding: '6px 4px',
-              textAlign: 'center',
-              background: colors ? colors.bg : isToday ? 'rgba(30,110,255,0.12)' : 'rgba(255,255,255,0.03)',
-              border: `1px solid ${colors ? colors.border : isToday ? 'rgba(30,110,255,0.4)' : 'rgba(255,255,255,0.05)'}`,
-              minHeight: 48,
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
-              opacity: isFuture && !hasPnl ? 0.35 : 1,
-              transition: 'transform 0.1s',
-              cursor: hasPnl ? 'default' : 'default',
+              position: 'relative',
+              borderRadius: 12,
+              padding: '8px 8px 10px',
+              background: bg,
+              border: `1px solid ${border}`,
+              minHeight: 76,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+              opacity: isFuture && !hasPnl ? 0.4 : 1,
+              transition: 'transform 0.12s ease, border-color 0.12s ease',
             }}
-            onMouseEnter={(e) => { if (hasPnl) (e.currentTarget as HTMLElement).style.transform = 'scale(1.06)' }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)' }}
+            onMouseEnter={(e) => { if (hasPnl) (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)' }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)' }}
             >
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: isToday ? 800 : 600, color: colors ? '#fff' : isToday ? 'rgba(77,144,255,0.9)' : 'rgba(255,255,255,0.5)', lineHeight: 1 }}>{day}</span>
-              {hasPnl && (
-                <span style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: colors!.text, lineHeight: 1 }}>
-                  {pnl >= 0 ? '+' : ''}{pnl.toFixed(2)}
-                </span>
-              )}
+              {/* Day number — top right, with blue badge on today */}
+              <span style={{
+                position: 'absolute', top: 6, right: 8,
+                fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 600, lineHeight: 1,
+                color: isToday ? '#fff' : hasPnl ? 'rgba(255,255,255,0.55)' : 'var(--text-3)',
+                ...(isToday ? {
+                  background: 'var(--accent)', borderRadius: 999,
+                  width: 20, height: 20, top: 4, right: 6,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                } : {}),
+              }}>{day}</span>
+
+              {hasPnl ? (
+                <>
+                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, color: pnlColor, lineHeight: 1, letterSpacing: '-0.01em' }}>
+                    {fmtPnl(data.pnl)}
+                  </span>
+                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 10.5, fontWeight: 500, color: isWin ? 'rgba(94,234,180,0.65)' : 'rgba(248,113,113,0.65)', lineHeight: 1 }}>
+                    {data.count} trade{data.count === 1 ? '' : 's'}
+                  </span>
+                </>
+              ) : null}
             </div>
           )
         })}
