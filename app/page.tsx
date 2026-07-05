@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowRight, Check } from 'lucide-react'
 import { KoveWordmark } from '@/components/KoveLogo'
@@ -49,8 +50,25 @@ const WARNING_EXAMPLES = [
 
 export default function LandingPage() {
   useReveal()
+  const router = useRouter()
   const [scrolled, setScrolled] = useState(false)
   const [openFaq,  setOpenFaq]  = useState<number | null>(null)
+
+  // Forward password-recovery tokens that Supabase redirects to the Site URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const code   = params.get('code')
+    const type   = params.get('type')
+
+    if (code && type === 'recovery') {
+      router.replace(`/auth/callback?code=${encodeURIComponent(code)}&type=recovery`)
+      return
+    }
+
+    if (window.location.hash.includes('type=recovery')) {
+      router.replace('/auth/reset-password')
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 20)

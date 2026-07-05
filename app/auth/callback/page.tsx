@@ -48,8 +48,13 @@ function CallbackHandler() {
 
     // Fallback: no code param — listen for an auth state change (implicit flow)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
+      if (event === 'PASSWORD_RECOVERY') {
         subscription.unsubscribe()
+        clearTimeout(timeout)
+        router.replace('/auth/reset-password')
+      } else if (session) {
+        subscription.unsubscribe()
+        clearTimeout(timeout)
         router.replace('/journal')
       }
     })
