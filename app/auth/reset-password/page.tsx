@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Eye, EyeOff } from 'lucide-react'
 import KoveLogo from '@/components/KoveLogo'
@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 export default function ResetPasswordPage() {
   const router = useRouter()
   const supabase = createClient()
+  const didVerify = useRef(false)
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -16,6 +17,33 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
+  // Establish the recovery session when the email links straight here with a
+  // token_hash (verifyOtp flow). If there's no token_hash, the session was
+  // already set by /auth/callback or the landing-page PASSWORD_RECOVERY handler.
+  const [verifying, setVerifying] = useState(false)
+  const [linkError, setLinkError] = useState('')
+
+  useEffect(() => {
+    if (didVerify.current) return
+    didVerify.current = true
+
+    const params = new URLSearchParams(window.location.search)
+    const tokenHash = params.get('token_hash')
+    if (!tokenHash) return
+
+    setVerifying(true)
+    supabase.auth
+      .verifyOtp({ token_hash: tokenHash, type: 'recovery' })
+      .then(({ error }) => {
+        if (error) {
+          setLinkError('This reset link is invalid or has expired. Please request a new one.')
+        } else {
+          // Strip the token from the URL so it isn't left in history
+          window.history.replaceState(null, '', '/auth/reset-password')
+        }
+        setVerifying(false)
+      })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -76,7 +104,26 @@ export default function ResetPasswordPage() {
         className="relative w-full max-w-[420px] bg-[#0e0e13] border border-white/[0.07] rounded-3xl animate-scale-in"
         style={{ boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 40px 80px rgba(0,0,0,0.8)' }}
       >
-        {done ? (
+        {verifying ? (
+          <div className="p-10 flex flex-col items-center text-center">
+            <Loader2 className="w-6 h-6 text-blue-400 animate-spin mb-4" />
+            <p className="text-[#777] text-sm font-light">Verifying your reset link…</p>
+          </div>
+        ) : linkError ? (
+          <div className="p-10 text-center">
+            <div className="w-14 h-14 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
+              <span className="text-red-400 text-2xl">!</span>
+            </div>
+            <h2 className="text-xl font-bold text-white mb-2 tracking-tight">Link expired</h2>
+            <p className="text-[#555] text-sm font-light mb-6">{linkError}</p>
+            <button
+              onClick={() => router.push('/forgot-password')}
+              className="btn-blue w-full"
+            >
+              Request a new link
+            </button>
+          </div>
+        ) : done ? (
           <div className="p-10 text-center">
             <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
               <span className="text-emerald-400 text-2xl">✓</span>
