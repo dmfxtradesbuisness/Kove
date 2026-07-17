@@ -177,7 +177,6 @@ function AccountContent() {
   const [emailError, setEmailError] = useState('')
 
   // Change password
-  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordLoading, setPasswordLoading] = useState(false)
@@ -337,11 +336,11 @@ function AccountContent() {
     setPasswordError('')
     if (newPassword.length < 8) { setPasswordError('At least 8 characters required.'); setPasswordLoading(false); return }
     if (newPassword !== confirmPassword) { setPasswordError('Passwords do not match.'); setPasswordLoading(false); return }
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email: userEmail, password: currentPassword })
-    if (signInError) { setPasswordError('Current password is incorrect.'); setPasswordLoading(false); return }
+    // Already authenticated — the active session authorizes the change, so no
+    // current password is required.
     const { error } = await supabase.auth.updateUser({ password: newPassword })
     if (error) setPasswordError(error.message)
-    else { setPasswordMsg('Password updated successfully.'); setCurrentPassword(''); setNewPassword(''); setConfirmPassword('') }
+    else { setPasswordMsg('Password updated successfully.'); setNewPassword(''); setConfirmPassword('') }
     setPasswordLoading(false)
   }
 
@@ -552,14 +551,6 @@ function AccountContent() {
           {/* Change password */}
           <InnerCard title="Change Password" collapsible defaultOpen={false}>
             <form onSubmit={handleChangePassword} className="flex flex-col gap-2">
-              <input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Current password"
-                className="input text-sm"
-                required
-              />
               <input
                 type="password"
                 value={newPassword}

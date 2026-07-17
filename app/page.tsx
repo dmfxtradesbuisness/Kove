@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { ArrowRight, Check } from 'lucide-react'
 import { KoveWordmark } from '@/components/KoveLogo'
 import HeroVisual from '@/components/HeroVisual'
+import { createClient } from '@/lib/supabase/client'
 
 // ─── Reveal on scroll ─────────────────────────────────────────────────────────
 function useReveal() {
@@ -54,20 +55,39 @@ export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false)
   const [openFaq,  setOpenFaq]  = useState<number | null>(null)
 
-  // Forward password-recovery tokens that Supabase redirects to the Site URL
+  // Catch password-recovery links that Supabase redirects to the Site URL.
+  // When the redirect_to isn't honored, the `type=recovery` query param is
+  // dropped and we land here with a bare `?code=...` or a `#...` token, so we
+  // can't rely on the URL alone. The Supabase client auto-processes whatever
+  // token is present (PKCE code or implicit hash) and fires PASSWORD_RECOVERY —
+  // that event is the reliable signal, so we listen for it here.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const code   = params.get('code')
-    const type   = params.get('type')
+    const hash   = window.location.hash
 
-    if (code && type === 'recovery') {
-      router.replace(`/auth/callback?code=${encodeURIComponent(code)}&type=recovery`)
+    // Fast paths when the type survived the redirect
+    if (params.get('type') === 'recovery' && params.get('code')) {
+      router.replace(`/auth/callback?code=${encodeURIComponent(params.get('code')!)}&type=recovery`)
+      return
+    }
+    if (hash.includes('type=recovery')) {
+      router.replace('/auth/reset-password')
       return
     }
 
-    if (window.location.hash.includes('type=recovery')) {
-      router.replace('/auth/reset-password')
-    }
+    // Robust catch-all: only arm the listener when a token is actually present,
+    // so a normal visit to the landing page never triggers it.
+    const hasToken = params.has('code') || hash.includes('access_token')
+    if (!hasToken) return
+
+    const supabase = createClient()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        subscription.unsubscribe()
+        router.replace('/auth/reset-password')
+      }
+    })
+    return () => subscription.unsubscribe()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
