@@ -17,32 +17,52 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
-  // Establish the recovery session when the email links straight here with a
-  // token_hash (verifyOtp flow). If there's no token_hash, the session was
-  // already set by /auth/callback or the landing-page PASSWORD_RECOVERY handler.
-  const [verifying, setVerifying] = useState(false)
+  // Establish the recovery session, whichever shape the reset link arrives in:
+  //   • token_hash → verifyOtp (new email template, works cross-device)
+  //   • code       → exchangeCodeForSession (older /auth/callback-style links)
+  //   • neither    → session was already set upstream (landing-page handler)
+  // After resolving, we confirm a session actually exists before showing the
+  // form, so we never render inputs that would fail with "Auth session missing".
+  const [verifying, setVerifying] = useState(true)
   const [linkError, setLinkError] = useState('')
+
+  const EXPIRED_MSG = 'This reset link is invalid or has expired. Please request a new one.'
 
   useEffect(() => {
     if (didVerify.current) return
     didVerify.current = true
 
-    const params = new URLSearchParams(window.location.search)
-    const tokenHash = params.get('token_hash')
-    if (!tokenHash) return
+    async function establishSession() {
+      const params    = new URLSearchParams(window.location.search)
+      const tokenHash = params.get('token_hash')
+      const code      = params.get('code')
 
-    setVerifying(true)
-    supabase.auth
-      .verifyOtp({ token_hash: tokenHash, type: 'recovery' })
-      .then(({ error }) => {
-        if (error) {
-          setLinkError('This reset link is invalid or has expired. Please request a new one.')
-        } else {
-          // Strip the token from the URL so it isn't left in history
-          window.history.replaceState(null, '', '/auth/reset-password')
+      try {
+        if (tokenHash) {
+          const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' })
+          if (error) { setLinkError(EXPIRED_MSG); return }
+        } else if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code)
+          if (error) { setLinkError(EXPIRED_MSG); return }
         }
+
+        // Whatever path we took, make sure we actually have a session now.
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+          setLinkError(EXPIRED_MSG)
+          return
+        }
+
+        // Strip any token from the URL so it isn't left in history.
+        window.history.replaceState(null, '', '/auth/reset-password')
+      } catch {
+        setLinkError(EXPIRED_MSG)
+      } finally {
         setVerifying(false)
-      })
+      }
+    }
+
+    establishSession()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(e: React.FormEvent) {
